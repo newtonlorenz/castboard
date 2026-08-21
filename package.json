@@ -1,0 +1,25 @@
+{
+  "name": "castboard",
+  "version": "0.1.0",
+  "description": "A configurable, plugin-based dashboard for Cast-enabled smart displays.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "cast": "node scripts/cast.mjs",
+    "test": "node --test",
+    "check": "node scripts/check.mjs"
+  },
+  "keywords": [
+    "dashboard",
+    "chromecast",
+    "smart-display",
+    "nest-hub",
+    "plugins"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,59 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8787
+  },
+  "branding": {
+    "name": "Castboard",
+    "subtitle": "Home at a glance",
+    "location": "Your home",
+    "accent": "#8ee6c2",
+    "timeZone": "Europe/Madrid"
+  },
+  "cast": {
+    "targets": {
+      "home": "Kitchen Display",
+      "briefing": "Office Display"
+    }
+  },
+  "screens": {
+    "home": {
+      "path": "/",
+      "widgets": [
+        { "plugin": "focus", "area": "focus" },
+        { "plugin": "solar", "area": "solar" },
+        { "plugin": "clock", "area": "clock" },
+        { "plugin": "weather", "area": "weather" },
+        { "plugin": "recovery", "area": "recovery" },
+        { "plugin": "spotify", "area": "spotify" },
+        { "plugin": "stocks", "area": "stocks" },
+        { "plugin": "calendar", "area": "calendar" },
+        { "plugin": "camera", "area": "camera" },
+        { "plugin": "news", "area": "news" }
+      ]
+    },
+    "briefing": {
+      "path": "/briefing",
+      "sourcePlugin": "news",
+      "rotationSeconds": 18
+    }
+  },
+  "plugins": {
+    "clock": { "enabled": true, "showSeconds": false },
+    "focus": { "enabled": true },
+    "weather": {
+      "enabled": true,
+      "provider": "demo",
+      "label": "Your town",
+      "latitude": 41.98,
+      "longitude": 3.2
+    },
+    "solar": { "enabled": true, "provider": "demo" },
+    "recovery": { "enabled": true, "provider": "demo" },
+    "spotify": { "enabled": true, "provider": "demo" },
+    "stocks": { "enabled": true, "provider": "demo", "currency": "EUR" },
+    "calendar": { "enabled": true, "provider": "demo" },
+    "camera": { "enabled": true, "provider": "demo", "name": "Front garden" },
+    "news": { "enabled": true, "provider": "demo" }
+  }
+}

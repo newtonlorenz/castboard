@@ -1,0 +1,24 @@
+import { demoTimestamp, fetchWithTimeout, readJsonSource } from '../../src/core/providers.js';
+import { parseIcs } from '../../src/core/ics.js';
+
+export function createPlugin({ config, context }) {
+  return {
+    id: 'calendar',
+    name: 'Calendar',
+    publicConfig: () => ({ title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),
+    async getData() {
+      if (config.provider === 'demo') {
+        const now = new Date();
+        const event = (hourOffset, title, source) => ({ id: `${hourOffset}:${title}`, title, start: new Date(now.getTime() + hourOffset * 3600000).toISOString(), end: new Date(now.getTime() + (hourOffset + 0.75) * 3600000).toISOString(), allDay: false, source });
+        return { events: [event(-0.25, 'Product review', 'Work'), event(1.25, 'Lunch outside', 'Personal'), event(3.5, 'Project deep work', 'Work')], updatedAt: demoTimestamp() };
+      }
+      if (config.provider === 'ics') {
+        if (!config.url) throw new Error('ics provider requires url');
+        const response = await fetchWithTimeout(config.url, { headers: { Accept: 'text/calendar' } }, config.timeoutMs || 12000);
+        if (!response.ok) throw new Error(`Calendar provider returned HTTP ${response.status}`);
+        return { events: parseIcs(await response.text()), updatedAt: demoTimestamp() };
+      }
+      return readJsonSource(config, context);
+    },
+  };
+}
