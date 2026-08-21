@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createApp } from '../src/server.js';
+import { loadConfig } from '../src/core/config.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 async function fixture() {
   const config = {
@@ -40,4 +45,15 @@ test('unknown and traversal-like routes do not expose files', async t => {
   assert.equal((await fetch(`${app.baseUrl}/package.json`)).status, 404);
   assert.equal((await fetch(`${app.baseUrl}/plugins/not-installed/widget.js`)).status, 404);
   assert.equal((await fetch(`${app.baseUrl}/api/plugins/clock/action`, { method: 'POST', body: '{}' })).status, 405);
+});
+
+test('example configuration loads every first-party plugin in demo mode', async () => {
+  const loadedConfig = loadConfig({ cwd: ROOT, env: {} });
+  const app = await createApp({ loadedConfig, logger: { error() {} } });
+  assert.deepEqual(app.plugins.map(plugin => plugin.id), ['calendar', 'camera', 'clock', 'focus', 'news', 'recovery', 'solar', 'spotify', 'stocks', 'weather']);
+  for (const plugin of app.plugins) {
+    if (plugin.getData) assert.ok(await plugin.getData({}), `${plugin.id} should return demo data`);
+  }
+  const media = app.plugins.find(plugin => plugin.id === 'spotify');
+  assert.deepEqual(await media.action({ action: 'toggle' }), { accepted: true, action: 'toggle' });
 });

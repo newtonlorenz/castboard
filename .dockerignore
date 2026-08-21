@@ -1,0 +1,7 @@
+.git
+.github
+.env
+castboard.config.json
+coverage
+node_modules
+*.log

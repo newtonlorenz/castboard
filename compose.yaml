@@ -1,0 +1,8 @@
+services:
+  castboard:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      CASTBOARD_CONFIG: /app/castboard.config.example.json

@@ -18,6 +18,14 @@ npm start
 
 Open [http://localhost:8787](http://localhost:8787) and [http://localhost:8787/briefing](http://localhost:8787/briefing). The example configuration is fully functional offline.
 
+Docker is optional:
+
+```sh
+docker compose up --build
+```
+
+The supplied Compose service runs the demo as an unprivileged user. For a private configuration, mount it read-only at `/app/castboard.config.json`, set `CASTBOARD_CONFIG` to that path, and supply integration environment variables through your secret manager or an ignored `.env` file.
+
 To cast a configured screen:
 
 ```sh
