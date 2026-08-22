@@ -23,8 +23,12 @@ Castboard turns Google Nest displays, wall tablets, TVs, kiosk browsers, and oth
 > No hosted account. No vendor-shaped layout. No frontend access to your integration secrets.
 
 <p align="center">
-  <img src="public/assets/castboard-studio.jpg" width="736" alt="Castboard Studio editing a live multi-panel smart-display dashboard">
-  <br><sub>Castboard Studio with a live Nest Hub-sized preview.</sub>
+  <img src="public/assets/castboard-hero.webp" width="960" alt="A smart display running a calm, modular Castboard dashboard in a modern home">
+</p>
+
+<p align="center">
+  <img src="public/assets/castboard-studio.jpg" width="960" alt="Castboard Studio editing a live multi-panel smart-display dashboard">
+  <br><sub>Design every screen visually, with the real output always in view.</sub>
 </p>
 
 ## Why Castboard?
@@ -98,6 +102,19 @@ Every configured screen independently chooses:
 ```
 
 News is not a special screen. It is an ordinary plugin that can be a headline strip, a list, or a full-screen editorial wire. The same is true for cameras, calendars, charts, media, and every plugin you add.
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/assets/castboard-home.jpg" alt="Castboard Home dashboard with weather, calendar, energy, stocks, media, camera, and news panels">
+      <br><sub><strong>Home:</strong> ten plugins sharing one calm ambient canvas.</sub>
+    </td>
+    <td width="50%">
+      <img src="public/assets/castboard-market-wire.jpg" alt="Castboard Market Wire showing a full-screen editorial news layout">
+      <br><sub><strong>Market Wire:</strong> the same news plugin, composed as a full screen.</sub>
+    </td>
+  </tr>
+</table>
 
 ## Batteries included, backends optional
 
