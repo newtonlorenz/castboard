@@ -2,7 +2,7 @@
 
 Notable changes are documented here. Castboard follows semantic versioning once releases are published.
 
-## Unreleased
+## 0.6.1 - 2026-08-22
 
 - Added configurable multi-screen layouts, targets, screen types, and casting protocols.
 - Added Castboard Studio with visual layout and appearance controls.

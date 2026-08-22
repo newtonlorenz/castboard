@@ -9,7 +9,7 @@ gh auth login --hostname github.com
 gh repo create castboard --public --source=. --remote=origin --push
 ```
 
-Then replace the placeholder clone URL in `README.md` with the repository’s HTTPS URL and add matching `repository`, `homepage`, and `bugs` fields to `package.json`. Do not publish those links before the repository exists; dead badges and clone commands make first-run trust worse.
+The canonical clone URL and package metadata point to `https://github.com/newtonlorenz/castboard`. If the project is transferred or renamed, update the README badges and the `repository`, `homepage`, and `bugs` fields in `package.json` in the same commit.
 
 ## First release checklist
 

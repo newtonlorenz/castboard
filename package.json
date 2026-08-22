@@ -26,5 +26,13 @@
     "home-automation",
     "plugins"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newtonlorenz/castboard.git"
+  },
+  "homepage": "https://github.com/newtonlorenz/castboard#readme",
+  "bugs": {
+    "url": "https://github.com/newtonlorenz/castboard/issues"
+  }
 }
