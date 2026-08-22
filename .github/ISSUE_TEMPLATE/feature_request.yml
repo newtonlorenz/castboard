@@ -1,0 +1,16 @@
+name: Feature request
+description: Propose a plugin, screen type, protocol, or core improvement.
+title: "[Idea]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: Problem or opportunity
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed experience
+      description: Explain how an administrator configures it and what a display shows.
+    validations:
+      required: true

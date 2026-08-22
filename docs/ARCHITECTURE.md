@@ -75,7 +75,7 @@ Cast command
   └─ protocol registry → Google Cast / URL / HTTP webhook / custom driver
 ```
 
-The core knows nothing about IBKR, WHOOP, Fronius, Spotify, Sonos, Bloomberg, or a particular camera. A plugin owns normalization and an optional widget. Each screen chooses a discoverable layout type and declares any number of panels; every panel selects a plugin plus type-specific position/size and presentation options. News is not a screen type—it is the same plugin whether rendered as a small strip, a list, or a full-screen wire. Casting is similarly driver-based, so display transport is independent from layout and content.
+The core knows nothing about a broker, health platform, inverter, media service, publisher, or particular camera. A plugin owns normalization and an optional widget. Each screen chooses a discoverable layout type and declares any number of panels; every panel selects a plugin plus type-specific position/size and presentation options. News is not a screen type—it is the same plugin whether rendered as a small strip, a list, or a full-screen wire. Casting is similarly driver-based, so display transport is independent from layout and content.
 
 ## Deliberate decisions
 

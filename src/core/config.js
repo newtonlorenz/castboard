@@ -3,6 +3,25 @@ import path from 'node:path';
 
 const ENV_PATTERN = /\$\{([A-Z_][A-Z0-9_]*)\}/g;
 
+export function environmentWithDotEnv(cwd = process.cwd(), env = process.env) {
+  const values = {};
+  try {
+    const source = fs.readFileSync(path.resolve(cwd, '.env'), 'utf8');
+    for (const rawLine of source.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const match = line.match(/^(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
+      if (!match) continue;
+      let value = match[2].trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+      values[match[1]] = value;
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw new Error(`Unable to load .env: ${error.message}`);
+  }
+  return { ...values, ...env };
+}
+
 export function expandEnvironment(value, env = process.env) {
   if (Array.isArray(value)) return value.map(item => expandEnvironment(item, env));
   if (value && typeof value === 'object') {
@@ -120,7 +139,10 @@ export function resolveConfigPath(cwd = process.cwd(), env = process.env) {
   return path.resolve(cwd, 'castboard.config.example.json');
 }
 
-export function loadConfig({ cwd = process.cwd(), env = process.env, configPath } = {}) {
+export function loadConfig(options = {}) {
+  const cwd = options.cwd || process.cwd();
+  const env = options.env === undefined ? environmentWithDotEnv(cwd) : options.env;
+  const { configPath } = options;
   const filePath = configPath ? path.resolve(cwd, configPath) : resolveConfigPath(cwd, env);
   let raw;
   try {

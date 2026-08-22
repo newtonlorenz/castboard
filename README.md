@@ -41,12 +41,16 @@ Most smart-display dashboards make you choose between a polished but rigid produ
 
 ## See it in 60 seconds
 
-You need Node.js 20 or newer. The included demo is fully functional without accounts, API keys, or internet access.
+You need Git and Node.js 20 or newer. Clone the repository after it is published or forked, then run the safe initializer:
 
 ```sh
-cp castboard.config.example.json castboard.config.json
+git clone <your-castboard-repository-url>
+cd castboard
+npm run init
 npm start
 ```
+
+`npm run init` never overwrites an existing configuration. The starter works without accounts or API keys: local/demo modules render immediately, while the default public RSS headlines need internet access.
 
 Now open:
 
@@ -104,13 +108,34 @@ The starter configuration demonstrates every first-party visual module:
 | Recovery | Demo, HTTP JSON, file JSON |
 | Spotify | Demo, `spotify_player` CLI, HTTP JSON, file JSON |
 | Sonos | Demo, Sonos HTTP bridge, HTTP JSON, file JSON |
-| Stocks | Demo, HTTP JSON, file JSON |
+| Stocks | Demo, Alpha Vantage free-key watchlist, HTTP JSON, file JSON |
 | Calendar | Demo, ICS, HTTP JSON, file JSON |
 | Camera | Demo, direct stream, camera discovery service |
-| News | Demo, HTTP JSON, file JSON, Markdown directory |
+| News | Demo, RSS/Atom with public starter feeds, HTTP JSON, file JSON, Markdown directory |
 | Clock and focus | Local time plus cross-plugin composition |
 
 Environment placeholders such as `${CALENDAR_ICS_URL}` expand only on the server. Raw plugin settings never appear in `/api/config`.
+
+### Live stocks in five lines
+
+Get a free Alpha Vantage API key, place it in your ignored `.env` or service environment, and choose the symbols you care about:
+
+```json
+"stocks": {
+  "enabled": true,
+  "provider": "alpha-vantage",
+  "apiKey": "${ALPHA_VANTAGE_API_KEY}",
+  "tickers": ["AAPL", "MSFT", "GOOGL"],
+  "refreshMinutes": 240,
+  "currency": "USD"
+}
+```
+
+The free endpoint is suitable for an ambient watchlist, not trading: quotes are generally end-of-day and the provider enforces request limits. Castboard caches the default three-symbol watchlist for four hours so frequent display polls do not consume the daily allowance. For broker holdings, another market source, or computed portfolio values, use the canonical HTTP/file JSON adapter.
+
+### RSS news without an account
+
+The starter aggregates official BBC Top Stories, World, and Business feeds. Replace or extend `plugins.news.feeds` with up to eight RSS or Atom URLs; each entry may set `name` and `category`. Feeds are cached for five minutes by default, and one failed feed does not blank the others. Bloomberg’s official content feeds are commercial, so Castboard does not redistribute or mislabel Bloomberg content—the full-screen `Market Wire` is simply another resizable news panel.
 
 ## Plugins are small on purpose
 
@@ -214,7 +239,7 @@ Smart displays / kiosks / browsers
      Your APIs, files, feeds, and LAN services
 ```
 
-The design intentionally keeps layout, content, and transport independent. The core does not know what Bloomberg, Fronius, Spotify, a camera bridge, or your future plugin looks like.
+The design intentionally keeps layout, content, and transport independent. The core does not know what a news desk, Fronius, Spotify, a camera bridge, or your future plugin looks like.
 
 ## Security model
 
@@ -239,6 +264,7 @@ Read the complete [security policy](SECURITY.md) before enabling cameras or cont
 - [Casting protocols](docs/CAST-PROTOCOLS.md)
 - [Architecture and source audit](docs/ARCHITECTURE.md)
 - [Migration guide](docs/MIGRATION.md)
+- [Publishing checklist](docs/PUBLISHING.md)
 
 ## Build with us
 

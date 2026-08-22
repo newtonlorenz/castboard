@@ -1,6 +1,26 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { demoTimestamp, readJsonSource, readTextFile, validateProviderConfig } from '../../src/core/providers.js';
+import { demoTimestamp, fetchText, readJsonSource, readTextFile, validateProviderConfig } from '../../src/core/providers.js';
+import { parseFeed } from '../../src/core/rss.js';
+
+export const DEFAULT_RSS_FEEDS = [
+  { name: 'BBC News', category: 'Top Stories', url: 'https://feeds.bbci.co.uk/news/rss.xml' },
+  { name: 'BBC News', category: 'World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { name: 'BBC News', category: 'Business', url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
+];
+
+function configuredFeeds(config) {
+  const feeds = config.feeds?.length ? config.feeds : DEFAULT_RSS_FEEDS;
+  if (!Array.isArray(feeds) || feeds.length > 8) throw new Error('Plugin news feeds must be an array with at most 8 entries');
+  return feeds.map((feed, index) => {
+    const normalized = typeof feed === 'string' ? { url: feed } : feed;
+    if (!normalized?.url) throw new Error(`Plugin news feeds[${index}] requires url`);
+    let url;
+    try { url = new URL(normalized.url); } catch { throw new Error(`Plugin news feeds[${index}].url must be valid`); }
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error(`Plugin news feeds[${index}].url must use http or https`);
+    return { url: url.href, name: normalized.name || '', category: normalized.category || '' };
+  });
+}
 
 function parseMarkdown(markdown, source, prefix) {
   const sections = String(markdown).split(/^##\s+/m).slice(1);
@@ -12,8 +32,29 @@ function parseMarkdown(markdown, source, prefix) {
 }
 
 export function createPlugin({ config, context }) {
-  validateProviderConfig('news', config, ['demo', 'markdown-directory', 'http-json', 'file-json']);
+  validateProviderConfig('news', config, ['demo', 'rss', 'markdown-directory', 'http-json', 'file-json']);
   if (config.provider === 'markdown-directory' && !config.path) throw new Error('Plugin news markdown-directory provider requires path');
+  const feeds = config.provider === 'rss' ? configuredFeeds(config) : [];
+  const refreshMinutes = Number(config.refreshMinutes ?? 5);
+  if (!Number.isFinite(refreshMinutes) || refreshMinutes <= 0) throw new Error('Plugin news refreshMinutes must be positive');
+  const refreshMs = Math.max(60_000, refreshMinutes * 60_000);
+  let rssCache = null;
+  let rssExpiresAt = 0;
+  let rssRequest = null;
+
+  async function readFeeds() {
+    const results = await Promise.allSettled(feeds.map(async feed => {
+      const { response, text } = await fetchText(feed.url, { headers: { Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml' } }, config.timeoutMs || 8000);
+      if (!response.ok) throw new Error(`RSS feed returned HTTP ${response.status}`);
+      return parseFeed(text, feed);
+    }));
+    const stories = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value);
+    if (!stories.length && results.some(result => result.status === 'rejected')) throw new Error('No configured RSS feeds responded with stories');
+    const unique = [...new Map(stories.map(story => [story.url || `${story.source}:${story.title}`, story])).values()]
+      .sort((a, b) => Date.parse(b.publishedAt || 0) - Date.parse(a.publishedAt || 0))
+      .slice(0, config.maxStories || 40);
+    return { stories: unique, updatedAt: demoTimestamp() };
+  }
   return {
     id: 'news',
     name: 'News and briefings',
@@ -33,6 +74,14 @@ export function createPlugin({ config, context }) {
         const files = (await fs.readdir(directory)).filter(file => file.endsWith('.md')).sort().reverse().slice(0, config.maxFiles || 10);
         const groups = await Promise.all(files.map(async file => parseMarkdown(await readTextFile(path.join(directory, file)), file.replace(/\.md$/, ''), file)));
         return { stories: groups.flat(), updatedAt: demoTimestamp() };
+      }
+      if (config.provider === 'rss') {
+        if (rssCache && Date.now() < rssExpiresAt) return rssCache;
+        if (!rssRequest) rssRequest = readFeeds()
+          .then(data => { rssCache = data; rssExpiresAt = Date.now() + refreshMs; return data; })
+          .catch(error => { if (rssCache) return { ...rssCache, stale: true }; throw error; })
+          .finally(() => { rssRequest = null; });
+        return rssRequest;
       }
       return readJsonSource(config, context);
     },

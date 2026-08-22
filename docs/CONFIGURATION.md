@@ -4,7 +4,7 @@ Copy `castboard.config.example.json` to the ignored `castboard.config.json`. Set
 
 ## Environment values
 
-Any string may include `${VARIABLE_NAME}`. Expansion happens before validation, on the server. A missing variable stops startup with a clear error. Raw plugin configuration is never returned by `/api/config`.
+Any string may include `${VARIABLE_NAME}`. Castboard loads an optional ignored `.env` file beside `package.json`, then lets real process variables override it. Expansion happens before validation, on the server. A missing variable stops startup with a clear error. Raw plugin configuration is never returned by `/api/config`.
 
 ```json
 {
@@ -118,10 +118,46 @@ News is an ordinary plugin-backed panel. Its `options.view` may be:
 - `wire`: the editorial lead story, categories, headline rail, controls, reader, and ticker.
 
 ```json
-{ "id": "markets", "plugin": "news", "position": { "column": 1, "row": 1, "width": 12, "height": 8 }, "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
+{ "id": "markets", "plugin": "news", "position": { "column": 1, "row": 1, "width": 12, "height": 8 }, "options": { "view": "wire", "title": "Market Wire", "rotationSeconds": 18 } }
 ```
 
 ## Provider examples
+
+### RSS and Atom news
+
+The `rss` provider aggregates up to eight feeds, removes duplicate links, sorts dated stories newest first, and keeps working when only some feeds respond. If `feeds` is omitted, Castboard uses its public BBC starter feeds.
+
+```json
+"news": {
+  "enabled": true,
+  "provider": "rss",
+  "maxStories": 40,
+  "refreshMinutes": 5,
+  "feeds": [
+    { "name": "BBC Business", "category": "Business", "url": "https://feeds.bbci.co.uk/news/business/rss.xml" },
+    { "name": "BBC World", "category": "World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" }
+  ]
+}
+```
+
+Feed summaries are normalized into the news contract; Castboard does not copy full publisher articles. Use only feeds whose terms permit your intended use.
+
+### Alpha Vantage stock watchlist
+
+Alpha Vantage offers a free API key and accepts one symbol per Global Quote request. Configure 1–12 ticker symbols; for the free service, keep the list short enough for its current request allowance.
+
+```json
+"stocks": {
+  "enabled": true,
+  "provider": "alpha-vantage",
+  "apiKey": "${ALPHA_VANTAGE_API_KEY}",
+  "tickers": ["AAPL", "MSFT", "GOOGL"],
+  "refreshMinutes": 240,
+  "currency": "USD"
+}
+```
+
+Free Global Quote data is generally end-of-day rather than realtime. The HTTP/file JSON providers remain available for other public sources or actual portfolio positions.
 
 ### Open-Meteo weather
 

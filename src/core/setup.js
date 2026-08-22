@@ -17,9 +17,10 @@ const PROVIDERS = {
   clock: { local: ['ready', 'Built in', 'Uses the display clock and needs no provider.'] },
   focus: { local: ['ready', 'Built in', 'Combines Calendar and Recovery; gracefully falls back when either is unavailable.'] },
   news: {
-    demo: ['demo', 'Demo stories', 'Choose Markdown directory for a local briefing.'],
+    demo: ['demo', 'Demo stories', 'Choose RSS for live public headlines.'],
+    rss: ['ready', 'Built in', 'Aggregates RSS or Atom feeds; BBC public news feeds are included by default.'],
     'markdown-directory': ['ready', 'Built in', 'Turns local Markdown headings into stories.'],
-    'http-json': ['adapter', 'JSON adapter', 'Your endpoint must return Castboard news JSON; RSS is not built in yet.'],
+    'http-json': ['adapter', 'JSON adapter', 'Your endpoint must return Castboard news JSON.'],
     'file-json': ['adapter', 'JSON file', 'Your file must contain Castboard news JSON.'],
   },
   recovery: {
@@ -46,7 +47,8 @@ const PROVIDERS = {
     'file-json': ['adapter', 'JSON file', 'Read-only playback metadata from a file.'],
   },
   stocks: {
-    demo: ['demo', 'Demo portfolio', 'A real broker or market source needs a Castboard JSON adapter.'],
+    demo: ['demo', 'Demo portfolio', 'Choose Alpha Vantage for a configurable market watchlist.'],
+    'alpha-vantage': ['ready', 'Free API key', 'Reads configured ticker quotes from Alpha Vantage. Free quotes are generally end-of-day.'],
     'http-json': ['adapter', 'JSON adapter', 'Your endpoint must return Castboard portfolio JSON.'],
     'file-json': ['adapter', 'JSON file', 'Your file must contain Castboard portfolio JSON.'],
   },

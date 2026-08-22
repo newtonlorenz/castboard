@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { expandEnvironment, loadConfig, publicAppConfig, validateConfig } from '../src/core/config.js';
+import { environmentWithDotEnv, expandEnvironment, loadConfig, publicAppConfig, validateConfig } from '../src/core/config.js';
 
 test('environment references expand recursively', () => {
   const result = expandEnvironment({ url: '${BASE_URL}/feed', nested: ['${TOKEN}'] }, { BASE_URL: 'http://localhost', TOKEN: 'private' });
@@ -12,6 +12,15 @@ test('environment references expand recursively', () => {
 
 test('missing environment values fail closed', () => {
   assert.throws(() => expandEnvironment('${MISSING}', {}), /Missing environment variable: MISSING/);
+});
+
+test('ignored dotenv values load locally and real environment values win', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'castboard-env-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  await fs.writeFile(path.join(directory, '.env'), 'FEED_URL="https://from-file.test/rss"\nSHARED=file\n# ignored\n');
+  assert.deepEqual(environmentWithDotEnv(directory, { SHARED: 'process', EXTRA: 'yes' }), {
+    FEED_URL: 'https://from-file.test/rss', SHARED: 'process', EXTRA: 'yes',
+  });
 });
 
 test('an environment admin token enables authenticated container or LAN access', async t => {

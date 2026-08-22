@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible Castboard problem without sharing private household data.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include the screen type, plugin/provider, and expected result. Redact URLs, tokens, receivers, and account data.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction
+      description: Provide the smallest safe configuration or steps that reproduce the issue.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Castboard and Node versions
+      placeholder: Castboard 0.6.0, Node 22.0.0
+  - type: dropdown
+    attributes:
+      label: Delivery target
+      options: [Browser preview, Google Cast, Kiosk/direct URL, HTTP webhook, Custom protocol]

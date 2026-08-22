@@ -6,6 +6,12 @@ services:
       - "8787:8787"
     environment:
       CASTBOARD_ADMIN_TOKEN: "${CASTBOARD_ADMIN_TOKEN:-}"
+      ALPHA_VANTAGE_API_KEY: "${ALPHA_VANTAGE_API_KEY:-}"
+      CALENDAR_ICS_URL: "${CALENDAR_ICS_URL:-}"
+      SONOS_BACKEND_URL: "${SONOS_BACKEND_URL:-}"
+      CAMERA_STREAM_URL: "${CAMERA_STREAM_URL:-}"
+      STOCKS_JSON_URL: "${STOCKS_JSON_URL:-}"
+      NEWS_JSON_URL: "${NEWS_JSON_URL:-}"
     volumes:
       - castboard-data:/data
 

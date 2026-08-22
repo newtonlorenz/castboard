@@ -3,7 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expandEnvironment, loadConfig, publicAppConfig, validateConfig } from './core/config.js';
+import { environmentWithDotEnv, expandEnvironment, loadConfig, publicAppConfig, validateConfig } from './core/config.js';
 import { discoverPlugins, pluginMap } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
@@ -64,8 +64,9 @@ function acceptsJson(req) {
 }
 
 export async function createApp(options = {}) {
-  const runtimeEnv = options.env || process.env;
-  const loaded = options.loadedConfig || loadConfig({ cwd: options.cwd || ROOT, env: runtimeEnv, configPath: options.configPath });
+  const cwd = options.cwd || ROOT;
+  const runtimeEnv = options.env === undefined ? environmentWithDotEnv(cwd) : options.env;
+  const loaded = options.loadedConfig || loadConfig({ cwd, env: runtimeEnv, configPath: options.configPath });
   const context = { root: ROOT, configDir: loaded.configDir, logger: options.logger || console };
   let runtimeConfig = loaded.config;
   let rawConfig = loaded.rawConfig || JSON.parse(JSON.stringify(loaded.config));

@@ -52,7 +52,7 @@
       "targets": [],
       "layout": { "padding": 8 },
       "panels": [
-        { "id": "market-news", "plugin": "news", "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
+        { "id": "market-news", "plugin": "news", "options": { "view": "wire", "title": "Market Wire", "rotationSeconds": 18 } }
       ]
     },
     "tablet": {
@@ -82,9 +82,17 @@
     "recovery": { "enabled": true, "provider": "demo" },
     "spotify": { "enabled": true, "provider": "demo" },
     "sonos": { "enabled": true, "provider": "demo" },
-    "stocks": { "enabled": true, "provider": "demo", "currency": "EUR" },
+    "stocks": { "enabled": true, "provider": "demo", "currency": "USD", "tickers": ["AAPL", "MSFT", "GOOGL"] },
     "calendar": { "enabled": true, "provider": "demo" },
     "camera": { "enabled": true, "provider": "demo", "name": "Front garden" },
-    "news": { "enabled": true, "provider": "demo" }
+    "news": {
+      "enabled": true,
+      "provider": "rss",
+      "feeds": [
+        { "name": "BBC News", "category": "Top Stories", "url": "https://feeds.bbci.co.uk/news/rss.xml" },
+        { "name": "BBC News", "category": "World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" },
+        { "name": "BBC News", "category": "Business", "url": "https://feeds.bbci.co.uk/news/business/rss.xml" }
+      ]
+    }
   }
 }

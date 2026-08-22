@@ -154,13 +154,15 @@ function cloneForTest(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-test('example configuration loads every first-party plugin in demo mode', async () => {
+test('example configuration loads every first-party plugin without requiring credentials', async () => {
   const loadedConfig = loadConfig({ cwd: ROOT, env: {} });
   const app = await createApp({ loadedConfig, logger: { error() {} } });
   assert.deepEqual(app.plugins.map(plugin => plugin.id), ['calendar', 'camera', 'clock', 'focus', 'news', 'recovery', 'solar', 'sonos', 'spotify', 'stocks', 'weather']);
   for (const plugin of app.plugins) {
-    if (plugin.getData) assert.ok(await plugin.getData({}), `${plugin.id} should return demo data`);
+    if (plugin.getData && plugin.id !== 'news') assert.ok(await plugin.getData({}), `${plugin.id} should return local or demo data`);
   }
+  assert.equal(loadedConfig.config.plugins.news.provider, 'rss');
+  assert.equal(app.plugins.find(plugin => plugin.id === 'news').publicConfig().maxStories, 40);
   const media = app.plugins.find(plugin => plugin.id === 'spotify');
   assert.deepEqual(await media.action({ action: 'toggle' }), { accepted: true, action: 'toggle' });
 });

@@ -9,9 +9,9 @@ const snippets = {
   spotify: '"spotify": { "enabled": true, "provider": "spotify-player", "executable": "spotify_player" }',
   sonos: '"sonos": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_BACKEND_URL}" }',
   camera: '"camera": { "enabled": true, "provider": "stream", "name": "Driveway", "streamUrl": "${CAMERA_STREAM_URL}" }',
-  news: '"news": { "enabled": true, "provider": "markdown-directory", "path": "./briefings" }',
+  news: '"news": { "enabled": true, "provider": "rss", "feeds": [{ "name": "BBC Business", "url": "https://feeds.bbci.co.uk/news/business/rss.xml" }] }',
   recovery: '"recovery": { "enabled": true, "provider": "file-json", "path": "./data/recovery.json" }',
-  stocks: '"stocks": { "enabled": true, "provider": "http-json", "url": "${STOCKS_JSON_URL}" }',
+  stocks: '"stocks": { "enabled": true, "provider": "alpha-vantage", "apiKey": "${ALPHA_VANTAGE_API_KEY}", "tickers": ["AAPL", "MSFT", "GOOGL"] }',
 };
 
 async function request(path, init = {}, retry = true) {

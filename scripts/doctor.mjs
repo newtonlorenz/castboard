@@ -11,7 +11,7 @@ async function main() {
   const loaded = loadConfig({ cwd: ROOT });
   const plugins = await discoverPlugins({ pluginsDir: path.join(ROOT, 'plugins'), config: loaded.config, context: { root: ROOT, configDir: loaded.configDir, logger: console } });
   const report = await buildSetupReport({ config: loaded.config, configPath: loaded.configPath, plugins });
-  console.log(`Castboard doctor · ${report.config.sourceFileName}${report.config.usingExample ? ' (starter demo)' : ''}`);
+  console.log(`Castboard doctor · ${report.config.sourceFileName}${report.config.usingExample ? ' (starter configuration)' : ''}`);
   console.log(`Local: ${report.urls.local}`);
   console.log(`LAN:   ${report.urls.lan || 'not detected'}`);
   console.log(`catt: ${report.tools.catt.installed ? report.tools.catt.version : `missing · ${report.tools.catt.install}`}`);
