@@ -11,8 +11,12 @@ Castboard Studio is the visual design surface at `/admin`. It edits the declarat
 - Single-plugin screens for immersive news, cameras, charts, or other modules.
 - Any discovered custom screen type through generic layout, position, and size JSON.
 - Plugin selection and per-panel options. News is in the same plugin library and follows the same placement and sizing rules as every other module.
+- Screen-wide typography, palette, density, borders, corners, and shadows. Castboard, Midnight Blue, Warm Paper, Amber Terminal, and Ocean presets are editable starting points.
+- Per-panel font, scale, background, accent, text, padding, border, radius, and shadow overrides. Clearing an override returns that panel to the screen theme.
 
 The viewport menu changes only the design simulator. It helps check a layout at common Nest Hub, tablet, small-display, and TV aspect ratios; the real screen route remains responsive to its browser viewport.
+
+Font choices are offline-safe stacks: modern sans, rounded, editorial serif, and monospace. Castboard does not fetch a third-party webfont from a display. Text scale is a percentage from 60 to 180 and changes widget typography without altering the screen grid itself.
 
 ## What it does not edit
 

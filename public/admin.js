@@ -20,6 +20,57 @@ const glyphs = {
   solar: '☀', spotify: '♪', stocks: '↗', weather: '☁',
 };
 
+const FONT_STACKS = {
+  sans: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  rounded: '"Avenir Next Rounded", "Arial Rounded MT Bold", ui-rounded, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  mono: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
+};
+
+const DESIGN_SHADOWS = {
+  none: 'none',
+  soft: '0 6px 18px rgba(0,0,0,.18)',
+  deep: '0 16px 36px rgba(0,0,0,.44)',
+};
+
+const THEMES = {
+  castboard: {
+    fontFamily: 'sans', headingFontFamily: 'serif', fontScale: 100,
+    background: '#07100f', panelBackground: '#192926', accent: '#8ee6c2',
+    textColor: '#f3faf7', mutedColor: '#91a49e', borderColor: '#35423e',
+    positiveColor: '#7ce5a4', negativeColor: '#ff8d8d', radius: 16,
+    panelPadding: 12, borderWidth: 1, shadow: 'soft',
+  },
+  midnight: {
+    fontFamily: 'sans', headingFontFamily: 'sans', fontScale: 100,
+    background: '#080b18', panelBackground: '#151a2e', accent: '#8aa7ff',
+    textColor: '#f4f6ff', mutedColor: '#939bbd', borderColor: '#303858',
+    positiveColor: '#76e2bf', negativeColor: '#ff8ca3', radius: 12,
+    panelPadding: 12, borderWidth: 1, shadow: 'deep',
+  },
+  paper: {
+    fontFamily: 'sans', headingFontFamily: 'serif', fontScale: 105,
+    background: '#e8e1d3', panelBackground: '#f8f3e9', accent: '#a74636',
+    textColor: '#25241f', mutedColor: '#746f63', borderColor: '#c7bead',
+    positiveColor: '#287a50', negativeColor: '#b23c35', radius: 8,
+    panelPadding: 14, borderWidth: 1, shadow: 'soft',
+  },
+  terminal: {
+    fontFamily: 'mono', headingFontFamily: 'mono', fontScale: 95,
+    background: '#0d0a05', panelBackground: '#171108', accent: '#ffbd5b',
+    textColor: '#ffe2a8', mutedColor: '#a88451', borderColor: '#4d3618',
+    positiveColor: '#a9d66f', negativeColor: '#ff746c', radius: 2,
+    panelPadding: 10, borderWidth: 1, shadow: 'none',
+  },
+  ocean: {
+    fontFamily: 'rounded', headingFontFamily: 'sans', fontScale: 100,
+    background: '#06141b', panelBackground: '#0d2932', accent: '#59d8e6',
+    textColor: '#eefcff', mutedColor: '#82aab3', borderColor: '#244b54',
+    positiveColor: '#69e2ae', negativeColor: '#ff8b94', radius: 20,
+    panelPadding: 13, borderWidth: 1, shadow: 'soft',
+  },
+};
+
 function currentScreen() {
   return state.design?.screens?.[state.selectedScreenId] || null;
 }
@@ -51,9 +102,10 @@ function toast(message, error = false) {
 }
 
 function markDirty(message = 'Unsaved design changes') {
-  state.dirty = true;
-  $('#save-design').disabled = false;
-  setStatus(message, 'dirty');
+  state.dirty = JSON.stringify(state.design) !== JSON.stringify(state.savedDesign);
+  $('#save-design').disabled = !state.dirty;
+  if (state.dirty) setStatus(message, 'dirty');
+  else setStatus('Design is up to date', 'saved');
 }
 
 async function requestDesign(method = 'GET', payload) {
@@ -200,6 +252,11 @@ function renderInspector() {
     background: '#07100f',
     accent: normalizeColor(state.design.branding?.accent, '#8ee6c2'),
     panelBackground: '#192926',
+    textColor: '#f3faf7',
+    mutedColor: '#91a49e',
+    positiveColor: '#7ce5a4',
+    negativeColor: '#ff8d8d',
+    borderColor: '#35423e',
   };
   for (const input of $$('[data-appearance]')) {
     const field = input.dataset.appearance;
@@ -207,6 +264,7 @@ function renderInspector() {
     const output = input.closest('.color-field')?.querySelector('output');
     if (output) output.textContent = appearance[field] || `Inherited · ${input.value}`;
   }
+  $('#theme-preset').value = matchingTheme(appearance);
   $('#set-default').disabled = state.selectedScreenId === state.design.defaultScreen;
 
   renderPanelInspector();
@@ -236,9 +294,47 @@ function renderPanelInspector() {
   $('#custom-position').value = JSON.stringify(panel.position || {}, null, 2);
   $('#custom-size').value = JSON.stringify(panel.size || {}, null, 2);
   $('#custom-panel-error').textContent = '';
+  renderPanelAppearance(panel, screen);
   const index = screen.panels.indexOf(panel);
   $('#panel-earlier').disabled = index <= 0;
   $('#panel-later').disabled = index === screen.panels.length - 1;
+}
+
+function matchingTheme(appearance) {
+  if (!Object.keys(appearance).length) return 'inherit';
+  for (const [id, theme] of Object.entries(THEMES)) {
+    if (Object.keys(theme).every(field => appearance[field] === theme[field])) return id;
+  }
+  return 'custom';
+}
+
+function effectiveScreenAppearance(screen) {
+  return { ...THEMES.castboard, accent: state.design.branding?.accent || THEMES.castboard.accent, ...(screen.appearance || {}) };
+}
+
+function renderPanelAppearance(panel, screen) {
+  const appearance = panel.appearance || {};
+  const inherited = effectiveScreenAppearance(screen);
+  const colorFallbacks = {
+    background: inherited.panelBackground,
+    accent: inherited.accent,
+    textColor: inherited.textColor,
+    mutedColor: inherited.mutedColor,
+    borderColor: inherited.borderColor,
+    positiveColor: inherited.positiveColor,
+    negativeColor: inherited.negativeColor,
+  };
+  for (const input of $$('[data-panel-appearance]')) {
+    const field = input.dataset.panelAppearance;
+    if (input.type === 'color') {
+      input.value = normalizeColor(appearance[field], colorFallbacks[field]);
+      const wrapper = input.closest('.color-field');
+      wrapper.classList.toggle('inherited', appearance[field] === undefined);
+      wrapper.querySelector('output').textContent = appearance[field] || `Inherit · ${input.value}`;
+    } else {
+      input.value = appearance[field] ?? '';
+    }
+  }
 }
 
 function renderPluginLibrary() {
@@ -279,15 +375,22 @@ function renderCanvas() {
     return;
   }
   const layout = canvasLayout(screen);
+  const screenAppearance = effectiveScreenAppearance(screen);
   surface.className = `design-surface ${screen.type}`;
   surface.replaceChildren();
   surface.style.setProperty('--design-padding', `${layout.padding ?? 8}px`);
   surface.style.setProperty('--design-gap', `${layout.gap ?? 8}px`);
-  surface.style.setProperty('--design-background', screen.appearance?.background || '#07100f');
-  surface.style.setProperty('--design-accent', screen.appearance?.accent || state.design.branding?.accent || '#8ee6c2');
-  surface.style.setProperty('--design-panel', screen.appearance?.panelBackground || 'linear-gradient(145deg, rgba(30,48,44,.95), rgba(13,25,23,.94))');
-  surface.style.setProperty('--design-radius', `${screen.appearance?.radius ?? 16}px`);
-  surface.style.setProperty('--design-panel-padding', `${screen.appearance?.panelPadding ?? 12}px`);
+  surface.style.setProperty('--design-background', screenAppearance.background);
+  surface.style.setProperty('--design-accent', screenAppearance.accent);
+  surface.style.setProperty('--design-text', screenAppearance.textColor);
+  surface.style.setProperty('--design-muted', screenAppearance.mutedColor);
+  surface.style.setProperty('--design-border', screenAppearance.borderColor);
+  surface.style.setProperty('--design-panel', screenAppearance.panelBackground);
+  surface.style.setProperty('--design-radius', `${screenAppearance.radius}px`);
+  surface.style.setProperty('--design-panel-padding', `${screenAppearance.panelPadding}px`);
+  surface.style.setProperty('--design-border-width', `${screenAppearance.borderWidth}px`);
+  surface.style.setProperty('--design-shadow', DESIGN_SHADOWS[screenAppearance.shadow]);
+  surface.style.setProperty('--design-font-family', FONT_STACKS[screenAppearance.fontFamily] || FONT_STACKS.sans);
 
   if (screen.type === 'grid') {
     surface.style.gridTemplateColumns = `repeat(${layout.columns}, minmax(0, 1fr))`;
@@ -317,6 +420,7 @@ function renderCanvas() {
     element.setAttribute('role', 'button');
     element.setAttribute('aria-label', `${pluginName(panel.plugin)} panel ${panel.id}`);
     element.dataset.panel = panel.id;
+    applyCanvasPanelAppearance(element, panel, screenAppearance);
     placeCanvasPanel(element, panel, screen);
 
     const copy = document.createElement('span');
@@ -353,6 +457,21 @@ function renderCanvas() {
           ? 'Single screens give the selected plugin the entire viewport.'
           : 'Custom screen type · edit its layout and panel JSON, then use Live preview for the renderer output.';
   updatePreview();
+}
+
+function applyCanvasPanelAppearance(element, panel, screenAppearance) {
+  const appearance = panel.appearance || {};
+  element.style.setProperty('--design-font-size', `${16 * (screenAppearance.fontScale / 100) * ((appearance.fontScale || 100) / 100)}px`);
+  element.style.setProperty('--design-font-family', FONT_STACKS[appearance.fontFamily] || FONT_STACKS[screenAppearance.fontFamily] || FONT_STACKS.sans);
+  if (appearance.background) element.style.setProperty('--design-panel', appearance.background);
+  if (appearance.accent) element.style.setProperty('--design-accent', appearance.accent);
+  if (appearance.textColor) element.style.setProperty('--design-text', appearance.textColor);
+  if (appearance.mutedColor) element.style.setProperty('--design-muted', appearance.mutedColor);
+  if (appearance.borderColor) element.style.setProperty('--design-border', appearance.borderColor);
+  if (appearance.radius !== undefined) element.style.setProperty('--design-radius', `${appearance.radius}px`);
+  if (appearance.padding !== undefined) element.style.setProperty('--design-panel-padding', `${appearance.padding}px`);
+  if (appearance.borderWidth !== undefined) element.style.setProperty('--design-border-width', `${appearance.borderWidth}px`);
+  if (appearance.shadow) element.style.setProperty('--design-shadow', DESIGN_SHADOWS[appearance.shadow]);
 }
 
 function placeCanvasPanel(element, panel, screen) {
@@ -577,6 +696,21 @@ function defaultLayout(type) {
   return {};
 }
 
+function applyTheme(themeId) {
+  if (!THEMES[themeId]) return;
+  currentScreen().appearance = clone(THEMES[themeId]);
+  markDirty(`${$('#theme-preset').selectedOptions[0].textContent} theme applied · unsaved`);
+  renderInspector();
+  renderCanvas();
+}
+
+function resetTheme() {
+  currentScreen().appearance = {};
+  markDirty('Screen now inherits project defaults · unsaved');
+  renderInspector();
+  renderCanvas();
+}
+
 function changeScreenType(type) {
   const screen = currentScreen();
   if (type === screen.type) return;
@@ -736,6 +870,14 @@ function bindEvents() {
     renderInspector();
   });
   $('#remove-panel').addEventListener('click', removePanel);
+  $('#theme-preset').addEventListener('change', () => $('#theme-preset').value === 'inherit' ? resetTheme() : applyTheme($('#theme-preset').value));
+  $('#reset-theme').addEventListener('click', resetTheme);
+  $('#reset-panel-style').addEventListener('click', () => {
+    delete currentPanel().appearance;
+    markDirty('Panel style overrides cleared · unsaved');
+    renderPanelInspector();
+    renderCanvas();
+  });
   $('#panel-earlier').addEventListener('click', () => movePanel(-1));
   $('#panel-later').addEventListener('click', () => movePanel(1));
   for (const button of $$('[data-mode]')) button.addEventListener('click', () => setMode(button.dataset.mode));
@@ -773,11 +915,37 @@ function bindEvents() {
     const screen = currentScreen();
     screen.appearance ||= {};
     const field = input.dataset.appearance;
-    if (input.type === 'number' && input.value === '') delete screen.appearance[field];
+    if (input.value === '') delete screen.appearance[field];
     else screen.appearance[field] = input.type === 'number' ? Number(input.value) : input.value;
     const output = input.closest('.color-field')?.querySelector('output');
     if (output) output.textContent = input.value;
+    $('#theme-preset').value = 'custom';
     markDirty('Appearance changed · unsaved');
+    renderCanvas();
+  });
+
+  for (const input of $$('[data-panel-appearance]')) input.addEventListener('input', () => {
+    const panel = currentPanel();
+    panel.appearance ||= {};
+    const field = input.dataset.panelAppearance;
+    if (input.value === '') delete panel.appearance[field];
+    else panel.appearance[field] = input.type === 'number' ? Number(input.value) : input.value;
+    if (!Object.keys(panel.appearance).length) delete panel.appearance;
+    const wrapper = input.closest('.color-field');
+    if (wrapper) {
+      wrapper.classList.remove('inherited');
+      wrapper.querySelector('output').textContent = input.value;
+    }
+    markDirty('Panel style changed · unsaved');
+    renderCanvas();
+  });
+
+  for (const button of $$('[data-clear-panel-appearance]')) button.addEventListener('click', () => {
+    const panel = currentPanel();
+    if (panel.appearance) delete panel.appearance[button.dataset.clearPanelAppearance];
+    if (panel.appearance && !Object.keys(panel.appearance).length) delete panel.appearance;
+    markDirty('Panel color now inherits the screen theme · unsaved');
+    renderPanelInspector();
     renderCanvas();
   });
 

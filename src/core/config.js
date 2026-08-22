@@ -21,6 +21,28 @@ function assertObject(value, label) {
   }
 }
 
+const APPEARANCE_COLORS = ['accent', 'background', 'panelBackground', 'textColor', 'mutedColor', 'borderColor', 'positiveColor', 'negativeColor'];
+const FONT_FAMILIES = new Set(['sans', 'rounded', 'serif', 'mono']);
+const SHADOWS = new Set(['none', 'soft', 'deep']);
+
+function validateAppearance(appearance, label, panel = false) {
+  assertObject(appearance, label);
+  for (const field of APPEARANCE_COLORS) {
+    if (appearance[field] !== undefined && !/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(appearance[field])) throw new Error(`${label}.${field} must be a hex color`);
+  }
+  const bounded = (field, min, max) => {
+    if (appearance[field] !== undefined && (!Number.isFinite(Number(appearance[field])) || Number(appearance[field]) < min || Number(appearance[field]) > max)) throw new Error(`${label}.${field} must be from ${min} to ${max}`);
+  };
+  bounded('radius', 0, 48);
+  bounded(panel ? 'padding' : 'panelPadding', 0, 48);
+  bounded('borderWidth', 0, 4);
+  bounded('fontScale', 60, 180);
+  for (const field of ['fontFamily', 'headingFontFamily']) {
+    if (appearance[field] !== undefined && !FONT_FAMILIES.has(appearance[field])) throw new Error(`${label}.${field} must be sans, rounded, serif, or mono`);
+  }
+  if (appearance.shadow !== undefined && !SHADOWS.has(appearance.shadow)) throw new Error(`${label}.shadow must be none, soft, or deep`);
+}
+
 export function validateConfig(config) {
   assertObject(config, 'Configuration');
   assertObject(config.server, 'server');
@@ -51,14 +73,7 @@ export function validateConfig(config) {
     if (paths.has(screen.path)) throw new Error(`Screen path must be unique: ${screen.path}`);
     paths.add(screen.path);
     if (screen.layout !== undefined) assertObject(screen.layout, `screens.${screenId}.layout`);
-    if (screen.appearance !== undefined) {
-      assertObject(screen.appearance, `screens.${screenId}.appearance`);
-      for (const field of ['accent', 'background', 'panelBackground']) {
-        if (screen.appearance[field] !== undefined && !/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(screen.appearance[field])) throw new Error(`screens.${screenId}.appearance.${field} must be a hex color`);
-      }
-      if (screen.appearance.radius !== undefined && (!Number.isFinite(Number(screen.appearance.radius)) || Number(screen.appearance.radius) < 0 || Number(screen.appearance.radius) > 32)) throw new Error(`screens.${screenId}.appearance.radius must be from 0 to 32`);
-      if (screen.appearance.panelPadding !== undefined && (!Number.isFinite(Number(screen.appearance.panelPadding)) || Number(screen.appearance.panelPadding) < 0 || Number(screen.appearance.panelPadding) > 32)) throw new Error(`screens.${screenId}.appearance.panelPadding must be from 0 to 32`);
-    }
+    if (screen.appearance !== undefined) validateAppearance(screen.appearance, `screens.${screenId}.appearance`);
     if (!Array.isArray(screen.panels)) throw new Error(`screens.${screenId}.panels must be an array`);
     const panelIds = new Set();
     for (const [index, panel] of screen.panels.entries()) {
@@ -69,6 +84,7 @@ export function validateConfig(config) {
       if (panel.position !== undefined) assertObject(panel.position, `screens.${screenId}.panels[${index}].position`);
       if (panel.size !== undefined) assertObject(panel.size, `screens.${screenId}.panels[${index}].size`);
       if (panel.options !== undefined) assertObject(panel.options, `screens.${screenId}.panels[${index}].options`);
+      if (panel.appearance !== undefined) validateAppearance(panel.appearance, `screens.${screenId}.panels[${index}].appearance`, true);
     }
     if (screen.targets !== undefined && !Array.isArray(screen.targets)) throw new Error(`screens.${screenId}.targets must be an array`);
     for (const [index, target] of (screen.targets || []).entries()) {

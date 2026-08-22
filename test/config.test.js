@@ -42,8 +42,10 @@ test('base screen validation accepts many screen types and target protocols', ()
 
 test('admin and screen appearance settings validate safe boundaries', () => {
   const base = { server: { port: 8787 }, plugins: {}, defaultScreen: 'home', screens: { home: { path: '/', panels: [] } } };
-  assert.doesNotThrow(() => validateConfig({ ...base, admin: { enabled: true, allowLan: false }, screens: { home: { path: '/', panels: [], appearance: { background: '#07100f', accent: '#8ee6c2', radius: 32, panelPadding: 0 } } } }));
+  assert.doesNotThrow(() => validateConfig({ ...base, admin: { enabled: true, allowLan: false }, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', appearance: { fontFamily: 'mono', fontScale: 85, background: '#101010', padding: 6, shadow: 'none' } }], appearance: { background: '#07100f', accent: '#8ee6c2', textColor: '#f3faf7', mutedColor: '#91a49e', fontFamily: 'rounded', headingFontFamily: 'serif', fontScale: 120, radius: 48, panelPadding: 0, borderWidth: 1.5, shadow: 'deep' } } } }));
   assert.throws(() => validateConfig({ ...base, admin: { allowLan: true } }), /admin.token is required/);
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { background: 'red' } } } }), /must be a hex color/);
-  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { radius: 33 } } } }), /radius must be from 0 to 32/);
+  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { radius: 49 } } } }), /radius must be from 0 to 48/);
+  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { fontFamily: 'comic-sans' } } } }), /fontFamily must be/);
+  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', appearance: { fontScale: 200 } }] } } }), /fontScale must be from 60 to 180/);
 });

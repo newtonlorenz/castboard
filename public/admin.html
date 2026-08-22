@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Castboard Studio</title>
-  <link rel="stylesheet" href="/admin.css?v=0.4.0">
+  <link rel="stylesheet" href="/admin.css?v=0.5.0">
 </head>
 <body>
   <header class="topbar">
@@ -115,13 +115,49 @@
         </section>
 
         <section>
-          <span class="eyebrow">Appearance</span>
+          <span class="eyebrow">Theme</span>
+          <label class="field"><span>Preset</span><select id="theme-preset">
+            <option value="inherit">Project defaults</option>
+            <option value="custom" disabled>Custom edits</option>
+            <option value="castboard">Castboard</option>
+            <option value="midnight">Midnight blue</option>
+            <option value="paper">Warm paper</option>
+            <option value="terminal">Amber terminal</option>
+            <option value="ocean">Ocean</option>
+          </select></label>
+          <button id="reset-theme" class="button secondary full" type="button">Use project defaults</button>
+        </section>
+
+        <section>
+          <span class="eyebrow">Typography</span>
+          <label class="field"><span>Interface font</span><select data-appearance="fontFamily">
+            <option value="">System default</option><option value="sans">Modern sans</option><option value="rounded">Rounded</option><option value="serif">Editorial serif</option><option value="mono">Monospace</option>
+          </select></label>
+          <label class="field"><span>Heading font</span><select data-appearance="headingFontFamily">
+            <option value="">Editorial default</option><option value="sans">Modern sans</option><option value="rounded">Rounded</option><option value="serif">Editorial serif</option><option value="mono">Monospace</option>
+          </select></label>
+          <label class="field"><span>Text scale · %</span><input type="number" min="60" max="180" step="5" placeholder="100" data-appearance="fontScale"></label>
+        </section>
+
+        <section>
+          <span class="eyebrow">Palette</span>
           <label class="field color-field"><span>Background</span><span><input type="color" data-appearance="background"><output></output></span></label>
-          <label class="field color-field"><span>Screen accent</span><span><input type="color" data-appearance="accent"><output></output></span></label>
-          <label class="field color-field"><span>Panel color</span><span><input type="color" data-appearance="panelBackground"><output></output></span></label>
+          <label class="field color-field"><span>Accent</span><span><input type="color" data-appearance="accent"><output></output></span></label>
+          <label class="field color-field"><span>Text</span><span><input type="color" data-appearance="textColor"><output></output></span></label>
+          <label class="field color-field"><span>Secondary text</span><span><input type="color" data-appearance="mutedColor"><output></output></span></label>
+          <label class="field color-field"><span>Positive value</span><span><input type="color" data-appearance="positiveColor"><output></output></span></label>
+          <label class="field color-field"><span>Negative value</span><span><input type="color" data-appearance="negativeColor"><output></output></span></label>
+        </section>
+
+        <section>
+          <span class="eyebrow">Panel chrome</span>
+          <label class="field color-field"><span>Panel background</span><span><input type="color" data-appearance="panelBackground"><output></output></span></label>
+          <label class="field color-field"><span>Border</span><span><input type="color" data-appearance="borderColor"><output></output></span></label>
           <div class="field-grid">
-            <label class="field"><span>Corner radius</span><input type="number" min="0" max="32" data-appearance="radius"></label>
-            <label class="field"><span>Panel padding</span><input type="number" min="0" max="32" data-appearance="panelPadding"></label>
+            <label class="field"><span>Corner radius</span><input type="number" min="0" max="48" data-appearance="radius"></label>
+            <label class="field"><span>Panel padding</span><input type="number" min="0" max="48" data-appearance="panelPadding"></label>
+            <label class="field"><span>Border width</span><input type="number" min="0" max="4" step="0.5" data-appearance="borderWidth"></label>
+            <label class="field"><span>Shadow</span><select data-appearance="shadow"><option value="">Soft default</option><option value="none">None</option><option value="soft">Soft</option><option value="deep">Deep</option></select></label>
           </div>
         </section>
 
@@ -172,6 +208,29 @@
           </section>
 
           <section>
+            <span class="eyebrow">Panel style overrides</span>
+            <p class="section-note">Leave a field empty to inherit the screen theme.</p>
+            <label class="field"><span>Font</span><select data-panel-appearance="fontFamily">
+              <option value="">Inherit</option><option value="sans">Modern sans</option><option value="rounded">Rounded</option><option value="serif">Editorial serif</option><option value="mono">Monospace</option>
+            </select></label>
+            <label class="field"><span>Text scale · %</span><input type="number" min="60" max="180" step="5" placeholder="100" data-panel-appearance="fontScale"></label>
+            <label class="field color-field optional-color"><span>Background</span><span><input type="color" data-panel-appearance="background"><output></output><button type="button" data-clear-panel-appearance="background" aria-label="Inherit panel background">×</button></span></label>
+            <label class="field color-field optional-color"><span>Accent</span><span><input type="color" data-panel-appearance="accent"><output></output><button type="button" data-clear-panel-appearance="accent" aria-label="Inherit panel accent">×</button></span></label>
+            <label class="field color-field optional-color"><span>Text</span><span><input type="color" data-panel-appearance="textColor"><output></output><button type="button" data-clear-panel-appearance="textColor" aria-label="Inherit panel text color">×</button></span></label>
+            <label class="field color-field optional-color"><span>Secondary text</span><span><input type="color" data-panel-appearance="mutedColor"><output></output><button type="button" data-clear-panel-appearance="mutedColor" aria-label="Inherit panel secondary text color">×</button></span></label>
+            <label class="field color-field optional-color"><span>Border</span><span><input type="color" data-panel-appearance="borderColor"><output></output><button type="button" data-clear-panel-appearance="borderColor" aria-label="Inherit panel border color">×</button></span></label>
+            <label class="field color-field optional-color"><span>Positive value</span><span><input type="color" data-panel-appearance="positiveColor"><output></output><button type="button" data-clear-panel-appearance="positiveColor" aria-label="Inherit panel positive color">×</button></span></label>
+            <label class="field color-field optional-color"><span>Negative value</span><span><input type="color" data-panel-appearance="negativeColor"><output></output><button type="button" data-clear-panel-appearance="negativeColor" aria-label="Inherit panel negative color">×</button></span></label>
+            <div class="field-grid">
+              <label class="field"><span>Corner radius</span><input type="number" min="0" max="48" data-panel-appearance="radius"></label>
+              <label class="field"><span>Padding</span><input type="number" min="0" max="48" data-panel-appearance="padding"></label>
+              <label class="field"><span>Border width</span><input type="number" min="0" max="4" step="0.5" data-panel-appearance="borderWidth"></label>
+              <label class="field"><span>Shadow</span><select data-panel-appearance="shadow"><option value="">Inherit</option><option value="none">None</option><option value="soft">Soft</option><option value="deep">Deep</option></select></label>
+            </div>
+            <button id="reset-panel-style" class="button secondary full" type="button">Clear all overrides</button>
+          </section>
+
+          <section>
             <span class="eyebrow">Advanced options</span>
             <label class="field"><span>Plugin options · JSON</span><textarea id="panel-options" rows="7" spellcheck="false"></textarea></label>
             <p id="options-error" class="field-error" role="alert"></p>
@@ -210,6 +269,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/admin.js?v=0.4.0"></script>
+  <script type="module" src="/admin.js?v=0.5.0"></script>
 </body>
 </html>

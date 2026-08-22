@@ -42,12 +42,15 @@ test('design merge preserves private settings and raw environment placeholders',
   const raw = privateConfig();
   const design = extractDesign(raw);
   design.screens.home.title = 'Edited Home';
-  design.screens.home.appearance = { accent: '#ffcc66', radius: 12 };
+  design.screens.home.appearance = { accent: '#ffcc66', textColor: '#fff7e0', fontFamily: 'rounded', fontScale: 110, radius: 12 };
+  design.screens.home.panels[0].appearance = { background: '#111111', fontFamily: 'mono', fontScale: 90 };
   design.screens.extra = { id: 'extra', path: '/extra', title: 'Extra', type: 'single', layout: { padding: 4 }, appearance: {}, panels: [{ id: 'news', plugin: 'clock' }] };
   const merged = mergeDesign(raw, design);
   assert.equal(merged.screens.home.title, 'Edited Home');
   assert.deepEqual(merged.screens.home.targets, raw.screens.home.targets);
   assert.equal(merged.screens.home.castProtocol, 'google-cast');
+  assert.equal(merged.screens.home.appearance.fontFamily, 'rounded');
+  assert.equal(merged.screens.home.panels[0].appearance.background, '#111111');
   assert.equal(merged.plugins.clock.token, '${CLOCK_TOKEN}');
   assert.equal(merged.casting.protocols['http-webhook'].headers.Authorization, '${WEBHOOK_TOKEN}');
   assert.deepEqual(merged.screens.extra.targets, []);

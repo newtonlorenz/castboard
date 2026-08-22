@@ -96,7 +96,8 @@ test('admin saves atomically, preserves private values, and hot-applies public d
   const initial = await (await fetch(`${baseUrl}/api/admin/design`)).json();
   initial.design.screens.home.title = 'After';
   initial.design.screens.home.path = '/after';
-  initial.design.screens.home.appearance = { accent: '#ffcc66', radius: 10 };
+  initial.design.screens.home.appearance = { accent: '#ffcc66', textColor: '#fff7e0', fontFamily: 'rounded', headingFontFamily: 'serif', fontScale: 115, radius: 10, borderWidth: 2, shadow: 'deep' };
+  initial.design.screens.home.panels[0].appearance = { fontFamily: 'mono', fontScale: 90, background: '#111111', padding: 6 };
   const savedResponse = await fetch(`${baseUrl}/api/admin/design`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -109,6 +110,8 @@ test('admin saves atomically, preserves private values, and hot-applies public d
   const publicConfig = await (await fetch(`${baseUrl}/api/config`)).json();
   assert.equal(publicConfig.screens.home.title, 'After');
   assert.equal(publicConfig.screens.home.path, '/after');
+  assert.equal(publicConfig.screens.home.appearance.fontScale, 115);
+  assert.equal(publicConfig.screens.home.panels[0].appearance.fontFamily, 'mono');
   assert.equal((await fetch(`${baseUrl}/after`)).status, 200);
   const onDisk = JSON.parse(await fs.readFile(configPath, 'utf8'));
   assert.equal(onDisk.plugins.clock.privateValue, 'preserve-me');

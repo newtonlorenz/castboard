@@ -71,7 +71,35 @@ For `grid` screens, coordinates are one-based and `width`/`height` are grid span
 
 Screen `layout`, panel `position`/`size`, and panel `options` are display configuration and are returned to the browser. Do not put credentials, private upstream URLs, or device identifiers in them.
 
-Optional screen `appearance` supports `background`, `accent`, and `panelBackground` hex colors plus `radius` and `panelPadding` numbers from 0 to 32. A screen accent overrides the shared branding accent.
+Optional screen `appearance` controls the visual theme:
+
+| Setting | Values |
+| --- | --- |
+| `fontFamily`, `headingFontFamily` | `sans`, `rounded`, `serif`, or `mono` |
+| `fontScale` | percentage from 60 to 180 |
+| `background`, `panelBackground`, `accent` | six- or eight-digit hex colors |
+| `textColor`, `mutedColor` | primary and secondary text hex colors |
+| `positiveColor`, `negativeColor` | semantic value hex colors |
+| `borderColor` | panel and internal-divider hex color |
+| `radius`, `panelPadding` | numbers from 0 to 48 |
+| `borderWidth` | number from 0 to 4 |
+| `shadow` | `none`, `soft`, or `deep` |
+
+A screen accent overrides the shared branding accent. Panels inherit the screen appearance and may provide their own `appearance` object with `fontFamily`, `headingFontFamily`, `fontScale`, `background`, `accent`, `textColor`, `mutedColor`, `positiveColor`, `negativeColor`, `borderColor`, `radius`, `padding`, `borderWidth`, and `shadow`.
+
+```json
+{
+  "id": "markets",
+  "plugin": "stocks",
+  "appearance": {
+    "fontFamily": "mono",
+    "fontScale": 90,
+    "background": "#101820",
+    "accent": "#65d9e8",
+    "radius": 6
+  }
+}
+```
 
 `targets` stays server-side and accepts zero, one, or many structured targets. The screen's `castProtocol` is the default; a target's `protocol` overrides it. Run `npm run cast -- screen-id`, `npm run cast -- --all`, or temporarily override every selected target with `npm run cast -- screen-id --protocol url`.
 
