@@ -13,7 +13,7 @@ async function fixture() {
     server: { host: '127.0.0.1', port: 8787 },
     branding: { name: 'Testboard', timeZone: 'UTC' },
     defaultScreen: 'clock-screen',
-    screens: { 'clock-screen': { path: '/screens/clock', targets: ['Private clock display'], grid: { columns: 2, rows: 1 }, panels: [{ id: 'clock', plugin: 'clock', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
+    screens: { 'clock-screen': { path: '/screens/clock', type: 'grid', targets: [{ name: 'Private clock display', device: 'clock-device' }], layout: { columns: 2, rows: 1 }, panels: [{ id: 'clock', plugin: 'clock', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
     plugins: { clock: { enabled: true, privateValue: 'never-public' } },
   };
   const app = await createApp({ loadedConfig: { config, configPath: '/tmp/test-config.json', configDir: '/tmp' }, logger: { error() {} } });
@@ -35,6 +35,8 @@ test('server exposes health, public config, and widget module', async t => {
   assert.equal(JSON.stringify(config).includes('never-public'), false);
   assert.equal(JSON.stringify(config).includes('Private clock display'), false);
   assert.equal(config.defaultScreen, 'clock-screen');
+  assert.equal(config.screens['clock-screen'].type, 'grid');
+  assert.deepEqual(config.screenTypes.map(type => type.id), ['flow', 'grid', 'single']);
   assert.match(configResponse.headers.get('content-security-policy'), /default-src 'self'/);
 
   assert.equal((await fetch(`${app.baseUrl}/screens/clock`)).status, 200);
@@ -42,6 +44,7 @@ test('server exposes health, public config, and widget module', async t => {
   const widget = await fetch(`${app.baseUrl}/plugins/clock/widget.js`);
   assert.equal(widget.status, 200);
   assert.match(await widget.text(), /export function mount/);
+  assert.equal((await fetch(`${app.baseUrl}/screen-types/grid/renderer.js`)).status, 200);
 });
 
 test('unknown and traversal-like routes do not expose files', async t => {

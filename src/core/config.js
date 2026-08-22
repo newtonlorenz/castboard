@@ -26,6 +26,13 @@ export function validateConfig(config) {
   assertObject(config.server, 'server');
   assertObject(config.screens, 'screens');
   assertObject(config.plugins, 'plugins');
+  if (config.casting !== undefined) assertObject(config.casting, 'casting');
+  if (config.casting?.protocols !== undefined) assertObject(config.casting.protocols, 'casting.protocols');
+  if (config.casting?.defaultProtocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(config.casting.defaultProtocol)) throw new Error('casting.defaultProtocol must be a valid protocol ID');
+  for (const [protocolId, protocolConfig] of Object.entries(config.casting?.protocols || {})) {
+    if (!/^[a-z][a-z0-9-]*$/.test(protocolId)) throw new Error(`Invalid cast protocol ID: ${protocolId}`);
+    assertObject(protocolConfig, `casting.protocols.${protocolId}`);
+  }
   const port = Number(config.server.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('server.port must be an integer from 1 to 65535');
   const screenEntries = Object.entries(config.screens);
@@ -34,14 +41,12 @@ export function validateConfig(config) {
   for (const [screenId, screen] of Object.entries(config.screens)) {
     assertObject(screen, `screens.${screenId}`);
     if (!/^[a-z][a-z0-9-]*$/.test(screenId)) throw new Error(`Invalid screen ID: ${screenId}`);
+    if (screen.type !== undefined && !/^[a-z][a-z0-9-]*$/.test(screen.type)) throw new Error(`Invalid screen type: ${screen.type}`);
+    if (screen.castProtocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(screen.castProtocol)) throw new Error(`Invalid screen cast protocol: ${screen.castProtocol}`);
     if (!screen.path || !String(screen.path).startsWith('/')) throw new Error(`screens.${screenId}.path must start with /`);
     if (paths.has(screen.path)) throw new Error(`Screen path must be unique: ${screen.path}`);
     paths.add(screen.path);
-    assertObject(screen.grid, `screens.${screenId}.grid`);
-    const columns = Number(screen.grid.columns);
-    const rows = Number(screen.grid.rows);
-    if (!Number.isInteger(columns) || columns < 1 || columns > 24) throw new Error(`screens.${screenId}.grid.columns must be an integer from 1 to 24`);
-    if (!Number.isInteger(rows) || rows < 1 || rows > 24) throw new Error(`screens.${screenId}.grid.rows must be an integer from 1 to 24`);
+    if (screen.layout !== undefined) assertObject(screen.layout, `screens.${screenId}.layout`);
     if (!Array.isArray(screen.panels)) throw new Error(`screens.${screenId}.panels must be an array`);
     const panelIds = new Set();
     for (const [index, panel] of screen.panels.entries()) {
@@ -49,17 +54,17 @@ export function validateConfig(config) {
       if (!panel.id || panelIds.has(panel.id)) throw new Error(`screens.${screenId} panel IDs must be present and unique`);
       panelIds.add(panel.id);
       if (!panel.plugin) throw new Error(`screens.${screenId}.panels[${index}].plugin is required`);
-      assertObject(panel.position, `screens.${screenId}.panels[${index}].position`);
-      const { column, row, width, height } = panel.position;
-      if (![column, row, width, height].every(value => Number.isInteger(Number(value)) && Number(value) > 0)) {
-        throw new Error(`screens.${screenId}.panels[${index}].position values must be positive integers`);
-      }
-      if (Number(column) + Number(width) - 1 > columns || Number(row) + Number(height) - 1 > rows) {
-        throw new Error(`screens.${screenId}.panels[${index}] exceeds its grid`);
-      }
+      if (panel.position !== undefined) assertObject(panel.position, `screens.${screenId}.panels[${index}].position`);
+      if (panel.size !== undefined) assertObject(panel.size, `screens.${screenId}.panels[${index}].size`);
+      if (panel.options !== undefined) assertObject(panel.options, `screens.${screenId}.panels[${index}].options`);
     }
     if (screen.targets !== undefined && !Array.isArray(screen.targets)) throw new Error(`screens.${screenId}.targets must be an array`);
-    if ((screen.targets || []).some(target => typeof target !== 'string' || !target.trim())) throw new Error(`screens.${screenId}.targets must contain non-empty strings`);
+    for (const [index, target] of (screen.targets || []).entries()) {
+      if (typeof target === 'string' && target.trim()) continue;
+      if (!target || typeof target !== 'object' || Array.isArray(target)) throw new Error(`screens.${screenId}.targets[${index}] must be a string or object`);
+      if (!target.name && !target.device && !target.endpoint) throw new Error(`screens.${screenId}.targets[${index}] requires name, device, or endpoint`);
+      if (target.protocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(target.protocol)) throw new Error(`Invalid target protocol: ${target.protocol}`);
+    }
   }
   if (config.defaultScreen && !config.screens[config.defaultScreen]) throw new Error(`defaultScreen references an unknown screen: ${config.defaultScreen}`);
   return config;
@@ -85,7 +90,7 @@ export function loadConfig({ cwd = process.cwd(), env = process.env, configPath 
   return { config, configPath: filePath, configDir: path.dirname(filePath) };
 }
 
-export function publicAppConfig(config, plugins) {
+export function publicAppConfig(config, plugins, screenTypes = []) {
   const branding = {
     name: config.branding?.name || 'Castboard',
     subtitle: config.branding?.subtitle || '',
@@ -100,9 +105,11 @@ export function publicAppConfig(config, plugins) {
       id,
       title: screen.title || id,
       path: screen.path,
-      grid: screen.grid,
+      type: screen.type || 'grid',
+      layout: screen.layout || {},
       panels: screen.panels,
     }])),
+    screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, version: type.version || '1.0.0' })),
     plugins: plugins.map(plugin => ({
       id: plugin.id,
       name: plugin.name,

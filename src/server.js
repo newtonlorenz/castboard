@@ -5,11 +5,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, publicAppConfig } from './core/config.js';
 import { discoverPlugins, pluginMap } from './core/plugin-registry.js';
+import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const PLUGINS_DIR = path.join(ROOT, 'plugins');
+const SCREEN_TYPES_DIR = path.join(ROOT, 'screen-types');
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -56,9 +58,11 @@ async function readBody(req) {
 export async function createApp(options = {}) {
   const loaded = options.loadedConfig || loadConfig({ cwd: options.cwd || ROOT, env: options.env || process.env, configPath: options.configPath });
   const context = { root: ROOT, configDir: loaded.configDir, logger: options.logger || console };
+  const screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: loaded.config });
+  const screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
   const plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   const byId = pluginMap(plugins);
-  const publicConfig = publicAppConfig(loaded.config, plugins);
+  const publicConfig = publicAppConfig(loaded.config, plugins, screenTypes);
 
   const server = http.createServer(async (req, res) => {
     securityHeaders(res);
@@ -91,6 +95,13 @@ export async function createApp(options = {}) {
         return sendFile(res, path.join(plugin.directory, 'widget.js'), true);
       }
 
+      const screenTypeMatch = url.pathname.match(/^\/screen-types\/([a-z][a-z0-9-]*)\/renderer\.js$/);
+      if (req.method === 'GET' && screenTypeMatch) {
+        const screenType = screenTypesById.get(screenTypeMatch[1]);
+        if (!screenType) return jsonResponse(res, 404, { error: { code: 'SCREEN_TYPE_NOT_FOUND', message: 'Screen type not found' } });
+        return sendFile(res, path.join(screenType.directory, 'renderer.js'), true);
+      }
+
       const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
       if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
@@ -103,7 +114,7 @@ export async function createApp(options = {}) {
     }
   });
 
-  return { server, config: loaded.config, plugins, publicConfig };
+  return { server, config: loaded.config, plugins, screenTypes, publicConfig };
 }
 
 export async function start(options = {}) {
@@ -115,6 +126,7 @@ export async function start(options = {}) {
   });
   console.log(`Castboard is running at http://localhost:${port}`);
   for (const [id, screen] of Object.entries(app.config.screens)) console.log(`${id}: http://localhost:${port}${screen.path}`);
+  console.log(`Screen types: ${app.screenTypes.map(type => type.id).join(', ')}`);
   console.log(`Loaded plugins: ${app.plugins.map(plugin => plugin.id).join(', ')}`);
   return app;
 }

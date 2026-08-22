@@ -27,14 +27,19 @@ Any string may include `${VARIABLE_NAME}`. Expansion happens before validation, 
 
 ## Screens
 
-A configuration must contain at least one screen and may contain any number. Every screen has its own route, Cast targets, grid, and panels:
+A configuration must contain at least one screen and may contain any number. Every screen has its own route, screen type, targets, layout settings, and panels:
 
 ```json
 "kitchen": {
   "path": "/screens/kitchen",
   "title": "Kitchen",
-  "targets": ["Kitchen Display", "Kitchen Max"],
-  "grid": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
+  "type": "grid",
+  "castProtocol": "google-cast",
+  "targets": [
+    { "name": "Kitchen Hub", "device": "Kitchen Display" },
+    { "name": "Wall tablet", "protocol": "http-webhook", "endpoint": "${TABLET_WEBHOOK}" }
+  ],
+  "layout": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
   "panels": [
     {
       "id": "forecast",
@@ -46,9 +51,11 @@ A configuration must contain at least one screen and may contain any number. Eve
 }
 ```
 
-Coordinates are one-based. `width` and `height` are grid spans. Panels must fit inside the configured grid, and panel IDs must be unique within a screen. Panels may reuse a plugin; `options` change only that panel's presentation.
+For `grid` screens, coordinates are one-based and `width`/`height` are grid spans. Panels must fit inside the configured grid, and panel IDs must be unique within a screen. Panels may reuse a plugin; `options` change only that panel's presentation. `flow` screens instead accept optional panel `size` spans, while `single` screens require exactly one panel.
 
-`targets` stays server-side and accepts zero, one, or many `catt` device names or addresses. Run `npm run cast -- screen-id` for one screen or `npm run cast -- --all` for every configured screen.
+Screen `layout`, panel `position`/`size`, and panel `options` are display configuration and are returned to the browser. Do not put credentials, private upstream URLs, or device identifiers in them.
+
+`targets` stays server-side and accepts zero, one, or many structured targets. The screen's `castProtocol` is the default; a target's `protocol` overrides it. Run `npm run cast -- screen-id`, `npm run cast -- --all`, or temporarily override every selected target with `npm run cast -- screen-id --protocol url`.
 
 ### News panel views
 

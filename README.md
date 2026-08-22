@@ -1,9 +1,10 @@
 # Castboard
 
-Castboard is a configurable, plugin-based dashboard for Cast-enabled smart displays. Configure one screen or many, assign one or many Cast targets to each, and place any plugin-backed panel anywhere on that screen's grid. It ships with two starter layouts:
+Castboard is a configurable, plugin-based dashboard for smart displays. Configure one screen or many, choose a screen type, assign one or many targets using the appropriate casting protocol, and place plugin-backed panels in that screen's layout. It ships with three starter layouts:
 
 - **Home** — focus, solar, clock, weather, recovery, media, stocks, calendar, camera, and a briefing strip.
 - **Office** — a full-grid instance of the same news plugin, rendered as an auto-rotating wire with categories, reader, and ticker.
+- **Tablet** — a responsive flow of clock, weather, calendar, and news panels delivered as a URL for a kiosk browser.
 
 The project intentionally has no runtime dependencies or build step. Node.js serves the UI and loads first-party plugins from `plugins/`; browsers load each plugin's widget module on demand.
 
@@ -16,7 +17,7 @@ cp castboard.config.example.json castboard.config.json
 npm start
 ```
 
-Open [http://localhost:8787](http://localhost:8787) and [http://localhost:8787/screens/office](http://localhost:8787/screens/office). The example configuration is fully functional offline.
+Open [http://localhost:8787](http://localhost:8787), [http://localhost:8787/screens/office](http://localhost:8787/screens/office), and [http://localhost:8787/screens/tablet](http://localhost:8787/screens/tablet). The example configuration is fully functional offline.
 
 Docker is optional:
 
@@ -36,7 +37,9 @@ npm run cast -- --all
 
 Each screen's `targets` is an array, so the same layout can be cast to several displays. Panel placement is declarative: choose a plugin and set its grid column, row, width, and height. The same plugin can appear more than once and use different presentation options in each panel. For example, `news` can be a one-row headline strip, a list, or a full-screen Bloomberg-style wire.
 
-Version 0.2 uses the generalized `screens.<id>.grid`, `panels`, and `targets` schema. The previous special-purpose `widgets` and briefing-screen fields are intentionally retired; [docs/CONFIGURATION.md](docs/CONFIGURATION.md) contains the complete replacement format.
+Built-in screen types are `grid`, responsive `flow`, and `single`; new types are discoverable modules under `screen-types/`. Built-in casting protocols are `google-cast`, `url`, and `http-webhook`; protocol drivers live under `cast-protocols/`. A screen chooses its default with `castProtocol`, and an individual target can override it.
+
+See [docs/SCREEN-TYPES.md](docs/SCREEN-TYPES.md) and [docs/CAST-PROTOCOLS.md](docs/CAST-PROTOCOLS.md) for extension contracts. Version 0.3 uses `screens.<id>.type`, `layout`, `panels`, structured `targets`, and `casting.protocols`.
 
 ## Configure integrations
 

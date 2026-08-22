@@ -59,6 +59,7 @@ Cast display(s)
 Node core
   ├─ config loading + environment expansion
   ├─ plugin discovery + lifecycle
+  ├─ screen-type discovery + validation
   ├─ safe static serving + security headers
   └─ standardized provider error handling
           │
@@ -69,9 +70,12 @@ First-party plugins
           │
           ▼
 Demo / canonical JSON / files / ICS / Fronius / LAN services
+
+Cast command
+  └─ protocol registry → Google Cast / URL / HTTP webhook / custom driver
 ```
 
-The core knows nothing about IBKR, WHOOP, Fronius, Spotify, Sonos, Bloomberg, or a particular camera. A plugin owns normalization and an optional widget. Each screen declares a grid and any number of panels; every panel selects a plugin plus its position, size, and presentation options. News is not a screen type—it is the same plugin whether rendered as a small strip, a list, or a full-screen wire. Removing a plugin removes its code path without changing the core.
+The core knows nothing about IBKR, WHOOP, Fronius, Spotify, Sonos, Bloomberg, or a particular camera. A plugin owns normalization and an optional widget. Each screen chooses a discoverable layout type and declares any number of panels; every panel selects a plugin plus type-specific position/size and presentation options. News is not a screen type—it is the same plugin whether rendered as a small strip, a list, or a full-screen wire. Casting is similarly driver-based, so display transport is independent from layout and content.
 
 ## Deliberate decisions
 

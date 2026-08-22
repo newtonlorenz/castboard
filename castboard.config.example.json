@@ -11,12 +11,22 @@
     "timeZone": "Europe/Madrid"
   },
   "defaultScreen": "home",
+  "casting": {
+    "defaultProtocol": "google-cast",
+    "protocols": {
+      "google-cast": { "enabled": true, "executable": "catt" },
+      "url": { "enabled": true },
+      "http-webhook": { "enabled": false }
+    }
+  },
   "screens": {
     "home": {
       "path": "/",
       "title": "Home",
-      "targets": ["Kitchen Display"],
-      "grid": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
+      "type": "grid",
+      "castProtocol": "google-cast",
+      "targets": [{ "name": "Kitchen Hub", "device": "Kitchen Display" }],
+      "layout": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
       "panels": [
         { "id": "focus", "plugin": "focus", "position": { "column": 1, "row": 1, "width": 8, "height": 1 } },
         { "id": "solar", "plugin": "solar", "position": { "column": 9, "row": 1, "width": 4, "height": 1 } },
@@ -33,10 +43,26 @@
     "office": {
       "path": "/screens/office",
       "title": "Office",
-      "targets": ["Office Display"],
-      "grid": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
+      "type": "single",
+      "castProtocol": "google-cast",
+      "targets": [{ "name": "Office Hub", "device": "Office Display" }],
+      "layout": { "padding": 8 },
       "panels": [
-        { "id": "market-news", "plugin": "news", "position": { "column": 1, "row": 1, "width": 12, "height": 8 }, "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
+        { "id": "market-news", "plugin": "news", "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
+      ]
+    },
+    "tablet": {
+      "path": "/screens/tablet",
+      "title": "Tablet",
+      "type": "flow",
+      "castProtocol": "url",
+      "targets": [{ "name": "Tablet browser", "protocol": "url" }],
+      "layout": { "minPanelWidth": 220, "minPanelHeight": 140, "gap": 8, "padding": 8 },
+      "panels": [
+        { "id": "tablet-clock", "plugin": "clock" },
+        { "id": "tablet-weather", "plugin": "weather" },
+        { "id": "tablet-calendar", "plugin": "calendar", "size": { "columns": 1, "rows": 2 } },
+        { "id": "tablet-news", "plugin": "news", "size": { "columns": 2, "rows": 2 }, "options": { "view": "list", "title": "News" } }
       ]
     }
   },

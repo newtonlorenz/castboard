@@ -21,7 +21,7 @@ test('public configuration contains only explicit plugin output', () => {
     server: { port: 8787 },
     branding: { name: 'Test' },
     defaultScreen: 'home',
-    screens: { home: { path: '/', title: 'Home', targets: ['Private display'], grid: { columns: 4, rows: 2 }, panels: [{ id: 'sample', plugin: 'sample', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
+    screens: { home: { path: '/', title: 'Home', type: 'grid', targets: [{ name: 'Private display', device: 'private-device' }], layout: { columns: 4, rows: 2 }, panels: [{ id: 'sample', plugin: 'sample', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
     plugins: { sample: { token: 'do-not-leak', url: 'http://private' } },
   };
   const output = publicAppConfig(config, [{ id: 'sample', name: 'Sample', publicConfig: () => ({ label: 'Public' }) }]);
@@ -33,9 +33,9 @@ test('public configuration contains only explicit plugin output', () => {
   assert.equal(output.screens.home.panels[0].position.width, 2);
 });
 
-test('screen validation accepts many screens and rejects panels outside their grid', () => {
+test('base screen validation accepts many screen types and target protocols', () => {
   const base = { server: { port: 8787 }, plugins: {}, defaultScreen: 'one' };
-  const screen = path => ({ path, grid: { columns: 4, rows: 3 }, panels: [], targets: [] });
-  assert.doesNotThrow(() => validateConfig({ ...base, screens: { one: screen('/'), two: screen('/screens/two') } }));
-  assert.throws(() => validateConfig({ ...base, screens: { one: { ...screen('/'), panels: [{ id: 'wide', plugin: 'sample', position: { column: 4, row: 1, width: 2, height: 1 } }] } } }), /exceeds its grid/);
+  const screen = (path, type) => ({ path, type, layout: {}, panels: [], targets: [{ name: 'Display', protocol: 'url' }] });
+  assert.doesNotThrow(() => validateConfig({ ...base, screens: { one: screen('/', 'flow'), two: screen('/screens/two', 'single') } }));
+  assert.throws(() => validateConfig({ ...base, screens: { one: { ...screen('/', 'flow'), targets: [{ protocol: 'url' }] } } }), /requires name, device, or endpoint/);
 });

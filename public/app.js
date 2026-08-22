@@ -7,15 +7,17 @@ async function boot() {
   const requested = Object.values(config.screens).find(screen => screen.path === window.location.pathname);
   const screen = requested || config.screens[config.defaultScreen] || Object.values(config.screens)[0];
   if (!screen) throw new Error('No screen is configured');
+  const screenType = config.screenTypes.find(type => type.id === screen.type);
+  if (!screenType) throw new Error(`Screen type is unavailable: ${screen.type}`);
+  const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(screenType.version)}`);
+  if (typeof renderer.prepare !== 'function' || typeof renderer.place !== 'function') throw new Error(`Screen type ${screen.type} has an invalid renderer`);
   document.title = `${screen.title} · ${config.branding.name || 'Castboard'}`;
   document.documentElement.style.setProperty('--accent', config.branding.accent || '#8ee6c2');
-  dashboard.style.setProperty('--grid-columns', screen.grid.columns);
-  dashboard.style.setProperty('--grid-rows', screen.grid.rows);
-  dashboard.style.setProperty('--grid-gap', `${screen.grid.gap ?? 8}px`);
-  dashboard.style.setProperty('--screen-padding', `${screen.grid.padding ?? 8}px`);
   dashboard.dataset.screen = screen.id;
+  dashboard.dataset.screenType = screen.type;
   dashboard.setAttribute('aria-label', `${screen.title} screen`);
   dashboard.innerHTML = '';
+  await renderer.prepare({ container: dashboard, screen });
   const pluginConfigs = new Map(config.plugins.map(plugin => [plugin.id, plugin]));
   const context = { app: config, screen, getPlugin: id => pluginConfigs.get(id), announce(message) { dashboard.setAttribute('data-status', message); } };
 
@@ -26,8 +28,7 @@ async function boot() {
     element.className = `widget widget-${plugin.id}`;
     element.dataset.plugin = plugin.id;
     element.dataset.panel = panel.id;
-    element.style.gridColumn = `${panel.position.column} / span ${panel.position.width}`;
-    element.style.gridRow = `${panel.position.row} / span ${panel.position.height}`;
+    await renderer.place({ container: dashboard, element, panel, screen });
     element.innerHTML = '<div class="widget-loading">Loading…</div>';
     dashboard.append(element);
     try {
