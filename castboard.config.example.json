@@ -32,16 +32,16 @@
       "targets": [{ "name": "Kitchen Hub", "device": "Kitchen Display" }],
       "layout": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
       "panels": [
-        { "id": "focus", "plugin": "focus", "position": { "column": 1, "row": 1, "width": 8, "height": 1 } },
-        { "id": "solar", "plugin": "solar", "position": { "column": 9, "row": 1, "width": 4, "height": 1 } },
-        { "id": "clock", "plugin": "clock", "position": { "column": 1, "row": 2, "width": 3, "height": 2 } },
-        { "id": "weather", "plugin": "weather", "position": { "column": 4, "row": 2, "width": 2, "height": 2 } },
-        { "id": "recovery", "plugin": "recovery", "position": { "column": 6, "row": 2, "width": 2, "height": 2 } },
-        { "id": "spotify", "plugin": "spotify", "position": { "column": 8, "row": 2, "width": 5, "height": 2 } },
-        { "id": "stocks", "plugin": "stocks", "position": { "column": 1, "row": 4, "width": 6, "height": 4 } },
-        { "id": "calendar", "plugin": "calendar", "position": { "column": 7, "row": 4, "width": 3, "height": 4 } },
+        { "id": "focus", "plugin": "focus", "position": { "column": 1, "row": 1, "width": 8, "height": 1 }, "options": { "fitContent": true } },
+        { "id": "solar", "plugin": "solar", "position": { "column": 9, "row": 1, "width": 4, "height": 1 }, "options": { "fitContent": true } },
+        { "id": "clock", "plugin": "clock", "position": { "column": 1, "row": 2, "width": 3, "height": 2 }, "options": { "fitContent": true } },
+        { "id": "weather", "plugin": "weather", "position": { "column": 4, "row": 2, "width": 2, "height": 2 }, "options": { "fitContent": true } },
+        { "id": "recovery", "plugin": "recovery", "position": { "column": 6, "row": 2, "width": 2, "height": 2 }, "options": { "fitContent": true } },
+        { "id": "spotify", "plugin": "spotify", "position": { "column": 8, "row": 2, "width": 5, "height": 2 }, "options": { "fitContent": true } },
+        { "id": "stocks", "plugin": "stocks", "position": { "column": 1, "row": 4, "width": 6, "height": 4 }, "options": { "fitContent": true } },
+        { "id": "calendar", "plugin": "calendar", "position": { "column": 7, "row": 4, "width": 3, "height": 4 }, "options": { "fitContent": true } },
         { "id": "camera", "plugin": "camera", "position": { "column": 10, "row": 4, "width": 3, "height": 4 } },
-        { "id": "news-strip", "plugin": "news", "position": { "column": 1, "row": 8, "width": 12, "height": 1 }, "options": { "view": "compact", "title": "Headlines" } }
+        { "id": "news-strip", "plugin": "news", "position": { "column": 1, "row": 8, "width": 12, "height": 1 }, "options": { "view": "compact", "title": "Headlines", "fitContent": true } }
       ]
     },
     "office": {

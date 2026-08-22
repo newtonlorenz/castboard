@@ -93,7 +93,10 @@ export function validateConfig(config) {
       if (!panel.plugin) throw new Error(`screens.${screenId}.panels[${index}].plugin is required`);
       if (panel.position !== undefined) assertObject(panel.position, `screens.${screenId}.panels[${index}].position`);
       if (panel.size !== undefined) assertObject(panel.size, `screens.${screenId}.panels[${index}].size`);
-      if (panel.options !== undefined) assertObject(panel.options, `screens.${screenId}.panels[${index}].options`);
+      if (panel.options !== undefined) {
+        assertObject(panel.options, `screens.${screenId}.panels[${index}].options`);
+        if (panel.options.fitContent !== undefined && typeof panel.options.fitContent !== 'boolean') throw new Error(`screens.${screenId}.panels[${index}].options.fitContent must be a boolean`);
+      }
       if (panel.appearance !== undefined) validateAppearance(panel.appearance, `screens.${screenId}.panels[${index}].appearance`, true);
     }
     if (screen.targets !== undefined && !Array.isArray(screen.targets)) throw new Error(`screens.${screenId}.targets must be an array`);

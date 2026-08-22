@@ -88,6 +88,14 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .solar-flow { height: 2px; margin-top: 7px; overflow: hidden; border-radius: 2px; background: rgba(255,255,255,.06); }
 .solar-flow::after { content: ""; display: block; width: var(--solar-share, 60%); height: 100%; background: var(--accent); }
 
+@container (max-height: 90px) {
+  .widget-solar .widget-head { font-size: .5em; }
+  .solar-metrics { margin-top: 3px; }
+  .solar-metric strong { font-size: .75em; }
+  .solar-metric span { margin-top: 0; font-size: .4375em; }
+  .solar-flow { margin-top: 3px; }
+}
+
 /* Spotify */
 .spotify-body { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: center; margin-top: 10px; }
 .spotify-art { display: grid; place-content: center; width: 52px; height: 52px; border-radius: 11px; overflow: hidden; background: linear-gradient(135deg, rgba(142,230,194,.32), rgba(75,91,140,.42)); color: var(--accent); font-size: 1.5em; }

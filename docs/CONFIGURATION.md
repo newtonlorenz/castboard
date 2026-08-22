@@ -71,7 +71,7 @@ A configuration must contain at least one screen and may contain any number. Eve
 }
 ```
 
-For `grid` screens, coordinates are one-based and `width`/`height` are grid spans. Panels must fit inside the configured grid, and panel IDs must be unique within a screen. Panels may reuse a plugin; `options` change only that panel's presentation. `flow` screens instead accept optional panel `size` spans, while `single` screens require exactly one panel.
+For `grid` screens, coordinates are one-based and `width`/`height` are grid spans. Panels must fit inside the configured grid, and panel IDs must be unique within a screen. Panels may reuse a plugin; `options` change only that panel's presentation. Set `options.fitContent` to `true` to let Castboard reduce that panel's typography when its rendered content would otherwise overflow; it never enlarges text beyond the configured font scale. `flow` screens instead accept optional panel `size` spans, while `single` screens require exactly one panel.
 
 Screen `layout`, panel `position`/`size`, and panel `options` are display configuration and are returned to the browser. Do not put credentials, private upstream URLs, or device identifiers in them.
 

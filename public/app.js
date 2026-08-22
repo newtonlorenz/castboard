@@ -48,6 +48,47 @@ function applyPanelAppearance(element, appearance = {}, screenAppearance = {}) {
   if (appearance.shadow) element.style.setProperty('--panel-shadow', PANEL_SHADOWS[appearance.shadow]);
 }
 
+function enablePanelAutoFit(element) {
+  const baseFontSize = Number.parseFloat(element.style.fontSize) || 16;
+  const minimumScale = 0.55;
+  let frame = 0;
+
+  const overflows = () => element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
+  const fit = () => {
+    frame = 0;
+    if (!element.isConnected || !element.clientWidth || !element.clientHeight) return;
+    element.style.fontSize = `${baseFontSize}px`;
+    let scale = 1;
+    if (overflows()) {
+      let low = minimumScale;
+      let high = 1;
+      element.style.fontSize = `${baseFontSize * low}px`;
+      if (overflows()) {
+        scale = low;
+      } else {
+        for (let index = 0; index < 8; index += 1) {
+          const candidate = (low + high) / 2;
+          element.style.fontSize = `${baseFontSize * candidate}px`;
+          if (overflows()) high = candidate;
+          else low = candidate;
+        }
+        scale = low;
+      }
+    }
+    element.style.fontSize = `${baseFontSize * scale}px`;
+    element.dataset.fitScale = String(Math.round(scale * 100));
+  };
+  const scheduleFit = () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(fit);
+  };
+
+  element.dataset.fitContent = 'true';
+  new ResizeObserver(scheduleFit).observe(element);
+  new MutationObserver(scheduleFit).observe(element, { childList: true, characterData: true, subtree: true });
+  scheduleFit();
+}
+
 function visibleDesignSignature(config, screenId) {
   return JSON.stringify({ branding: config.branding, screen: config.screens[screenId] });
 }
@@ -112,6 +153,7 @@ async function boot() {
       const module = await import(`/plugins/${encodeURIComponent(plugin.id)}/widget.js`);
       if (typeof module.mount !== 'function') throw new Error('Widget does not export mount()');
       await module.mount({ element, config: { ...plugin.config, ...panel.options }, context, panel });
+      if (panel.options?.fitContent === true) enablePanelAutoFit(element);
     } catch (error) {
       element.innerHTML = `<div class="empty-state"><strong>${escapeHtml(plugin.name)}</strong><span>${escapeHtml(error.message)}</span></div>`;
       element.classList.add('widget-unavailable');

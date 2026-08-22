@@ -70,4 +70,6 @@ test('admin and screen appearance settings validate safe boundaries', () => {
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { radius: 49 } } } }), /radius must be from 0 to 48/);
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { fontFamily: 'comic-sans' } } } }), /fontFamily must be/);
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', appearance: { fontScale: 200 } }] } } }), /fontScale must be from 60 to 180/);
+  assert.doesNotThrow(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', options: { fitContent: true } }] } } }));
+  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', options: { fitContent: 'yes' } }] } } }), /fitContent must be a boolean/);
 });

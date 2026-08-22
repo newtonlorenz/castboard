@@ -289,6 +289,7 @@ function renderPanelInspector() {
   setInput('#panel-plugin', panel.plugin);
   setInput('#panel-title', panel.options?.title || '');
   setInput('#panel-view', panel.options?.view || '');
+  $('#panel-fit-content').checked = panel.options?.fitContent === true;
   $('#panel-options').value = JSON.stringify(panel.options || {}, null, 2);
   $('#options-error').textContent = '';
 
@@ -631,7 +632,12 @@ function resizeCanvasFrame() {
   frame.style.width = `${Math.round(width)}px`;
   frame.style.height = `${Math.round(height)}px`;
   frame.style.aspectRatio = `${state.viewport.width} / ${state.viewport.height}`;
-  $('#canvas-scale').textContent = `${Math.round((width / state.viewport.width) * 100)}%`;
+  const scale = Math.min(frame.clientWidth / state.viewport.width, frame.clientHeight / state.viewport.height);
+  const iframe = $('#live-preview');
+  iframe.style.width = `${state.viewport.width}px`;
+  iframe.style.height = `${state.viewport.height}px`;
+  iframe.style.transform = `scale(${scale})`;
+  $('#canvas-scale').textContent = `${Math.round(scale * 100)}%`;
   if (state.design) renderCanvas();
 }
 
@@ -976,6 +982,17 @@ function bindEvents() {
     renderCanvas();
   });
 
+  $('#panel-fit-content').addEventListener('change', () => {
+    const panel = currentPanel();
+    panel.options ||= {};
+    if ($('#panel-fit-content').checked) panel.options.fitContent = true;
+    else delete panel.options.fitContent;
+    if (!Object.keys(panel.options).length) delete panel.options;
+    $('#panel-options').value = JSON.stringify(panel.options || {}, null, 2);
+    markDirty('Panel content sizing changed · unsaved');
+    renderCanvas();
+  });
+
   for (const input of $$('[data-position]')) input.addEventListener('input', () => {
     const value = Number(input.value);
     if (!Number.isInteger(value)) return;
@@ -1001,6 +1018,7 @@ function bindEvents() {
       currentPanel().options = options;
       $('#panel-title').value = options.title || '';
       $('#panel-view').value = options.view || '';
+      $('#panel-fit-content').checked = options.fitContent === true;
       $('#options-error').textContent = '';
       markDirty('Advanced panel options changed · unsaved');
       renderCanvas();
