@@ -18,4 +18,4 @@ Then replace the placeholder clone URL in `README.md` with the repository’s HT
 3. Open `/setup`, `/admin`, and every starter screen at representative display sizes.
 4. Confirm the example config contains no real targets or credentials.
 5. Enable GitHub branch protection and require the Node 20/22 CI job.
-6. Create a signed `v0.6.0` tag and a GitHub release using `CHANGELOG.md`.
+6. Create a signed `v0.6.1` tag and a GitHub release using `CHANGELOG.md`.
