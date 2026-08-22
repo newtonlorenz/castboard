@@ -12,7 +12,8 @@ async function fixture() {
   const config = {
     server: { host: '127.0.0.1', port: 8787 },
     branding: { name: 'Testboard', timeZone: 'UTC' },
-    screens: { home: { path: '/', widgets: [{ plugin: 'clock', area: 'clock' }] } },
+    defaultScreen: 'clock-screen',
+    screens: { 'clock-screen': { path: '/screens/clock', targets: ['Private clock display'], grid: { columns: 2, rows: 1 }, panels: [{ id: 'clock', plugin: 'clock', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
     plugins: { clock: { enabled: true, privateValue: 'never-public' } },
   };
   const app = await createApp({ loadedConfig: { config, configPath: '/tmp/test-config.json', configDir: '/tmp' }, logger: { error() {} } });
@@ -32,7 +33,11 @@ test('server exposes health, public config, and widget module', async t => {
   const config = await configResponse.json();
   assert.equal(config.branding.name, 'Testboard');
   assert.equal(JSON.stringify(config).includes('never-public'), false);
+  assert.equal(JSON.stringify(config).includes('Private clock display'), false);
+  assert.equal(config.defaultScreen, 'clock-screen');
   assert.match(configResponse.headers.get('content-security-policy'), /default-src 'self'/);
+
+  assert.equal((await fetch(`${app.baseUrl}/screens/clock`)).status, 200);
 
   const widget = await fetch(`${app.baseUrl}/plugins/clock/widget.js`);
   assert.equal(widget.status, 200);

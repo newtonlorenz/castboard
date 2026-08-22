@@ -12,22 +12,45 @@ function localAddress() {
   return candidates.find(address => /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(address.address))?.address || candidates[0]?.address;
 }
 
-const screenId = process.argv[2] || 'home';
-const { config } = loadConfig({ cwd: ROOT });
-const screen = config.screens[screenId];
-if (!screen) throw new Error(`Unknown screen "${screenId}". Available: ${Object.keys(config.screens).join(', ')}`);
-const device = config.cast?.targets?.[screenId];
-if (!device) throw new Error(`cast.targets.${screenId} is not configured`);
-const address = localAddress();
-if (!address) throw new Error('Unable to find a LAN IPv4 address');
-const url = `http://${address}:${config.server.port}${screen.path || '/'}`;
+function cast(device, url) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.env.CATT_BIN || 'catt', ['-d', device, 'cast_site', url], { stdio: 'inherit' });
+    child.once('error', reject);
+    child.once('exit', code => code === 0 ? resolve() : reject(new Error(`catt exited with code ${code}`)));
+  });
+}
 
-console.log(`Casting ${screenId} to ${device}`);
-console.log(url);
-const child = spawn(process.env.CATT_BIN || 'catt', ['-d', device, 'cast_site', url], { stdio: 'inherit' });
-child.on('error', error => {
-  console.error(`Unable to start catt: ${error.message}`);
-  console.error('Install it with: pipx install catt');
-  process.exitCode = 1;
-});
-child.on('exit', code => { process.exitCode = code || 0; });
+export function buildCastPlan(config, address, requested = config.defaultScreen || Object.keys(config.screens)[0]) {
+  const screenIds = requested === '--all' ? Object.keys(config.screens) : [requested];
+  for (const id of screenIds) {
+    if (!config.screens[id]) throw new Error(`Unknown screen "${id}". Available: ${Object.keys(config.screens).join(', ')}`);
+  }
+  return screenIds.flatMap(screenId => {
+    const screen = config.screens[screenId];
+    const devices = screen.targets || [];
+    if (!devices.length) throw new Error(`screens.${screenId}.targets has no Cast devices`);
+    const url = `http://${address}:${config.server.port}${screen.path}`;
+    return devices.map(device => ({ screenId, device, url }));
+  });
+}
+
+async function main() {
+  const { config } = loadConfig({ cwd: ROOT });
+  const address = localAddress();
+  if (!address) throw new Error('Unable to find a LAN IPv4 address');
+  const requested = process.argv[2] || config.defaultScreen || Object.keys(config.screens)[0];
+  const plan = buildCastPlan(config, address, requested);
+  await Promise.all(plan.map(async item => {
+    console.log(`Casting ${item.screenId} to ${item.device}`);
+    console.log(item.url);
+    await cast(item.device, item.url);
+  }));
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(error => {
+    console.error(error.message);
+    if (error.code === 'ENOENT') console.error('Install catt with: pipx install catt');
+    process.exitCode = 1;
+  });
+}

@@ -16,7 +16,7 @@ The original system should remain in place until Castboard has run beside it for
 | Merged caches + ICS bridge | `calendar` | Prefer a single `ics` bridge; use canonical JSON if source labels must be preserved |
 | Camera discovery/MJPEG service | `camera` | `camera-service` |
 | Daily vault Markdown briefs | `news` | `markdown-directory` initially; canonical JSON for categories and full metadata |
-| Office Wire screen | `briefing` screen | `news` source plugin |
+| Office Wire screen | Full-grid panel | `news` plugin with `view: "wire"` |
 
 ## Recommended adapter phase
 
@@ -43,7 +43,7 @@ Example private configuration (values intentionally generic):
 
 1. Copy the example config to the ignored private config and enable one real provider at a time.
 2. Compare every provider response with `docs/PLUGIN-CONTRACTS.md`; normalize in the collector if it contains account- or vendor-specific fields.
-3. Test `home` and `briefing` in ordinary browsers at the exact display viewports.
+3. Test every configured screen route in ordinary browsers at the exact display viewports.
 4. Run the server on a stable LAN address and confirm both displays can load `/api/health`.
 5. Cast each screen manually with `npm run cast -- <screen>`.
 6. Observe provider failures, stream recycling, and media actions for several days.

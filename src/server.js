@@ -91,9 +91,9 @@ export async function createApp(options = {}) {
         return sendFile(res, path.join(plugin.directory, 'widget.js'), true);
       }
 
-      const page = url.pathname === '/' ? 'index.html' : url.pathname === '/briefing' ? 'briefing.html' : null;
-      if (req.method === 'GET' && page) return sendFile(res, path.join(PUBLIC_DIR, page));
-      if (req.method === 'GET' && /^\/(app|briefing|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
+      const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
+      if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+      if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
       if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
       return jsonResponse(res, 404, { error: { code: 'NOT_FOUND', message: 'Route not found' } });
     } catch (error) {
@@ -114,7 +114,7 @@ export async function start(options = {}) {
     app.server.listen(port, host, resolve);
   });
   console.log(`Castboard is running at http://localhost:${port}`);
-  console.log(`Briefing screen: http://localhost:${port}/briefing`);
+  for (const [id, screen] of Object.entries(app.config.screens)) console.log(`${id}: http://localhost:${port}${screen.path}`);
   console.log(`Loaded plugins: ${app.plugins.map(plugin => plugin.id).join(', ')}`);
   return app;
 }

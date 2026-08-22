@@ -23,19 +23,44 @@ Any string may include `${VARIABLE_NAME}`. Expansion happens before validation, 
 - `server.host`: use `0.0.0.0` so a Cast device can reach the service.
 - `server.port`: LAN port, from 1 to 65535.
 - `branding.name`, `subtitle`, `location`, `accent`, `timeZone`: public display settings.
-- `cast.targets`: screen ID to `catt` device name or address.
+- `defaultScreen`: screen shown at `/` when that path does not identify another configured screen.
 
 ## Screens
 
-A home widget descriptor needs `plugin` and `area`. `options` may override that plugin's public display options for one placement.
+A configuration must contain at least one screen and may contain any number. Every screen has its own route, Cast targets, grid, and panels:
 
 ```json
-{ "plugin": "weather", "area": "weather", "options": { "label": "Coast" } }
+"kitchen": {
+  "path": "/screens/kitchen",
+  "title": "Kitchen",
+  "targets": ["Kitchen Display", "Kitchen Max"],
+  "grid": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
+  "panels": [
+    {
+      "id": "forecast",
+      "plugin": "weather",
+      "position": { "column": 1, "row": 1, "width": 4, "height": 2 },
+      "options": { "label": "Coast" }
+    }
+  ]
+}
 ```
 
-The supplied CSS defines areas for all first-party widgets. A custom theme may define any new grid areas.
+Coordinates are one-based. `width` and `height` are grid spans. Panels must fit inside the configured grid, and panel IDs must be unique within a screen. Panels may reuse a plugin; `options` change only that panel's presentation.
 
-The briefing screen uses `sourcePlugin` and `rotationSeconds`.
+`targets` stays server-side and accepts zero, one, or many `catt` device names or addresses. Run `npm run cast -- screen-id` for one screen or `npm run cast -- --all` for every configured screen.
+
+### News panel views
+
+News is an ordinary plugin-backed panel. Its `options.view` may be:
+
+- `compact`: a rotating one-row headline strip.
+- `list`: a simple headline list for medium panels.
+- `wire`: the editorial lead story, categories, headline rail, controls, reader, and ticker.
+
+```json
+{ "id": "markets", "plugin": "news", "position": { "column": 1, "row": 1, "width": 12, "height": 8 }, "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
+```
 
 ## Provider examples
 

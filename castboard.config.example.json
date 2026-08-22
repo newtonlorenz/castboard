@@ -10,32 +10,34 @@
     "accent": "#8ee6c2",
     "timeZone": "Europe/Madrid"
   },
-  "cast": {
-    "targets": {
-      "home": "Kitchen Display",
-      "briefing": "Office Display"
-    }
-  },
+  "defaultScreen": "home",
   "screens": {
     "home": {
       "path": "/",
-      "widgets": [
-        { "plugin": "focus", "area": "focus" },
-        { "plugin": "solar", "area": "solar" },
-        { "plugin": "clock", "area": "clock" },
-        { "plugin": "weather", "area": "weather" },
-        { "plugin": "recovery", "area": "recovery" },
-        { "plugin": "spotify", "area": "spotify" },
-        { "plugin": "stocks", "area": "stocks" },
-        { "plugin": "calendar", "area": "calendar" },
-        { "plugin": "camera", "area": "camera" },
-        { "plugin": "news", "area": "news" }
+      "title": "Home",
+      "targets": ["Kitchen Display"],
+      "grid": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
+      "panels": [
+        { "id": "focus", "plugin": "focus", "position": { "column": 1, "row": 1, "width": 8, "height": 1 } },
+        { "id": "solar", "plugin": "solar", "position": { "column": 9, "row": 1, "width": 4, "height": 1 } },
+        { "id": "clock", "plugin": "clock", "position": { "column": 1, "row": 2, "width": 3, "height": 2 } },
+        { "id": "weather", "plugin": "weather", "position": { "column": 4, "row": 2, "width": 2, "height": 2 } },
+        { "id": "recovery", "plugin": "recovery", "position": { "column": 6, "row": 2, "width": 2, "height": 2 } },
+        { "id": "spotify", "plugin": "spotify", "position": { "column": 8, "row": 2, "width": 5, "height": 2 } },
+        { "id": "stocks", "plugin": "stocks", "position": { "column": 1, "row": 4, "width": 6, "height": 4 } },
+        { "id": "calendar", "plugin": "calendar", "position": { "column": 7, "row": 4, "width": 3, "height": 4 } },
+        { "id": "camera", "plugin": "camera", "position": { "column": 10, "row": 4, "width": 3, "height": 4 } },
+        { "id": "news-strip", "plugin": "news", "position": { "column": 1, "row": 8, "width": 12, "height": 1 }, "options": { "view": "compact", "title": "Headlines" } }
       ]
     },
-    "briefing": {
-      "path": "/briefing",
-      "sourcePlugin": "news",
-      "rotationSeconds": 18
+    "office": {
+      "path": "/screens/office",
+      "title": "Office",
+      "targets": ["Office Display"],
+      "grid": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
+      "panels": [
+        { "id": "market-news", "plugin": "news", "position": { "column": 1, "row": 1, "width": 12, "height": 8 }, "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
+      ]
     }
   },
   "plugins": {
@@ -44,9 +46,7 @@
     "weather": {
       "enabled": true,
       "provider": "demo",
-      "label": "Your town",
-      "latitude": 41.98,
-      "longitude": 3.2
+      "label": "Your town"
     },
     "solar": { "enabled": true, "provider": "demo" },
     "recovery": { "enabled": true, "provider": "demo" },

@@ -26,17 +26,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: 64px 142px minmax(0, 1fr) 72px;
-  grid-template-areas:
-    "focus focus focus focus focus focus focus focus solar solar solar solar"
-    "clock clock clock weather weather recovery recovery spotify spotify spotify spotify spotify"
-    "stocks stocks stocks stocks stocks stocks calendar calendar calendar camera camera camera"
-    "news news news news news news news news news news news news";
-  gap: 8px;
+  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--grid-rows, 8), minmax(0, 1fr));
+  gap: var(--grid-gap, 8px);
   width: 100%;
   height: 100%;
-  padding: 8px;
+  padding: var(--screen-padding, 8px);
 }
 
 .widget {
@@ -49,6 +44,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   background: linear-gradient(145deg, rgba(30, 48, 44, 0.93), rgba(13, 25, 23, 0.92));
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.035), 0 8px 22px rgba(0, 0, 0, 0.14);
   padding: 12px;
+  container-type: size;
 }
 
 .widget-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
@@ -130,7 +126,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .camera-demo::after { content: ""; position: absolute; width: 38%; height: 34%; left: 32%; top: 38%; border: 2px solid rgba(255,255,255,.25); border-bottom: 0; transform: skew(-7deg); background: #101b18; }
 
 /* News strip */
-.widget-news { display: grid; grid-template-columns: 115px 1fr auto; align-items: center; gap: 12px; padding: 9px 14px; }
+.widget-news.news-view-compact { display: grid; grid-template-columns: 115px 1fr auto; align-items: center; gap: 12px; padding: 9px 14px; }
 .news-label strong, .news-story strong { display: block; }
 .news-label strong { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .news-label span, .news-story span { color: var(--muted); font-size: 9px; }
@@ -141,8 +137,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .news-dots i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.18); }
 .news-dots i.active { background: var(--accent); }
 
-/* Briefing screen */
-.briefing-screen { background: #0a0d0c; }
+/* Full news wire panel */
+.widget-news.news-view-wire { padding: 0; background: #0a0d0c; }
 .briefing-shell { display: grid; grid-template-rows: 54px 44px minmax(0, 1fr) 58px; height: 100%; padding: 0 18px 10px; }
 .briefing-masthead { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.14); }
 .briefing-masthead div { display: flex; align-items: baseline; gap: 12px; }
@@ -190,8 +186,34 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .reader-dialog button { align-self: start; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 8px 14px; background: transparent; color: var(--text); }
 .reader-body { overflow: auto; padding-right: 10px; font-family: Georgia, serif; font-size: 17px; line-height: 1.55; }
 
+.widget-news.news-view-list { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.news-panel-list { min-height: 0; margin-top: 8px; overflow: hidden; }
+.news-panel-list button { display: grid; grid-template-columns: 1fr auto; gap: 10px; width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,.07); background: transparent; color: var(--text); padding: 8px 2px; text-align: left; }
+.news-panel-list button span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.news-panel-list button small { color: var(--muted); }
+
+@container (max-width: 700px) {
+  .briefing-shell { grid-template-rows: 46px 38px minmax(0, 1fr) 48px; padding: 0 12px 8px; }
+  .briefing-layout { grid-template-columns: 1fr; }
+  .briefing-lead { padding-right: 4px; border-right: 0; }
+  .briefing-wire { display: none; }
+  .briefing-lead h1 { font-size: clamp(24px, 8cqw, 42px); }
+  .briefing-footer { grid-template-columns: 150px 1fr; gap: 8px; }
+  .briefing-controls button { min-width: 30px; }
+  .briefing-controls button:first-child { min-width: 48px; }
+}
+
+@container (max-height: 360px) {
+  .briefing-shell { grid-template-rows: 38px 32px minmax(0, 1fr) 42px; }
+  .briefing-masthead strong { font-size: 18px; }
+  .briefing-categories button { padding: 4px 7px; }
+  .briefing-lead h1 { margin: 8px 0; font-size: clamp(22px, 5cqh, 34px); }
+  .briefing-lead p { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .briefing-footer { grid-template-columns: 150px 1fr; }
+}
+
 @media (max-width: 800px) {
-  .dashboard-grid { grid-template-rows: 58px 128px minmax(0, 1fr) 66px; gap: 6px; padding: 6px; }
+  .dashboard-grid { gap: min(var(--grid-gap, 8px), 6px); padding: min(var(--screen-padding, 8px), 6px); }
   .widget { border-radius: 12px; padding: 9px; }
   .focus-meta { display: none; }
   .stocks-table small { max-width: 90px; }

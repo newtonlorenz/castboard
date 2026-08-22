@@ -37,7 +37,7 @@ export async function mount({ element, config, context }) {
 }
 ```
 
-Add the plugin to `plugins` and a screen's `widgets`, then add its grid area to the theme. A plugin may be backend-only or browser-only, but `plugin.js` is always required as its manifest and privacy boundary.
+Add the plugin to `plugins` and place it in any screen's `panels` with an explicit position. A plugin may be used by multiple panels or screens, may be backend-only or browser-only, but `plugin.js` is always required as its manifest and privacy boundary.
 
 ## Lifecycle and error behavior
 

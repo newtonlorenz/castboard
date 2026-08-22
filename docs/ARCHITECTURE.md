@@ -51,9 +51,9 @@ The functionality is strong, but the boundaries reflect one household rather tha
 ## Target architecture
 
 ```text
-Cast display
-  ├─ /             configurable home screen
-  └─ /briefing     configurable editorial screen
+Cast display(s)
+  ├─ /                  configured default screen
+  └─ /screens/:screen   any additional configured grid
           │
           ▼ same-origin JSON/action/stream routes
 Node core
@@ -71,7 +71,7 @@ First-party plugins
 Demo / canonical JSON / files / ICS / Fronius / LAN services
 ```
 
-The core knows nothing about IBKR, WHOOP, Fronius, Spotify, Sonos, or a particular camera. A plugin owns normalization and an optional widget. Screens reference plugin IDs and areas. Removing a plugin removes its code path without changing the core.
+The core knows nothing about IBKR, WHOOP, Fronius, Spotify, Sonos, Bloomberg, or a particular camera. A plugin owns normalization and an optional widget. Each screen declares a grid and any number of panels; every panel selects a plugin plus its position, size, and presentation options. News is not a screen type—it is the same plugin whether rendered as a small strip, a list, or a full-screen wire. Removing a plugin removes its code path without changing the core.
 
 ## Deliberate decisions
 

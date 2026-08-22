@@ -25,10 +25,9 @@ export async function discoverPlugins({ pluginsDir, config, context }) {
   }
   const enabledIds = new Set(plugins.map(plugin => plugin.id));
   for (const [screenId, screen] of Object.entries(config.screens || {})) {
-    for (const widget of screen.widgets || []) {
-      if (!enabledIds.has(widget.plugin)) throw new Error(`Screen ${screenId} references disabled or missing plugin: ${widget.plugin}`);
+    for (const panel of screen.panels || []) {
+      if (!enabledIds.has(panel.plugin)) throw new Error(`Screen ${screenId} references disabled or missing plugin: ${panel.plugin}`);
     }
-    if (screen.sourcePlugin && !enabledIds.has(screen.sourcePlugin)) throw new Error(`Screen ${screenId} references disabled or missing sourcePlugin: ${screen.sourcePlugin}`);
   }
   return plugins;
 }
