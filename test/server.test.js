@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApp } from '../src/server.js';
@@ -54,6 +56,73 @@ test('unknown and traversal-like routes do not expose files', async t => {
   assert.equal((await fetch(`${app.baseUrl}/plugins/not-installed/widget.js`)).status, 404);
   assert.equal((await fetch(`${app.baseUrl}/api/plugins/clock/action`, { method: 'POST', body: '{}' })).status, 405);
 });
+
+test('admin studio exposes only the editable design catalog', async t => {
+  const app = await fixture();
+  t.after(() => app.server.close());
+  assert.equal((await fetch(`${app.baseUrl}/admin`)).status, 200);
+  assert.equal((await fetch(`${app.baseUrl}/admin.js`)).status, 200);
+  const response = await fetch(`${app.baseUrl}/api/admin/design`);
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  const serialized = JSON.stringify(payload);
+  assert.equal(payload.design.screens['clock-screen'].title, undefined);
+  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', name: 'Clock' }]);
+  assert.equal(serialized.includes('never-public'), false);
+  assert.equal(serialized.includes('Private clock display'), false);
+  assert.equal(serialized.includes('clock-device'), false);
+});
+
+test('admin saves atomically, preserves private values, and hot-applies public design', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'castboard-server-admin-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const configPath = path.join(directory, 'castboard.config.json');
+  const rawConfig = {
+    server: { host: '127.0.0.1', port: 8787 },
+    branding: { name: 'Testboard', timeZone: 'UTC' },
+    admin: { enabled: true, allowLan: false },
+    defaultScreen: 'home',
+    screens: { home: { path: '/', title: 'Before', type: 'grid', targets: [{ name: 'Private display', device: 'private-device' }], layout: { columns: 2, rows: 1 }, panels: [{ id: 'clock', plugin: 'clock', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
+    plugins: { clock: { enabled: true, privateValue: 'preserve-me' } },
+  };
+  await fs.writeFile(configPath, JSON.stringify(rawConfig));
+  const app = await createApp({ loadedConfig: { config: cloneForTest(rawConfig), rawConfig, configPath, configDir: directory }, logger: { error() {} } });
+  app.server.listen(0, '127.0.0.1');
+  await once(app.server, 'listening');
+  t.after(() => app.server.close());
+  const address = app.server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  const initial = await (await fetch(`${baseUrl}/api/admin/design`)).json();
+  initial.design.screens.home.title = 'After';
+  initial.design.screens.home.path = '/after';
+  initial.design.screens.home.appearance = { accent: '#ffcc66', radius: 10 };
+  const savedResponse = await fetch(`${baseUrl}/api/admin/design`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ revision: initial.revision, design: initial.design }),
+  });
+  assert.equal(savedResponse.status, 200);
+  const saved = await savedResponse.json();
+  assert.equal(saved.applied, true);
+  assert.notEqual(saved.revision, initial.revision);
+  const publicConfig = await (await fetch(`${baseUrl}/api/config`)).json();
+  assert.equal(publicConfig.screens.home.title, 'After');
+  assert.equal(publicConfig.screens.home.path, '/after');
+  assert.equal((await fetch(`${baseUrl}/after`)).status, 200);
+  const onDisk = JSON.parse(await fs.readFile(configPath, 'utf8'));
+  assert.equal(onDisk.plugins.clock.privateValue, 'preserve-me');
+  assert.equal(onDisk.screens.home.targets[0].device, 'private-device');
+
+  const conflict = await fetch(`${baseUrl}/api/admin/design`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: initial.revision, design: initial.design }),
+  });
+  assert.equal(conflict.status, 409);
+});
+
+function cloneForTest(value) {
+  return JSON.parse(JSON.stringify(value));
+}
 
 test('example configuration loads every first-party plugin in demo mode', async () => {
   const loadedConfig = loadConfig({ cwd: ROOT, env: {} });

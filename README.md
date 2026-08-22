@@ -19,6 +19,10 @@ npm start
 
 Open [http://localhost:8787](http://localhost:8787), [http://localhost:8787/screens/office](http://localhost:8787/screens/office), and [http://localhost:8787/screens/tablet](http://localhost:8787/screens/tablet). The example configuration is fully functional offline.
 
+Open [http://localhost:8787/admin](http://localhost:8787/admin) to design the screens visually. Castboard Studio can create, duplicate, and remove screens; switch screen types and simulated viewport sizes; add plugin panels; drag and resize fixed-grid panels; edit responsive flow spans and order; and tune colors, radius, and spacing. **Save & apply** validates the entire configuration, writes it atomically, and updates open screens within five seconds without restarting or recasting the server.
+
+The studio deliberately receives only the public design layer. It never receives cast targets, protocol credentials, provider configuration, device addresses, or environment-backed secrets. Existing private fields are merged back into the saved file. When the example configuration is active, the first save creates the ignored `castboard.config.json` rather than changing the tracked example. See [docs/ADMIN-STUDIO.md](docs/ADMIN-STUDIO.md).
+
 Docker is optional:
 
 ```sh
@@ -39,7 +43,7 @@ Each screen's `targets` is an array, so the same layout can be cast to several d
 
 Built-in screen types are `grid`, responsive `flow`, and `single`; new types are discoverable modules under `screen-types/`. Built-in casting protocols are `google-cast`, `url`, and `http-webhook`; protocol drivers live under `cast-protocols/`. A screen chooses its default with `castProtocol`, and an individual target can override it.
 
-See [docs/SCREEN-TYPES.md](docs/SCREEN-TYPES.md) and [docs/CAST-PROTOCOLS.md](docs/CAST-PROTOCOLS.md) for extension contracts. Version 0.3 uses `screens.<id>.type`, `layout`, `panels`, structured `targets`, and `casting.protocols`.
+See [docs/SCREEN-TYPES.md](docs/SCREEN-TYPES.md) and [docs/CAST-PROTOCOLS.md](docs/CAST-PROTOCOLS.md) for extension contracts. Version 0.4 adds the safe visual studio and per-screen `appearance`; its underlying model remains `screens.<id>.type`, `layout`, `panels`, structured `targets`, and `casting.protocols`.
 
 ## Configure integrations
 

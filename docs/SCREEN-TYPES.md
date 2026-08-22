@@ -65,3 +65,5 @@ export function place({ element, panel }) {
 ```
 
 Only `screen.type`, `screen.layout`, and panel display data reach this renderer. Targets and casting settings remain server-side.
+
+Castboard Studio lists every discovered type. It provides purpose-built controls for `grid`, `flow`, and `single`; an additional type receives generic JSON editors for `layout`, panel `position`, and panel `size`, plus the saved renderer in Live preview. This means a new type is usable without modifying the studio. A future type-specific editor can be added as an enhancement without changing its runtime contract.

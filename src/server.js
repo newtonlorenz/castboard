@@ -3,10 +3,11 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig, publicAppConfig } from './core/config.js';
+import { expandEnvironment, loadConfig, publicAppConfig, validateConfig } from './core/config.js';
 import { discoverPlugins, pluginMap } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
+import { authorizeAdmin, configRevision, extractDesign, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -45,7 +46,7 @@ async function readBody(req) {
   let raw = '';
   for await (const chunk of req) {
     raw += chunk;
-    if (raw.length > 64 * 1024) throw new Error('Request body exceeds 64 KiB');
+    if (raw.length > 512 * 1024) throw new Error('Request body exceeds 512 KiB');
   }
   if (!raw) return {};
   try {
@@ -56,13 +57,28 @@ async function readBody(req) {
 }
 
 export async function createApp(options = {}) {
-  const loaded = options.loadedConfig || loadConfig({ cwd: options.cwd || ROOT, env: options.env || process.env, configPath: options.configPath });
+  const runtimeEnv = options.env || process.env;
+  const loaded = options.loadedConfig || loadConfig({ cwd: options.cwd || ROOT, env: runtimeEnv, configPath: options.configPath });
   const context = { root: ROOT, configDir: loaded.configDir, logger: options.logger || console };
-  const screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: loaded.config });
-  const screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
+  let runtimeConfig = loaded.config;
+  let rawConfig = loaded.rawConfig || JSON.parse(JSON.stringify(loaded.config));
+  let configPath = loaded.configPath;
+  let screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: runtimeConfig });
+  let screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
   const plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   const byId = pluginMap(plugins);
-  const publicConfig = publicAppConfig(loaded.config, plugins, screenTypes);
+  let publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
+
+  function adminPayload() {
+    return {
+      revision: configRevision(rawConfig),
+      design: extractDesign(rawConfig),
+      catalog: {
+        plugins: plugins.map(plugin => ({ id: plugin.id, name: plugin.name })),
+        screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name })),
+      },
+    };
+  }
 
   const server = http.createServer(async (req, res) => {
     securityHeaders(res);
@@ -72,6 +88,33 @@ export async function createApp(options = {}) {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
       }
       if (req.method === 'GET' && url.pathname === '/api/config') return jsonResponse(res, 200, publicConfig);
+      if (url.pathname === '/api/admin/design') {
+        if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Admin access requires localhost or an authorized LAN token' } });
+        if (req.method === 'GET') return jsonResponse(res, 200, { ok: true, ...adminPayload() });
+        if (req.method !== 'PUT') return jsonResponse(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Use GET or PUT' } });
+        if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Admin saves require application/json' } });
+        const body = await readBody(req);
+        const currentRevision = configRevision(rawConfig);
+        if (body.revision !== currentRevision) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'The configuration changed after this editor loaded. Reload before saving.' }, revision: currentRevision });
+        try {
+          const nextRaw = mergeDesign(rawConfig, body.design);
+          const nextConfig = validateConfig(expandEnvironment(nextRaw, runtimeEnv));
+          const nextScreenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig });
+          await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: nextConfig, context });
+          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
+          await writeConfigAtomic(nextPath, nextRaw);
+          rawConfig = nextRaw;
+          runtimeConfig = nextConfig;
+          configPath = nextPath;
+          context.configDir = path.dirname(nextPath);
+          screenTypes = nextScreenTypes;
+          screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
+          publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
+          return jsonResponse(res, 200, { ok: true, ...adminPayload(), applied: true });
+        } catch (error) {
+          return jsonResponse(res, 422, { error: { code: 'INVALID_DESIGN', message: error.message } });
+        }
+      }
 
       const apiMatch = url.pathname.match(/^\/api\/plugins\/([a-z][a-z0-9-]*)\/(data|action|stream)$/);
       if (apiMatch) {
@@ -102,6 +145,8 @@ export async function createApp(options = {}) {
         return sendFile(res, path.join(screenType.directory, 'renderer.js'), true);
       }
 
+      if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
+      if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
       if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
@@ -114,7 +159,15 @@ export async function createApp(options = {}) {
     }
   });
 
-  return { server, config: loaded.config, plugins, screenTypes, publicConfig };
+  return {
+    server,
+    get config() { return runtimeConfig; },
+    get rawConfig() { return rawConfig; },
+    get configPath() { return configPath; },
+    plugins,
+    get screenTypes() { return screenTypes; },
+    get publicConfig() { return publicConfig; },
+  };
 }
 
 export async function start(options = {}) {

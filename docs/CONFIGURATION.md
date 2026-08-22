@@ -25,6 +25,22 @@ Any string may include `${VARIABLE_NAME}`. Expansion happens before validation, 
 - `branding.name`, `subtitle`, `location`, `accent`, `timeZone`: public display settings.
 - `defaultScreen`: screen shown at `/` when that path does not identify another configured screen.
 
+## Admin studio
+
+The visual editor is enabled by default at `/admin`, but its API accepts requests only from loopback addresses. To disable it completely:
+
+```json
+"admin": { "enabled": false }
+```
+
+To use it from another trusted device on the LAN, require an environment-backed bearer token:
+
+```json
+"admin": { "enabled": true, "allowLan": true, "token": "${CASTBOARD_ADMIN_TOKEN}" }
+```
+
+The token is entered when the studio opens and retained only in that browser tab. Do not enable LAN editing without a token, and do not expose the studio to the public internet.
+
 ## Screens
 
 A configuration must contain at least one screen and may contain any number. Every screen has its own route, screen type, targets, layout settings, and panels:
@@ -54,6 +70,8 @@ A configuration must contain at least one screen and may contain any number. Eve
 For `grid` screens, coordinates are one-based and `width`/`height` are grid spans. Panels must fit inside the configured grid, and panel IDs must be unique within a screen. Panels may reuse a plugin; `options` change only that panel's presentation. `flow` screens instead accept optional panel `size` spans, while `single` screens require exactly one panel.
 
 Screen `layout`, panel `position`/`size`, and panel `options` are display configuration and are returned to the browser. Do not put credentials, private upstream URLs, or device identifiers in them.
+
+Optional screen `appearance` supports `background`, `accent`, and `panelBackground` hex colors plus `radius` and `panelPadding` numbers from 0 to 32. A screen accent overrides the shared branding accent.
 
 `targets` stays server-side and accepts zero, one, or many structured targets. The screen's `castProtocol` is the default; a target's `protocol` overrides it. Run `npm run cast -- screen-id`, `npm run cast -- --all`, or temporarily override every selected target with `npm run cast -- screen-id --protocol url`.
 

@@ -26,6 +26,10 @@ export function validateConfig(config) {
   assertObject(config.server, 'server');
   assertObject(config.screens, 'screens');
   assertObject(config.plugins, 'plugins');
+  if (config.admin !== undefined) {
+    assertObject(config.admin, 'admin');
+    if (config.admin.allowLan === true && !config.admin.token) throw new Error('admin.token is required when admin.allowLan is true');
+  }
   if (config.casting !== undefined) assertObject(config.casting, 'casting');
   if (config.casting?.protocols !== undefined) assertObject(config.casting.protocols, 'casting.protocols');
   if (config.casting?.defaultProtocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(config.casting.defaultProtocol)) throw new Error('casting.defaultProtocol must be a valid protocol ID');
@@ -47,6 +51,14 @@ export function validateConfig(config) {
     if (paths.has(screen.path)) throw new Error(`Screen path must be unique: ${screen.path}`);
     paths.add(screen.path);
     if (screen.layout !== undefined) assertObject(screen.layout, `screens.${screenId}.layout`);
+    if (screen.appearance !== undefined) {
+      assertObject(screen.appearance, `screens.${screenId}.appearance`);
+      for (const field of ['accent', 'background', 'panelBackground']) {
+        if (screen.appearance[field] !== undefined && !/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(screen.appearance[field])) throw new Error(`screens.${screenId}.appearance.${field} must be a hex color`);
+      }
+      if (screen.appearance.radius !== undefined && (!Number.isFinite(Number(screen.appearance.radius)) || Number(screen.appearance.radius) < 0 || Number(screen.appearance.radius) > 32)) throw new Error(`screens.${screenId}.appearance.radius must be from 0 to 32`);
+      if (screen.appearance.panelPadding !== undefined && (!Number.isFinite(Number(screen.appearance.panelPadding)) || Number(screen.appearance.panelPadding) < 0 || Number(screen.appearance.panelPadding) > 32)) throw new Error(`screens.${screenId}.appearance.panelPadding must be from 0 to 32`);
+    }
     if (!Array.isArray(screen.panels)) throw new Error(`screens.${screenId}.panels must be an array`);
     const panelIds = new Set();
     for (const [index, panel] of screen.panels.entries()) {
@@ -87,7 +99,7 @@ export function loadConfig({ cwd = process.cwd(), env = process.env, configPath 
     throw new Error(`Unable to load configuration at ${filePath}: ${error.message}`);
   }
   const config = validateConfig(expandEnvironment(raw, env));
-  return { config, configPath: filePath, configDir: path.dirname(filePath) };
+  return { config, rawConfig: raw, configPath: filePath, configDir: path.dirname(filePath) };
 }
 
 export function publicAppConfig(config, plugins, screenTypes = []) {
@@ -107,6 +119,7 @@ export function publicAppConfig(config, plugins, screenTypes = []) {
       path: screen.path,
       type: screen.type || 'grid',
       layout: screen.layout || {},
+      appearance: screen.appearance || {},
       panels: screen.panels,
     }])),
     screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, version: type.version || '1.0.0' })),

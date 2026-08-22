@@ -39,3 +39,11 @@ test('base screen validation accepts many screen types and target protocols', ()
   assert.doesNotThrow(() => validateConfig({ ...base, screens: { one: screen('/', 'flow'), two: screen('/screens/two', 'single') } }));
   assert.throws(() => validateConfig({ ...base, screens: { one: { ...screen('/', 'flow'), targets: [{ protocol: 'url' }] } } }), /requires name, device, or endpoint/);
 });
+
+test('admin and screen appearance settings validate safe boundaries', () => {
+  const base = { server: { port: 8787 }, plugins: {}, defaultScreen: 'home', screens: { home: { path: '/', panels: [] } } };
+  assert.doesNotThrow(() => validateConfig({ ...base, admin: { enabled: true, allowLan: false }, screens: { home: { path: '/', panels: [], appearance: { background: '#07100f', accent: '#8ee6c2', radius: 32, panelPadding: 0 } } } }));
+  assert.throws(() => validateConfig({ ...base, admin: { allowLan: true } }), /admin.token is required/);
+  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { background: 'red' } } } }), /must be a hex color/);
+  assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { radius: 33 } } } }), /radius must be from 0 to 32/);
+});

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Castboard Studio</title>
+  <link rel="stylesheet" href="/admin.css?v=0.4.0">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin" aria-label="Castboard Studio home">
+      <span class="brand-mark">C</span>
+      <span><strong>Castboard</strong><small>Screen Studio</small></span>
+    </a>
+    <div class="topbar-center">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="save-status">Loading design…</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="open-screen" class="button secondary" type="button">Open screen</button>
+      <button id="save-design" class="button primary" type="button" disabled>Save &amp; apply</button>
+    </div>
+  </header>
+
+  <main class="studio" aria-label="Castboard screen designer">
+    <aside class="sidebar screens-sidebar">
+      <div class="section-heading">
+        <div><span class="eyebrow">Project</span><h1>Screens</h1></div>
+        <button id="add-screen" class="icon-button" type="button" title="Add screen" aria-label="Add screen">+</button>
+      </div>
+      <div id="screen-list" class="screen-list" role="list"></div>
+
+      <section class="branding-section">
+        <div class="section-heading compact"><div><span class="eyebrow">Shared</span><h2>Branding</h2></div></div>
+        <label class="field"><span>Name</span><input id="brand-name" data-branding="name" autocomplete="off"></label>
+        <label class="field"><span>Subtitle</span><input id="brand-subtitle" data-branding="subtitle" autocomplete="off"></label>
+        <label class="field"><span>Location</span><input id="brand-location" data-branding="location" autocomplete="off"></label>
+        <label class="field"><span>Time zone</span><input id="brand-timezone" data-branding="timeZone" placeholder="Europe/Madrid" autocomplete="off"></label>
+        <label class="field color-field"><span>Default accent</span><span><input id="brand-accent" data-branding="accent" type="color"><output id="brand-accent-value"></output></span></label>
+      </section>
+
+      <div class="privacy-note">
+        <span aria-hidden="true">◆</span>
+        <p><strong>Design-only editor</strong>Delivery targets, protocol credentials, and provider secrets stay in the private config and are never sent here.</p>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-toolbar">
+        <div class="segmented" aria-label="Canvas mode">
+          <button type="button" class="active" data-mode="design">Design</button>
+          <button type="button" data-mode="preview">Live preview</button>
+        </div>
+        <div class="toolbar-meta">
+          <label>Viewport
+            <select id="viewport">
+              <option value="1024x600">Nest Hub Max · 1024×600</option>
+              <option value="1280x800">Tablet · 1280×800</option>
+              <option value="800x480">Small display · 800×480</option>
+              <option value="1920x1080">TV · 1920×1080</option>
+            </select>
+          </label>
+          <span id="canvas-scale">Fit</span>
+        </div>
+      </div>
+
+      <div id="canvas-stage" class="canvas-stage">
+        <div id="canvas-frame" class="canvas-frame">
+          <div id="design-surface" class="design-surface" aria-label="Editable screen layout"></div>
+          <iframe id="live-preview" title="Saved screen preview"></iframe>
+        </div>
+      </div>
+      <div class="canvas-help">
+        <span id="canvas-message">Select a panel to edit it. Drag panels or their lower-right handle to resize.</span>
+        <span><kbd>Grid</kbd> positions snap to cells</span>
+      </div>
+    </section>
+
+    <aside class="sidebar inspector-sidebar">
+      <div class="inspector-tabs" role="tablist" aria-label="Inspector">
+        <button type="button" role="tab" class="active" data-inspector="screen">Screen</button>
+        <button type="button" role="tab" data-inspector="panel">Panel</button>
+      </div>
+
+      <div id="screen-inspector" class="inspector-pane">
+        <section>
+          <span class="eyebrow">Identity</span>
+          <label class="field"><span>Title</span><input id="screen-title" data-screen="title" autocomplete="off"></label>
+          <label class="field"><span>URL path</span><input id="screen-path" data-screen="path" autocomplete="off"></label>
+          <label class="field"><span>Screen type</span><select id="screen-type" data-screen="type"></select></label>
+        </section>
+
+        <section id="layout-controls">
+          <span class="eyebrow">Layout</span>
+          <div id="grid-layout-fields" class="field-grid">
+            <label class="field"><span>Columns</span><input type="number" min="1" max="24" data-layout="columns"></label>
+            <label class="field"><span>Rows</span><input type="number" min="1" max="24" data-layout="rows"></label>
+            <label class="field"><span>Gap</span><input type="number" min="0" max="64" data-layout="gap"></label>
+            <label class="field"><span>Padding</span><input type="number" min="0" max="64" data-layout="padding"></label>
+          </div>
+          <div id="flow-layout-fields" class="field-grid" hidden>
+            <label class="field"><span>Min width</span><input type="number" min="120" max="1920" data-layout="minPanelWidth"></label>
+            <label class="field"><span>Min height</span><input type="number" min="80" max="1080" data-layout="minPanelHeight"></label>
+            <label class="field"><span>Gap</span><input type="number" min="0" max="64" data-layout="gap"></label>
+            <label class="field"><span>Padding</span><input type="number" min="0" max="64" data-layout="padding"></label>
+          </div>
+          <div id="single-layout-fields" hidden>
+            <label class="field"><span>Padding</span><input type="number" min="0" max="64" data-layout="padding"></label>
+          </div>
+          <div id="custom-layout-fields" hidden>
+            <label class="field"><span>Custom layout · JSON</span><textarea id="custom-layout" rows="7" spellcheck="false"></textarea></label>
+            <p id="custom-layout-error" class="field-error" role="alert"></p>
+          </div>
+        </section>
+
+        <section>
+          <span class="eyebrow">Appearance</span>
+          <label class="field color-field"><span>Background</span><span><input type="color" data-appearance="background"><output></output></span></label>
+          <label class="field color-field"><span>Screen accent</span><span><input type="color" data-appearance="accent"><output></output></span></label>
+          <label class="field color-field"><span>Panel color</span><span><input type="color" data-appearance="panelBackground"><output></output></span></label>
+          <div class="field-grid">
+            <label class="field"><span>Corner radius</span><input type="number" min="0" max="32" data-appearance="radius"></label>
+            <label class="field"><span>Panel padding</span><input type="number" min="0" max="32" data-appearance="panelPadding"></label>
+          </div>
+        </section>
+
+        <section class="danger-zone">
+          <span class="eyebrow">Screen actions</span>
+          <div class="button-row">
+            <button id="duplicate-screen" class="button secondary" type="button">Duplicate</button>
+            <button id="delete-screen" class="button danger" type="button">Delete</button>
+          </div>
+          <button id="set-default" class="button secondary full" type="button">Set as default screen</button>
+        </section>
+      </div>
+
+      <div id="panel-inspector" class="inspector-pane" hidden>
+        <div id="panel-empty" class="empty-inspector">
+          <span>□</span><strong>No panel selected</strong><p>Select a panel on the canvas or add one from the library.</p>
+        </div>
+        <div id="panel-fields" hidden>
+          <section>
+            <span class="eyebrow">Panel</span>
+            <label class="field"><span>Panel ID</span><input id="panel-id" data-panel="id" autocomplete="off"></label>
+            <label class="field"><span>Plugin</span><select id="panel-plugin" data-panel="plugin"></select></label>
+            <label class="field"><span>Display title</span><input id="panel-title" data-option="title" placeholder="Plugin default" autocomplete="off"></label>
+            <label class="field"><span>View variant</span><input id="panel-view" data-option="view" placeholder="Plugin default" autocomplete="off"></label>
+          </section>
+
+          <section id="panel-geometry">
+            <span class="eyebrow">Placement</span>
+            <div id="grid-panel-fields" class="field-grid">
+              <label class="field"><span>Column</span><input type="number" min="1" data-position="column"></label>
+              <label class="field"><span>Row</span><input type="number" min="1" data-position="row"></label>
+              <label class="field"><span>Width</span><input type="number" min="1" data-position="width"></label>
+              <label class="field"><span>Height</span><input type="number" min="1" data-position="height"></label>
+            </div>
+            <div id="flow-panel-fields" class="field-grid" hidden>
+              <label class="field"><span>Column span</span><input type="number" min="1" max="12" data-size="columns"></label>
+              <label class="field"><span>Row span</span><input type="number" min="1" max="12" data-size="rows"></label>
+            </div>
+            <div id="flow-order" class="button-row" hidden>
+              <button id="panel-earlier" class="button secondary" type="button">Move earlier</button>
+              <button id="panel-later" class="button secondary" type="button">Move later</button>
+            </div>
+            <div id="custom-panel-fields" hidden>
+              <label class="field"><span>Position · JSON</span><textarea id="custom-position" rows="5" spellcheck="false"></textarea></label>
+              <label class="field"><span>Size · JSON</span><textarea id="custom-size" rows="5" spellcheck="false"></textarea></label>
+              <p id="custom-panel-error" class="field-error" role="alert"></p>
+            </div>
+          </section>
+
+          <section>
+            <span class="eyebrow">Advanced options</span>
+            <label class="field"><span>Plugin options · JSON</span><textarea id="panel-options" rows="7" spellcheck="false"></textarea></label>
+            <p id="options-error" class="field-error" role="alert"></p>
+          </section>
+          <button id="remove-panel" class="button danger full" type="button">Remove panel</button>
+        </div>
+      </div>
+
+      <section class="plugin-library">
+        <div class="section-heading compact"><div><span class="eyebrow">Modules</span><h2>Plugin library</h2></div></div>
+        <div id="plugin-list" class="plugin-list"></div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="screen-dialog">
+    <form method="dialog" id="screen-form">
+      <header><div><span class="eyebrow">New destination</span><h2>Add a screen</h2></div><button value="cancel" class="dialog-close" aria-label="Close">×</button></header>
+      <label class="field"><span>Screen name</span><input id="new-screen-title" required autocomplete="off" placeholder="Kitchen display"></label>
+      <label class="field"><span>Screen ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off" placeholder="kitchen"></label>
+      <label class="field"><span>URL path</span><input id="new-screen-path" required pattern="/.*" autocomplete="off" placeholder="/kitchen"></label>
+      <label class="field"><span>Screen type</span><select id="new-screen-type"></select></label>
+      <p class="dialog-note">The screen starts without a cast target. Add its delivery target and protocol in the private config when you are ready to deploy it.</p>
+      <footer><button value="cancel" class="button secondary">Cancel</button><button id="create-screen" value="default" class="button primary">Create screen</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="token-dialog">
+    <form method="dialog" id="token-form">
+      <header><div><span class="eyebrow">Protected studio</span><h2>Admin token</h2></div></header>
+      <p class="dialog-note">This Castboard allows studio access over the local network. Enter the admin bearer token; it is kept only for this browser tab.</p>
+      <label class="field"><span>Token</span><input id="admin-token" type="password" required autocomplete="off"></label>
+      <p id="token-error" class="field-error" role="alert"></p>
+      <footer><button id="submit-token" value="default" class="button primary">Unlock studio</button></footer>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/admin.js?v=0.4.0"></script>
+</body>
+</html>

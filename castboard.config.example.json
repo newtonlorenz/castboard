@@ -10,6 +10,10 @@
     "accent": "#8ee6c2",
     "timeZone": "Europe/Madrid"
   },
+  "admin": {
+    "enabled": true,
+    "allowLan": false
+  },
   "defaultScreen": "home",
   "casting": {
     "defaultProtocol": "google-cast",
