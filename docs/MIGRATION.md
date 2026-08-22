@@ -11,7 +11,8 @@ The original system should remain in place until Castboard has run beside it for
 | Open-Meteo weather | `weather` | `open-meteo` |
 | Fronius power flow | `solar` | `fronius` |
 | WHOOP fetch script/cache | `recovery` | A small canonical JSON file or HTTP collector |
-| Sonos API + Spotify playback | `spotify` | `sonos-http` |
+| Spotify playback | `spotify` | `spotify-player` CLI |
+| Sonos room control | `sonos` | `sonos-http` bridge |
 | IBKR/crypto merged holdings | `stocks` | Canonical `file-json` produced by the existing collector |
 | Merged caches + ICS bridge | `calendar` | Prefer a single `ics` bridge; use canonical JSON if source labels must be preserved |
 | Camera discovery/MJPEG service | `camera` | `camera-service` |
@@ -20,7 +21,7 @@ The original system should remain in place until Castboard has run beside it for
 
 ## Recommended adapter phase
 
-Keep the existing collectors that already authenticate to IBKR, WHOOP, calendars, Sonos/Spotify, and the camera vendor. Change their final output to the canonical contracts instead of moving credentials into Castboard. This sharply reduces the initial migration risk.
+Keep the existing collectors that already authenticate to IBKR, WHOOP, calendars, Sonos, and the camera vendor. Change their final output to the canonical contracts instead of moving credentials into Castboard. Spotify can instead move to the independent `spotify_player` CLI after it has been installed and authenticated on the host. This sharply reduces the initial migration risk.
 
 Example private configuration (values intentionally generic):
 
@@ -30,7 +31,8 @@ Example private configuration (values intentionally generic):
     "weather": { "enabled": true, "provider": "open-meteo", "latitude": 0, "longitude": 0, "label": "Home" },
     "solar": { "enabled": true, "provider": "fronius", "baseUrl": "${FRONIUS_URL}" },
     "recovery": { "enabled": true, "provider": "file-json", "path": "../private/recovery.json" },
-    "spotify": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_API_URL}" },
+    "spotify": { "enabled": true, "provider": "spotify-player", "executable": "spotify_player" },
+    "sonos": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_API_URL}" },
     "stocks": { "enabled": true, "provider": "file-json", "path": "../private/portfolio.json", "currency": "EUR" },
     "calendar": { "enabled": true, "provider": "ics", "url": "${CALENDAR_ICS_URL}" },
     "camera": { "enabled": true, "provider": "camera-service", "baseUrl": "${CAMERA_SERVICE_URL}", "preferredId": "${CAMERA_ID}" },

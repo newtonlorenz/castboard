@@ -141,13 +141,34 @@ News is an ordinary plugin-backed panel. Its `options.view` may be:
 "calendar": { "enabled": true, "provider": "ics", "url": "${CALENDAR_ICS_URL}", "timeoutMs": 12000 }
 ```
 
-### Sonos-backed Spotify/media card
+### Sonos HTTP bridge
 
 ```json
-"spotify": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SPOTIFY_BACKEND_URL}", "statusPath": "/api/sonos/status" }
+"sonos": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_BACKEND_URL}", "statusPath": "/api/sonos/status" }
 ```
 
 The backend may override `actions.previous`, `actions.toggle`, `actions.next`, `actions.play`, and `actions.pause`.
+
+### Spotify CLI and local speakers
+
+Spotify is a separate plugin. Install and authenticate `spotify_player` on the Castboard host, then select its provider:
+
+```sh
+brew install spotify_player  # macOS
+# or: cargo install spotify_player --locked
+spotify_player authenticate
+```
+
+```json
+"spotify": {
+  "enabled": true,
+  "provider": "spotify-player",
+  "executable": "spotify_player",
+  "timeoutMs": 15000
+}
+```
+
+Run the `spotify_player` application when the host should play through its local audio output. Castboard uses its JSON CLI and allowlisted playback commands; it does not handle Spotify passwords or OAuth tokens. The upstream CLI requires Spotify Premium. Optional `configFolder` and `cacheFolder` settings are passed as explicit CLI arguments when non-default locations are needed. `SPOTIFY_PLAYER_BIN` overrides the configured executable.
 
 ### Canonical JSON over HTTP
 
@@ -155,9 +176,11 @@ The backend may override `actions.previous`, `actions.toggle`, `actions.next`, `
 "stocks": { "enabled": true, "provider": "http-json", "url": "${STOCKS_JSON_URL}", "headers": { "Authorization": "Bearer ${STOCKS_TOKEN}" } }
 ```
 
-The same `http-json` and `file-json` providers work for weather, solar, recovery, stocks, calendar, and news. Files resolve relative to the configuration file.
+The same `http-json` and `file-json` providers work for weather, solar, recovery, Spotify, Sonos, stocks, calendar, and news. Files resolve relative to the configuration file.
 
 Enabled first-party plugins validate their provider and required connection settings during startup. JSON, ICS, and Markdown provider bodies are limited to 1 MiB each, and HTTP timeouts cover both headers and body reads.
+
+Run `npm run doctor` or open `/setup` after changing provider or target configuration. Provider and delivery changes require a Castboard restart; visual screen changes saved in Studio apply without one.
 
 ### Camera stream
 

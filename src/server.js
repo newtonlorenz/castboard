@@ -8,6 +8,7 @@ import { discoverPlugins, pluginMap } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
 import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
+import { buildSetupReport, discoverCastDevices, testPluginConnection } from './core/setup.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -104,6 +105,17 @@ export async function createApp(options = {}) {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
       }
       if (req.method === 'GET' && url.pathname === '/api/config') return jsonResponse(res, 200, publicConfig);
+      if (url.pathname.startsWith('/api/admin/setup')) {
+        if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Setup access requires localhost or an authorized LAN token' } });
+        if (req.method === 'GET' && url.pathname === '/api/admin/setup') return jsonResponse(res, 200, { ok: true, ...(await buildSetupReport({ config: runtimeConfig, configPath, plugins })) });
+        if (req.method === 'POST' && url.pathname === '/api/admin/setup/test-plugin') {
+          if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Connection tests require application/json' } });
+          const body = await readBody(req);
+          return jsonResponse(res, 200, await testPluginConnection(plugins, String(body.pluginId || '')));
+        }
+        if (req.method === 'POST' && url.pathname === '/api/admin/setup/discover-cast') return jsonResponse(res, 200, await discoverCastDevices(runtimeConfig));
+        return jsonResponse(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Unsupported setup operation' } });
+      }
       if (url.pathname === '/api/admin/design') {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Admin access requires localhost or an authorized LAN token' } });
         if (req.method === 'GET') return jsonResponse(res, 200, { ok: true, ...adminPayload() });
@@ -171,6 +183,8 @@ export async function createApp(options = {}) {
 
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
+      if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
+      if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
       if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);

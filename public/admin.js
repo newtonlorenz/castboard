@@ -17,7 +17,7 @@ const state = {
 
 const glyphs = {
   calendar: '31', camera: '◎', clock: '12', focus: '→', news: 'N', recovery: '♥',
-  solar: '☀', spotify: '♪', stocks: '↗', weather: '☁',
+  solar: '☀', sonos: '◉', spotify: '♪', stocks: '↗', weather: '☁',
 };
 
 const FONT_STACKS = {

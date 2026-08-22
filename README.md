@@ -50,10 +50,13 @@ npm start
 
 Now open:
 
+- [`localhost:8787/setup`](http://localhost:8787/setup) — first-run checks and connection tests
 - [`localhost:8787/admin`](http://localhost:8787/admin) — visual screen studio
 - [`localhost:8787`](http://localhost:8787) — 10-panel Home dashboard
 - [`localhost:8787/screens/office`](http://localhost:8787/screens/office) — full-screen news wire
 - [`localhost:8787/screens/tablet`](http://localhost:8787/screens/tablet) — responsive tablet flow
+
+Start in Setup. It detects the LAN URL and optional CLIs, labels every provider as demo, built-in, or adapter-backed, tests data connections, shows missing screen targets, and can discover Cast devices. The same report is available in a terminal with `npm run doctor`.
 
 In Studio, drag and resize panels, switch screen types, edit plugin options, and tune fonts, colors, spacing, borders, corners, shadows, and per-panel overrides. **Save & apply** validates and atomically writes the configuration; open displays pick up the design within five seconds.
 
@@ -99,7 +102,8 @@ The starter configuration demonstrates every first-party visual module:
 | Weather | Demo, Open-Meteo, HTTP JSON, file JSON |
 | Solar | Demo, Fronius, HTTP JSON, file JSON |
 | Recovery | Demo, HTTP JSON, file JSON |
-| Spotify / media | Demo, Sonos HTTP, HTTP JSON, file JSON |
+| Spotify | Demo, `spotify_player` CLI, HTTP JSON, file JSON |
+| Sonos | Demo, Sonos HTTP bridge, HTTP JSON, file JSON |
 | Stocks | Demo, HTTP JSON, file JSON |
 | Calendar | Demo, ICS, HTTP JSON, file JSON |
 | Camera | Demo, direct stream, camera discovery service |
@@ -134,9 +138,39 @@ export function createPlugin({ config }) {
 
 Castboard validates extension IDs and contracts during startup, serves only browser widgets, bounds provider payloads, and isolates refresh failures to the affected panel. Read [Writing a plugin](docs/PLUGINS.md) and the [canonical data contracts](docs/PLUGIN-CONTRACTS.md).
 
+## Spotify with local speakers
+
+Spotify is independent of Sonos. Its native provider uses [`spotify_player`](https://github.com/aome510/spotify-player), which can control Spotify Connect or stream through the audio output of the machine running it. A Spotify Premium account and one-time authentication are required.
+
+```sh
+# macOS
+brew install spotify_player
+
+# Other platforms with Rust installed
+cargo install spotify_player --locked
+
+spotify_player authenticate
+```
+
+Run `spotify_player` on the Castboard host when you want that machine to appear as a local Spotify speaker, then configure:
+
+```json
+"spotify": { "enabled": true, "provider": "spotify-player", "executable": "spotify_player" }
+```
+
+Castboard reads `spotify_player get key playback` and sends only allowlisted playback commands. The CLI can control whichever Spotify Connect device is active; local audio comes from `spotify_player` itself, not from the dashboard web page. Linux users who want unattended local playback can install the CLI with its daemon feature and run `spotify_player --daemon`; follow the upstream audio-backend instructions for the host OS.
+
+Sonos remains available separately:
+
+```json
+"sonos": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_BACKEND_URL}" }
+```
+
 ## Cast it—or just open the URL
 
-Google Cast delivery uses [`catt`](https://github.com/skorokithakis/catt). URL and webhook targets require no additional software.
+Google Cast delivery uses [`catt`](https://github.com/skorokithakis/catt). Install it first with `pipx install catt`, then use `/setup` to discover receiver names. URL and webhook targets require no additional software.
+
+The starter screens deliberately contain no fake receivers. In Setup, discover a device, copy its target JSON into the chosen screen's `targets` array, restart Castboard, and then cast:
 
 ```sh
 npm run cast -- home
@@ -159,6 +193,8 @@ CASTBOARD_ADMIN_TOKEN=replace-with-a-long-random-token
 ```
 
 Then visit [`localhost:8787/admin`](http://localhost:8787/admin) and enter that token. For a separately managed configuration, mount it at `/data/castboard.config.json`.
+
+The base container intentionally does not include `catt`, `spotify_player`, host audio devices, or Spotify credentials. Run those integrations on the host or build a private image that includes them; the demo, URL delivery, webhooks, and HTTP/file providers work in the stock container.
 
 ## Architecture at a glance
 
@@ -196,6 +232,7 @@ Read the complete [security policy](SECURITY.md) before enabling cameras or cont
 
 - [Configuration](docs/CONFIGURATION.md)
 - [Visual Studio](docs/ADMIN-STUDIO.md)
+- First-run diagnostics: `npm run doctor` or `/setup`
 - [Plugin authoring](docs/PLUGINS.md)
 - [Plugin data contracts](docs/PLUGIN-CONTRACTS.md)
 - [Screen types](docs/SCREEN-TYPES.md)

@@ -22,7 +22,7 @@ All timestamps should be ISO 8601 strings.
 { "score": 82, "status": "Ready", "detail": "Sleep 91% · HRV balanced", "updatedAt": "2026-01-01T10:00:00Z" }
 ```
 
-## Spotify / media
+## Spotify and Sonos playback
 
 ```json
 { "playing": true, "title": "Track", "artist": "Artist", "album": "Album", "artworkUrl": "https://…", "device": "Living room", "volume": 34, "updatedAt": "2026-01-01T10:00:00Z" }

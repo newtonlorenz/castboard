@@ -36,7 +36,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .status-dot.error { background: var(--danger); }
 .topbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; height: 100%; padding: 0 14px; border-left: 1px solid var(--line); }
 
-.button { min-height: 32px; border: 1px solid transparent; border-radius: 8px; padding: 0 12px; background: var(--surface-3); color: var(--text); font-size: 11px; font-weight: 700; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; border: 1px solid transparent; border-radius: 8px; padding: 0 12px; background: var(--surface-3); color: var(--text); font-size: 11px; font-weight: 700; text-decoration: none; }
 .button.primary { background: var(--accent); color: var(--accent-ink); }
 .button.secondary { border-color: var(--line); background: transparent; }
 .button.danger { border-color: rgba(255, 147, 142, .24); background: rgba(255, 147, 142, .07); color: var(--danger); }
@@ -84,6 +84,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .section-note { margin: -2px 0 11px; color: var(--muted); font-size: 8px; line-height: 1.45; }
 .privacy-note { display: grid; grid-template-columns: 18px 1fr; gap: 8px; margin: 0 12px 18px; border: 1px solid rgba(142, 230, 194, .12); border-radius: 9px; padding: 10px; background: rgba(142, 230, 194, .035); color: var(--accent); font-size: 8px; }
 .privacy-note p { margin: 0; color: var(--muted); line-height: 1.45; }
+.privacy-note a { color: var(--accent); }
 .privacy-note strong { display: block; margin-bottom: 2px; color: var(--text); font-size: 9px; }
 
 .workspace { display: grid; grid-template-rows: 46px minmax(0, 1fr) 34px; min-width: 0; min-height: 0; background: #090c0a; }

@@ -29,7 +29,7 @@
       "title": "Home",
       "type": "grid",
       "castProtocol": "google-cast",
-      "targets": [{ "name": "Kitchen Hub", "device": "Kitchen Display" }],
+      "targets": [],
       "layout": { "columns": 12, "rows": 8, "gap": 8, "padding": 8 },
       "panels": [
         { "id": "focus", "plugin": "focus", "position": { "column": 1, "row": 1, "width": 8, "height": 1 }, "options": { "fitContent": true } },
@@ -49,7 +49,7 @@
       "title": "Office",
       "type": "single",
       "castProtocol": "google-cast",
-      "targets": [{ "name": "Office Hub", "device": "Office Display" }],
+      "targets": [],
       "layout": { "padding": 8 },
       "panels": [
         { "id": "market-news", "plugin": "news", "options": { "view": "wire", "title": "Bloomberg", "rotationSeconds": 18 } }
@@ -60,7 +60,7 @@
       "title": "Tablet",
       "type": "flow",
       "castProtocol": "url",
-      "targets": [{ "name": "Tablet browser", "protocol": "url" }],
+      "targets": [],
       "layout": { "minPanelWidth": 220, "minPanelHeight": 140, "gap": 8, "padding": 8 },
       "panels": [
         { "id": "tablet-clock", "plugin": "clock" },
@@ -81,6 +81,7 @@
     "solar": { "enabled": true, "provider": "demo" },
     "recovery": { "enabled": true, "provider": "demo" },
     "spotify": { "enabled": true, "provider": "demo" },
+    "sonos": { "enabled": true, "provider": "demo" },
     "stocks": { "enabled": true, "provider": "demo", "currency": "EUR" },
     "calendar": { "enabled": true, "provider": "demo" },
     "camera": { "enabled": true, "provider": "demo", "name": "Front garden" },

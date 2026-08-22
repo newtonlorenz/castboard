@@ -84,12 +84,17 @@ test('admin studio exposes only the editable design catalog', async t => {
   t.after(() => app.server.close());
   assert.equal((await fetch(`${app.baseUrl}/admin`)).status, 200);
   assert.equal((await fetch(`${app.baseUrl}/admin.js`)).status, 200);
+  assert.equal((await fetch(`${app.baseUrl}/setup`)).status, 200);
+  assert.equal((await fetch(`${app.baseUrl}/setup.js`)).status, 200);
+  const setup = await (await fetch(`${app.baseUrl}/api/admin/setup`)).json();
+  assert.equal(setup.ok, true);
+  assert.equal(setup.plugins.find(plugin => plugin.id === 'spotify').name, 'Spotify');
   const response = await fetch(`${app.baseUrl}/api/admin/design`);
   assert.equal(response.status, 200);
   const payload = await response.json();
   const serialized = JSON.stringify(payload);
   assert.equal(payload.design.screens['clock-screen'].title, undefined);
-  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', name: 'Clock' }, { id: 'spotify', name: 'Spotify / media' }]);
+  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', name: 'Clock' }, { id: 'spotify', name: 'Spotify' }]);
   assert.equal(serialized.includes('never-public'), false);
   assert.equal(serialized.includes('Private clock display'), false);
   assert.equal(serialized.includes('clock-device'), false);
@@ -152,7 +157,7 @@ function cloneForTest(value) {
 test('example configuration loads every first-party plugin in demo mode', async () => {
   const loadedConfig = loadConfig({ cwd: ROOT, env: {} });
   const app = await createApp({ loadedConfig, logger: { error() {} } });
-  assert.deepEqual(app.plugins.map(plugin => plugin.id), ['calendar', 'camera', 'clock', 'focus', 'news', 'recovery', 'solar', 'spotify', 'stocks', 'weather']);
+  assert.deepEqual(app.plugins.map(plugin => plugin.id), ['calendar', 'camera', 'clock', 'focus', 'news', 'recovery', 'solar', 'sonos', 'spotify', 'stocks', 'weather']);
   for (const plugin of app.plugins) {
     if (plugin.getData) assert.ok(await plugin.getData({}), `${plugin.id} should return demo data`);
   }

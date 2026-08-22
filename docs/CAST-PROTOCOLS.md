@@ -21,6 +21,8 @@ Protocol references are resolved against the enabled registry before any target 
 
 Uses `catt cast_site` and requires a `device` or `name` on the target.
 
+Install it with `pipx install catt`. `/setup` can run `catt scan --json-output` and produce copy-ready target JSON; the starter configuration contains no placeholder receivers that could be mistaken for real devices.
+
 ```json
 {
   "casting": { "protocols": { "google-cast": { "enabled": true, "executable": "catt" } } },

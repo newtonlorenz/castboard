@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>Castboard Studio</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/admin.css?v=0.5.0">
+  <link rel="stylesheet" href="/admin.css?v=0.6.0">
 </head>
 <body>
   <header class="topbar">
@@ -19,6 +19,7 @@
       <span id="save-status">Loading design…</span>
     </div>
     <div class="topbar-actions">
+      <a class="button secondary" href="/setup">Setup</a>
       <button id="open-screen" class="button secondary" type="button">Open screen</button>
       <button id="save-design" class="button primary" type="button" disabled>Save &amp; apply</button>
     </div>
@@ -43,7 +44,7 @@
 
       <div class="privacy-note">
         <span aria-hidden="true">◆</span>
-        <p><strong>Design-only editor</strong>Delivery targets, protocol credentials, and provider secrets stay in the private config and are never sent here.</p>
+        <p><strong>Design-only editor</strong>Delivery targets and provider credentials stay private. Use <a href="/setup">Setup</a> to test them safely.</p>
       </div>
     </aside>
 
@@ -271,6 +272,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/admin.js?v=0.5.0"></script>
+  <script type="module" src="/admin.js?v=0.6.0"></script>
 </body>
 </html>

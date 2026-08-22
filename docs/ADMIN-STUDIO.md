@@ -2,6 +2,8 @@
 
 Castboard Studio is the visual design surface at `/admin`. It edits the declarative screen model; it is not a second configuration system. The same `screens`, `layout`, `panels`, and `appearance` values remain readable, reviewable JSON on disk.
 
+Use `/setup` before Studio for first-run diagnostics. It checks optional executables, shows which providers are demos or require adapters, tests provider connections, reports target counts, and performs user-triggered Cast discovery. It never returns configured receiver names, URLs, headers, tokens, or file paths.
+
 ## What it edits
 
 - Project branding and the default screen.

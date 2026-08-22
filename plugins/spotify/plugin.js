@@ -1,41 +1,77 @@
-import { demoTimestamp, fetchJson, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
+import path from 'node:path';
+import { readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
+import { runCommand } from '../../src/core/command.js';
 
-const ALLOWED_ACTIONS = new Set(['previous', 'toggle', 'next', 'play', 'pause']);
+const ALLOWED_ACTIONS = new Map([
+  ['previous', ['playback', 'previous']],
+  ['toggle', ['playback', 'play-pause']],
+  ['next', ['playback', 'next']],
+  ['play', ['playback', 'play']],
+  ['pause', ['playback', 'pause']],
+]);
 
-function normalizeSonos(data) {
+export function normalizeSpotifyPlayback(playback) {
+  const item = playback?.item || playback?.track || null;
+  const artists = item?.artists || item?.album?.artists || [];
   return {
-    playing: data.playing ?? String(data.state || '').toLowerCase() === 'playing',
-    title: data.title || data.track || data.currentTrack?.title || 'Nothing playing',
-    artist: data.artist || data.currentTrack?.artist || '',
-    album: data.album || data.currentTrack?.album || '',
-    artworkUrl: data.artworkUrl || data.albumArtUrl || data.currentTrack?.albumArtUrl || null,
-    device: data.speaker || data.room || data.device || 'Media',
-    volume: data.volume ?? null,
-    updatedAt: demoTimestamp(),
+    playing: playback?.is_playing === true,
+    title: item?.name || 'Nothing playing',
+    artist: artists.map(artist => artist?.name).filter(Boolean).join(', '),
+    album: item?.album?.name || '',
+    artworkUrl: item?.album?.images?.[0]?.url || item?.images?.[0]?.url || null,
+    device: playback?.device?.name || 'Spotify',
+    volume: playback?.device?.volume_percent ?? null,
+    progressMs: playback?.progress_ms ?? null,
+    durationMs: item?.duration_ms ?? null,
+    updatedAt: new Date().toISOString(),
   };
 }
 
+function cliArgs(config, context, args) {
+  const prefix = [];
+  if (config.configFolder) prefix.push('--config-folder', path.resolve(context.configDir, config.configFolder));
+  if (config.cacheFolder) prefix.push('--cache-folder', path.resolve(context.configDir, config.cacheFolder));
+  return [...prefix, ...args];
+}
+
+async function runSpotify(config, context, args) {
+  const executable = process.env.SPOTIFY_PLAYER_BIN || config.executable || 'spotify_player';
+  return runCommand(executable, cliArgs(config, context, args), {
+    cwd: context.configDir,
+    timeoutMs: config.timeoutMs || 15000,
+    maxBytes: 1024 * 1024,
+  });
+}
+
 export function createPlugin({ config, context }) {
-  validateProviderConfig('spotify', config, ['demo', 'sonos-http', 'http-json', 'file-json']);
-  if (config.provider === 'sonos-http' && !config.baseUrl) throw new Error('Plugin spotify sonos-http provider requires baseUrl');
-  const controllable = config.provider === 'demo' || config.provider === 'sonos-http';
-  const plugin = {
+  validateProviderConfig('spotify', config, ['demo', 'spotify-player', 'http-json', 'file-json']);
+  const controllable = config.provider === 'demo' || config.provider === 'spotify-player';
+  return {
     id: 'spotify',
-    name: 'Spotify / media',
-    publicConfig: () => ({ title: config.title || 'Now playing', controllable }),
+    name: 'Spotify',
+    publicConfig: () => ({ title: config.title || 'Spotify', controllable }),
     async getData() {
-      if (config.provider === 'demo') return { playing: true, title: 'A New Morning', artist: 'The Castboard Ensemble', album: 'Home Signals', artworkUrl: null, device: 'Living room', volume: 34, updatedAt: demoTimestamp() };
-      if (config.provider === 'sonos-http') return normalizeSonos(await fetchJson(`${String(config.baseUrl).replace(/\/$/, '')}${config.statusPath || '/api/sonos/status'}`, { headers: config.headers || {} }));
+      if (config.provider === 'demo') return normalizeSpotifyPlayback({
+        is_playing: true,
+        device: { name: config.deviceName || 'Local speakers', volume_percent: 34 },
+        item: { name: 'A New Morning', artists: [{ name: 'The Castboard Ensemble' }], album: { name: 'Home Signals', images: [] }, duration_ms: 218000 },
+        progress_ms: 74000,
+      });
+      if (config.provider === 'spotify-player') {
+        const { stdout } = await runSpotify(config, context, ['get', 'key', 'playback']);
+        let playback;
+        try { playback = JSON.parse(stdout || 'null'); } catch { throw new Error('spotify_player returned invalid playback JSON'); }
+        return normalizeSpotifyPlayback(playback);
+      }
       return readJsonSource(config, context);
     },
+    ...(controllable ? {
+      async action(payload) {
+        const args = ALLOWED_ACTIONS.get(String(payload?.action || ''));
+        if (!args) throw new Error('Unsupported Spotify action');
+        if (config.provider === 'spotify-player') await runSpotify(config, context, args);
+        return { accepted: true, action: payload.action };
+      },
+    } : {}),
   };
-  if (controllable) plugin.action = async payload => {
-    const action = String(payload?.action || '');
-    if (!ALLOWED_ACTIONS.has(action)) throw new Error('Unsupported media action');
-    if (config.provider === 'demo') return { accepted: true, action };
-    const route = config.actions?.[action] || `/api/sonos/${action}`;
-    const method = config.actionMethod || 'POST';
-    return fetchJson(`${String(config.baseUrl).replace(/\/$/, '')}${route}`, { method, headers: { ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }), ...(config.headers || {}) }, body: method === 'GET' ? undefined : JSON.stringify({ action }) });
-  };
-  return plugin;
 }
