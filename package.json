@@ -1,7 +1,7 @@
 {
   "name": "castboard",
   "version": "0.5.0",
-  "description": "A configurable, plugin-based dashboard for Cast-enabled smart displays.",
+  "description": "An open-source visual dashboard builder for Google Cast, smart displays, wall tablets, and kiosks.",
   "type": "module",
   "private": true,
   "engines": {
@@ -17,8 +17,11 @@
   "keywords": [
     "dashboard",
     "chromecast",
-    "smart-display",
+    "google-cast",
     "nest-hub",
+    "smart-display",
+    "kiosk",
+    "home-automation",
     "plugins"
   ],
   "license": "MIT"

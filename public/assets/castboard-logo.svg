@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Castboard</title>
+  <desc id="description">An open cast signal wrapping a modular dashboard.</desc>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M338 62H226C123 62 40 145 40 248s83 186 186 186h112" stroke="#8ee6c2" stroke-width="44"/>
+    <path d="M286 128h-52c-66 0-120 54-120 120s54 120 120 120h52" stroke="#59d8e6" stroke-width="34"/>
+    <rect x="218" y="148" width="264" height="200" rx="34" stroke="#8ee6c2" stroke-width="20"/>
+  </g>
+  <rect x="246" y="176" width="104" height="92" rx="20" fill="#59d8e6"/>
+  <rect x="366" y="176" width="88" height="40" rx="14" fill="#8ee6c2"/>
+  <rect x="366" y="228" width="88" height="40" rx="14" fill="#59d8e6"/>
+  <circle cx="270" cy="306" r="24" fill="#8ee6c2"/>
+  <rect x="308" y="282" width="46" height="48" rx="14" fill="#59d8e6"/>
+  <rect x="366" y="282" width="88" height="48" rx="14" fill="#8ee6c2"/>
+</svg>

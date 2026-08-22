@@ -59,6 +59,12 @@ test('server exposes health, public config, and widget module', async t => {
   assert.equal(widget.status, 200);
   assert.match(await widget.text(), /export function mount/);
   assert.equal((await fetch(`${app.baseUrl}/screen-types/grid/renderer.js`)).status, 200);
+  const logo = await fetch(`${app.baseUrl}/assets/castboard-logo.png`);
+  assert.equal(logo.status, 200);
+  assert.equal(logo.headers.get('content-type'), 'image/png');
+  const vectorLogo = await fetch(`${app.baseUrl}/assets/castboard-logo.svg`);
+  assert.equal(vectorLogo.status, 200);
+  assert.equal(vectorLogo.headers.get('content-type'), 'image/svg+xml');
 });
 
 test('unknown and traversal-like routes do not expose files', async t => {

@@ -175,6 +175,8 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
       if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
+      if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.png') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.png'), true);
+      if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.svg') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.svg'), true);
       return jsonResponse(res, 404, { error: { code: 'NOT_FOUND', message: 'Route not found' } });
     } catch (error) {
       context.logger.error(`[${req.method}] ${url?.pathname || req.url || '/'}:`, error.message);

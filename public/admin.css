@@ -25,7 +25,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .topbar { display: grid; grid-template-columns: var(--sidebar-left) 1fr var(--sidebar-right); align-items: center; height: 58px; border-bottom: 1px solid var(--line); background: rgba(10, 14, 12, .96); }
 .brand { display: flex; align-items: center; gap: 10px; height: 100%; padding: 0 16px; color: var(--text); text-decoration: none; border-right: 1px solid var(--line); }
-.brand-mark { display: grid; place-content: center; width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 14px; font-weight: 850; }
+.brand-mark { display: block; width: 30px; height: 30px; object-fit: contain; }
 .brand strong, .brand small { display: block; }
 .brand strong { font-size: 13px; letter-spacing: -.01em; }
 .brand small { margin-top: 1px; color: var(--muted); font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
