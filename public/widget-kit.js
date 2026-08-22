@@ -6,18 +6,28 @@ export function title(label, meta = '') {
   return `<header class="widget-head"><span>${escapeHtml(label)}</span>${meta ? `<small>${escapeHtml(meta)}</small>` : ''}</header>`;
 }
 
+export async function requestJson(input, init = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    const payload = await response.json();
+    return { response, payload };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function getPluginData(id) {
-  const response = await fetch(`/api/plugins/${encodeURIComponent(id)}/data`, { cache: 'no-store' });
-  const payload = await response.json();
+  const { response, payload } = await requestJson(`/api/plugins/${encodeURIComponent(id)}/data`, { cache: 'no-store' });
   if (!response.ok || !payload.ok) throw new Error(payload.error?.message || `Unable to load ${id}`);
   return payload.data;
 }
 
 export async function postPluginAction(id, action, extra = {}) {
-  const response = await fetch(`/api/plugins/${encodeURIComponent(id)}/action`, {
+  const { response, payload } = await requestJson(`/api/plugins/${encodeURIComponent(id)}/action`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...extra }),
   });
-  const payload = await response.json();
   if (!response.ok || !payload.ok) throw new Error(payload.error?.message || `Unable to control ${id}`);
   return payload.data;
 }
@@ -28,8 +38,14 @@ export function unavailable(element, label, error) {
 }
 
 export function schedule(load, milliseconds) {
-  load();
-  return setInterval(load, milliseconds);
+  let running = false;
+  const run = async () => {
+    if (running) return;
+    running = true;
+    try { await load(); } finally { running = false; }
+  };
+  void run();
+  return setInterval(run, milliseconds);
 }
 
 export function formatNumber(value, digits = 1) {

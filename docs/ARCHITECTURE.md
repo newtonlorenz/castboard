@@ -87,6 +87,8 @@ The core knows nothing about IBKR, WHOOP, Fronius, Spotify, Sonos, Bloomberg, or
 - **Failure isolation.** Each widget owns its loading/unavailable state and refresh cadence.
 - **LAN scope.** Authentication is not pretended away; internet exposure is explicitly out of scope for the initial release.
 
-## Remaining optional work before a public hosted release
+## Review status and remaining hosted-product work
 
-For a public repository, the current version is suitable as an initial tagged release. A hosted or multi-user product would additionally need authentication/authorization, CSRF protection for action routes, rate limits, structured observability, plugin package signing or an allowlist, richer config schemas, and browser compatibility CI against actual Cast firmware.
+The open-source LAN release now validates plugin, screen-type, provider, and casting references at startup; bounds and times provider reads; rejects DNS-rebinding Hosts; prevents overlapping widget refreshes; requires JSON for actions; times casting drivers; and excludes private configuration from Docker build contexts. These controls make failures early and local instead of allowing a malformed extension or stalled backend to degrade every screen.
+
+A public hosted or multi-user product is a different security boundary. It would still need user authentication and authorization, per-action permissions, CSRF tokens, rate limits, structured observability, sandboxed or signed third-party packages, tenant isolation, and browser compatibility CI against actual receiver firmware. Custom plugins, screen types, and casting protocols remain trusted code loaded from disk and must be reviewed before installation.

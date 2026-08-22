@@ -1,30 +1,85 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
-export async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+export const MAX_PROVIDER_BYTES = 1024 * 1024;
+
+export function validateProviderConfig(pluginId, config, providers) {
+  if (!config.provider || !providers.includes(config.provider)) throw new Error(`Plugin ${pluginId} requires provider: ${providers.join(', ')}`);
+  if (config.timeoutMs !== undefined && (!Number.isFinite(Number(config.timeoutMs)) || Number(config.timeoutMs) < 1)) throw new Error(`Plugin ${pluginId} timeoutMs must be positive`);
+  if (config.provider === 'http-json' && !config.url) throw new Error(`Plugin ${pluginId} http-json provider requires url`);
+  if (config.provider === 'file-json' && !config.path) throw new Error(`Plugin ${pluginId} file-json provider requires path`);
+}
+
+export async function readTextFile(filePath, maxBytes = MAX_PROVIDER_BYTES) {
+  const data = await fs.readFile(filePath);
+  if (data.length > maxBytes) throw new Error(`Provider file exceeds ${maxBytes} bytes`);
+  return data.toString('utf8');
+}
+
+async function withTimeout(timeoutMs, externalSignal, operation) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const abort = () => controller.abort(externalSignal?.reason);
+  if (externalSignal?.aborted) abort();
+  else externalSignal?.addEventListener('abort', abort, { once: true });
+  const timer = setTimeout(() => controller.abort(new Error(`Provider timed out after ${timeoutMs}ms`)), timeoutMs);
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    return await operation(controller.signal);
   } finally {
     clearTimeout(timer);
+    externalSignal?.removeEventListener('abort', abort);
   }
 }
 
-export async function fetchJson(url, options = {}, timeoutMs = 8000) {
-  const response = await fetchWithTimeout(url, {
+async function readResponseBody(response, maxBytes) {
+  const declaredLength = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) throw new Error(`Provider response exceeds ${maxBytes} bytes`);
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const chunks = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > maxBytes) {
+        await reader.cancel();
+        throw new Error(`Provider response exceeds ${maxBytes} bytes`);
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks, length).toString('utf8');
+}
+
+export async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  return withTimeout(timeoutMs, options.signal, signal => fetch(url, { ...options, signal }));
+}
+
+export async function fetchText(url, options = {}, timeoutMs = 8000, maxBytes = MAX_PROVIDER_BYTES) {
+  return withTimeout(timeoutMs, options.signal, async signal => {
+    const response = await fetch(url, { ...options, signal });
+    const text = await readResponseBody(response, maxBytes);
+    return { response, text };
+  });
+}
+
+export async function fetchJson(url, options = {}, timeoutMs = 8000, maxBytes = MAX_PROVIDER_BYTES) {
+  const { response, text } = await fetchText(url, {
     ...options,
     headers: { Accept: 'application/json', ...(options.headers || {}) },
-  }, timeoutMs);
-  const text = await response.text();
+  }, timeoutMs, maxBytes);
   let body;
   try {
     body = text ? JSON.parse(text) : null;
   } catch {
     throw new Error(`Provider returned invalid JSON (${response.status})`);
   }
-  if (!response.ok) throw new Error(body?.error?.message || body?.error || `Provider returned HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Provider returned HTTP ${response.status}`);
   return body;
 }
 
@@ -36,7 +91,7 @@ export async function readJsonSource(config, context) {
   if (config.provider === 'file-json') {
     if (!config.path) throw new Error('file-json provider requires path');
     const filePath = path.resolve(context.configDir, config.path);
-    return JSON.parse(await fs.readFile(filePath, 'utf8'));
+    return JSON.parse(await readTextFile(filePath));
   }
   throw new Error(`Unsupported JSON provider: ${config.provider}`);
 }
@@ -63,22 +118,32 @@ export function jsonResponse(res, status, body) {
 }
 
 export async function proxyStream(url, req, res, { headers = {}, timeoutMs = 12000 } = {}) {
-  const response = await fetchWithTimeout(url, {
-    headers: { Accept: req.headers.accept || '*/*', ...headers },
-  }, timeoutMs);
-  if (!response.ok || !response.body) throw new Error(`Stream provider returned HTTP ${response.status}`);
-  res.writeHead(200, {
-    'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-    Connection: 'keep-alive',
-  });
-  Readable.fromWeb(response.body).pipe(res);
+  const controller = new AbortController();
+  let completed = false;
+  const abort = () => { if (!completed) controller.abort(); };
+  req.once('aborted', abort);
+  res.once('close', abort);
+  try {
+    const response = await fetchWithTimeout(url, {
+      headers: { Accept: req.headers.accept || '*/*', ...headers },
+      signal: controller.signal,
+    }, timeoutMs);
+    if (!response.ok || !response.body) throw new Error(`Stream provider returned HTTP ${response.status}`);
+    res.writeHead(200, {
+      'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      Connection: 'keep-alive',
+    });
+    await pipeline(Readable.fromWeb(response.body), res);
+    completed = true;
+  } catch (error) {
+    if (!controller.signal.aborted || (!req.aborted && !res.destroyed)) throw error;
+  } finally {
+    req.removeListener('aborted', abort);
+    res.removeListener('close', abort);
+  }
 }
 
 export function demoTimestamp() {
   return new Date().toISOString();
-}
-
-export function escapeXml(value = '') {
-  return String(value).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 }

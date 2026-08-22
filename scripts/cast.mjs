@@ -22,7 +22,8 @@ export function buildCastPlan(config, address, requested = config.defaultScreen 
     const screen = config.screens[screenId];
     const targets = screen.targets || [];
     if (!targets.length) throw new Error(`screens.${screenId}.targets has no display targets`);
-    const url = `http://${address}:${config.server.port}${screen.path}`;
+    const baseUrl = config.server.publicUrl?.replace(/\/$/, '') || `http://${address}:${config.server.port}`;
+    const url = `${baseUrl}${screen.path}`;
     return targets.map(rawTarget => {
       const target = typeof rawTarget === 'string' ? { name: rawTarget, device: rawTarget } : rawTarget;
       const protocol = protocolOverride || target.protocol || screen.castProtocol || config.casting?.defaultProtocol || 'google-cast';
@@ -31,14 +32,37 @@ export function buildCastPlan(config, address, requested = config.defaultScreen 
   });
 }
 
+export function parseCastArgs(argv, fallbackScreen) {
+  let requested = fallbackScreen;
+  let explicitScreen = false;
+  let protocolOverride = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+    if (argument === '--all') {
+      if (explicitScreen) throw new Error('Choose a screen ID or --all, not both');
+      requested = '--all';
+      explicitScreen = true;
+    } else if (argument === '--protocol') {
+      protocolOverride = argv[index + 1];
+      if (!protocolOverride || protocolOverride.startsWith('--')) throw new Error('--protocol requires a protocol ID');
+      index += 1;
+    } else if (argument.startsWith('--')) {
+      throw new Error(`Unknown option: ${argument}`);
+    } else {
+      if (explicitScreen) throw new Error('Only one screen ID may be selected');
+      requested = argument;
+      explicitScreen = true;
+    }
+  }
+  return { requested, protocolOverride };
+}
+
 async function main() {
   const { config } = loadConfig({ cwd: ROOT });
   const address = localAddress();
   if (!address) throw new Error('Unable to find a LAN IPv4 address');
-  const requested = process.argv[2] || config.defaultScreen || Object.keys(config.screens)[0];
-  const overrideIndex = process.argv.indexOf('--protocol');
-  const protocolOverride = overrideIndex >= 0 ? process.argv[overrideIndex + 1] : null;
-  if (overrideIndex >= 0 && !protocolOverride) throw new Error('--protocol requires a protocol ID');
+  const fallback = config.defaultScreen || Object.keys(config.screens)[0];
+  const { requested, protocolOverride } = parseCastArgs(process.argv.slice(2), fallback);
   const protocols = await discoverCastProtocols({ protocolsDir: PROTOCOLS_DIR, config });
   const protocolsById = new Map(protocols.map(protocol => [protocol.id, protocol]));
   const plan = buildCastPlan(config, address, requested, protocolOverride);

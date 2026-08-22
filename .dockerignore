@@ -1,7 +1,14 @@
 .git
 .github
+.gitignore
 .env
+.env.*
+.npmrc
 castboard.config.json
-coverage
 node_modules
+coverage
 *.log
+*.pid
+*.key
+*.pem
+.DS_Store

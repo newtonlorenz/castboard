@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { demoTimestamp, readJsonSource } from '../../src/core/providers.js';
+import { demoTimestamp, readJsonSource, readTextFile, validateProviderConfig } from '../../src/core/providers.js';
 
 function parseMarkdown(markdown, source, prefix) {
   const sections = String(markdown).split(/^##\s+/m).slice(1);
@@ -12,6 +12,8 @@ function parseMarkdown(markdown, source, prefix) {
 }
 
 export function createPlugin({ config, context }) {
+  validateProviderConfig('news', config, ['demo', 'markdown-directory', 'http-json', 'file-json']);
+  if (config.provider === 'markdown-directory' && !config.path) throw new Error('Plugin news markdown-directory provider requires path');
   return {
     id: 'news',
     name: 'News and briefings',
@@ -29,7 +31,7 @@ export function createPlugin({ config, context }) {
         if (!config.path) throw new Error('markdown-directory provider requires path');
         const directory = path.resolve(context.configDir, config.path);
         const files = (await fs.readdir(directory)).filter(file => file.endsWith('.md')).sort().reverse().slice(0, config.maxFiles || 10);
-        const groups = await Promise.all(files.map(async file => parseMarkdown(await fs.readFile(path.join(directory, file), 'utf8'), file.replace(/\.md$/, ''), file)));
+        const groups = await Promise.all(files.map(async file => parseMarkdown(await readTextFile(path.join(directory, file)), file.replace(/\.md$/, ''), file)));
         return { stories: groups.flat(), updatedAt: demoTimestamp() };
       }
       return readJsonSource(config, context);

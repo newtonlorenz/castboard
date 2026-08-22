@@ -1,6 +1,7 @@
-import { demoTimestamp, readJsonSource } from '../../src/core/providers.js';
+import { demoTimestamp, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 export function createPlugin({ config, context }) {
+  validateProviderConfig('stocks', config, ['demo', 'http-json', 'file-json']);
   return {
     id: 'stocks',
     name: 'Stocks',

@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { expandEnvironment, publicAppConfig, validateConfig } from '../src/core/config.js';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { expandEnvironment, loadConfig, publicAppConfig, validateConfig } from '../src/core/config.js';
 
 test('environment references expand recursively', () => {
   const result = expandEnvironment({ url: '${BASE_URL}/feed', nested: ['${TOKEN}'] }, { BASE_URL: 'http://localhost', TOKEN: 'private' });
@@ -9,6 +12,16 @@ test('environment references expand recursively', () => {
 
 test('missing environment values fail closed', () => {
   assert.throws(() => expandEnvironment('${MISSING}', {}), /Missing environment variable: MISSING/);
+});
+
+test('an environment admin token enables authenticated container or LAN access', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'castboard-config-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const file = path.join(directory, 'config.json');
+  await fs.writeFile(file, JSON.stringify({ server: { port: 8787 }, admin: { allowLan: false }, screens: { home: { path: '/', panels: [] } }, plugins: {} }));
+  const { config, rawConfig } = loadConfig({ configPath: file, env: { CASTBOARD_ADMIN_TOKEN: 'container-secret' } });
+  assert.deepEqual(config.admin, { allowLan: true, enabled: true, token: 'container-secret' });
+  assert.equal(rawConfig.admin.token, undefined);
 });
 
 test('configuration validates screen and port boundaries', () => {
@@ -33,6 +46,14 @@ test('public configuration contains only explicit plugin output', () => {
   assert.equal(output.screens.home.panels[0].position.width, 2);
 });
 
+test('public plugin configuration must be a JSON-safe object', () => {
+  const config = { server: { port: 8787 }, screens: { home: { path: '/', panels: [] } }, plugins: {} };
+  assert.throws(() => publicAppConfig(config, [{ id: 'bad', name: 'Bad', publicConfig: () => 'not-an-object' }]), /must return a synchronous object/);
+  const circular = {};
+  circular.self = circular;
+  assert.throws(() => publicAppConfig(config, [{ id: 'bad', name: 'Bad', publicConfig: () => circular }]), /JSON-safe/);
+});
+
 test('base screen validation accepts many screen types and target protocols', () => {
   const base = { server: { port: 8787 }, plugins: {}, defaultScreen: 'one' };
   const screen = (path, type) => ({ path, type, layout: {}, panels: [], targets: [{ name: 'Display', protocol: 'url' }] });
@@ -44,6 +65,7 @@ test('admin and screen appearance settings validate safe boundaries', () => {
   const base = { server: { port: 8787 }, plugins: {}, defaultScreen: 'home', screens: { home: { path: '/', panels: [] } } };
   assert.doesNotThrow(() => validateConfig({ ...base, admin: { enabled: true, allowLan: false }, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', appearance: { fontFamily: 'mono', fontScale: 85, background: '#101010', padding: 6, shadow: 'none' } }], appearance: { background: '#07100f', accent: '#8ee6c2', textColor: '#f3faf7', mutedColor: '#91a49e', fontFamily: 'rounded', headingFontFamily: 'serif', fontScale: 120, radius: 48, panelPadding: 0, borderWidth: 1.5, shadow: 'deep' } } } }));
   assert.throws(() => validateConfig({ ...base, admin: { allowLan: true } }), /admin.token is required/);
+  assert.throws(() => validateConfig({ ...base, admin: { allowLan: true, token: 'too-short' } }), /at least 16 characters/);
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { background: 'red' } } } }), /must be a hex color/);
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { radius: 49 } } } }), /radius must be from 0 to 48/);
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [], appearance: { fontFamily: 'comic-sans' } } } }), /fontFamily must be/);

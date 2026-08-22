@@ -1,3 +1,5 @@
+import { escapeHtml, requestJson, schedule } from '/widget-kit.js';
+
 const dashboard = document.getElementById('dashboard');
 
 const FONT_STACKS = {
@@ -52,11 +54,10 @@ function visibleDesignSignature(config, screenId) {
 
 function watchDesign(config, screen) {
   const initialSignature = visibleDesignSignature(config, screen.id);
-  window.setInterval(async () => {
+  schedule(async () => {
     try {
-      const response = await fetch('/api/config', { cache: 'no-store' });
+      const { response, payload: latest } = await requestJson('/api/config', { cache: 'no-store' });
       if (!response.ok) return;
-      const latest = await response.json();
       const nextScreen = latest.screens[screen.id];
       if (!nextScreen) {
         const fallback = latest.screens[latest.defaultScreen] || Object.values(latest.screens)[0];
@@ -75,9 +76,8 @@ function watchDesign(config, screen) {
 }
 
 async function boot() {
-  const response = await fetch('/api/config', { cache: 'no-store' });
+  const { response, payload: config } = await requestJson('/api/config', { cache: 'no-store' });
   if (!response.ok) throw new Error('Unable to load Castboard configuration');
-  const config = await response.json();
   const requested = Object.values(config.screens).find(screen => screen.path === window.location.pathname);
   const screen = requested || config.screens[config.defaultScreen] || Object.values(config.screens)[0];
   if (!screen) throw new Error('No screen is configured');
@@ -113,7 +113,7 @@ async function boot() {
       if (typeof module.mount !== 'function') throw new Error('Widget does not export mount()');
       await module.mount({ element, config: { ...plugin.config, ...panel.options }, context, panel });
     } catch (error) {
-      element.innerHTML = `<div class="empty-state"><strong>${plugin.name}</strong><span>${error.message}</span></div>`;
+      element.innerHTML = `<div class="empty-state"><strong>${escapeHtml(plugin.name)}</strong><span>${escapeHtml(error.message)}</span></div>`;
       element.classList.add('widget-unavailable');
     }
   }));
@@ -121,5 +121,5 @@ async function boot() {
 }
 
 boot().catch(error => {
-  dashboard.innerHTML = `<div class="boot-state error"><strong>Castboard could not start</strong><span>${error.message}</span></div>`;
+  dashboard.innerHTML = `<div class="boot-state error"><strong>Castboard could not start</strong><span>${escapeHtml(error.message)}</span></div>`;
 });

@@ -13,6 +13,7 @@ The protocol is resolved in this order:
 5. `google-cast` fallback.
 
 Protocol configuration and target details remain server-side.
+Protocol references are resolved against the enabled registry before any target is contacted. Built-in network/process drivers also enforce a timeout (`timeoutMs`, default 10 seconds for webhooks and 60 seconds for `catt`).
 
 ## Built-in protocols
 
@@ -33,6 +34,7 @@ Prints the resolved LAN URL instead of transmitting it. This is useful for wall 
 
 ```sh
 npm run cast -- home --protocol url
+npm run cast -- --protocol url home
 ```
 
 ### `http-webhook`
@@ -71,3 +73,5 @@ export function createProtocol({ config }) {
 ```
 
 Add an enabled `casting.protocols.my-protocol` entry. Protocol drivers are trusted server-side code: do not install one you have not reviewed.
+
+If the server URL cannot be derived from the host's LAN interface, configure `server.publicUrl`; it becomes the base URL sent to every receiver.

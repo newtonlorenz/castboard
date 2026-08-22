@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { isIP } from 'node:net';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const BRANDING_FIELDS = ['name', 'subtitle', 'location', 'accent', 'timeZone'];
@@ -58,6 +59,22 @@ export function isLoopbackAddress(address = '') {
   return normalized === '127.0.0.1' || normalized === '::1';
 }
 
+export function isLocalAdminHost(host = '') {
+  try {
+    const hostname = new URL(`http://${host}`).hostname.toLowerCase();
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
+export function isAllowedApplicationHost(host = '', allowedHosts = []) {
+  let hostname;
+  try { hostname = new URL(`http://${host}`).hostname.toLowerCase().replace(/^\[|\]$/g, ''); } catch { return false; }
+  if (hostname === 'localhost' || isIP(hostname) || !hostname.includes('.') || hostname.endsWith('.local') || hostname.endsWith('.home.arpa')) return true;
+  return allowedHosts.some(item => String(item).toLowerCase() === hostname);
+}
+
 function secureEqual(left, right) {
   const a = Buffer.from(String(left));
   const b = Buffer.from(String(right));
@@ -66,7 +83,9 @@ function secureEqual(left, right) {
 
 export function authorizeAdmin(req, config) {
   if (config.admin?.enabled === false) return false;
-  if (isLoopbackAddress(req.socket?.remoteAddress)) return true;
+  // A loopback socket alone is not enough: a hostile DNS name can resolve to
+  // 127.0.0.1 and otherwise inherit passwordless local-admin access.
+  if (isLoopbackAddress(req.socket?.remoteAddress) && isLocalAdminHost(req.headers.host)) return true;
   if (config.admin?.allowLan !== true || !config.admin?.token) return false;
   const authorization = req.headers.authorization || '';
   return authorization.startsWith('Bearer ') && secureEqual(authorization.slice(7), config.admin.token);

@@ -20,7 +20,20 @@ export async function discoverCastProtocols({ protocolsDir, config, context = {}
     if (!protocol || protocol.id !== entry.name || !VALID_ID.test(protocol.id) || typeof protocol.cast !== 'function') {
       throw new Error(`Invalid cast protocol: ${entry.name}`);
     }
+    if (typeof protocol.name !== 'string' || !protocol.name.trim()) throw new Error(`Cast protocol ${entry.name} must provide a name`);
     protocols.push(protocol);
+  }
+  const enabled = new Set(protocols.map(protocol => protocol.id));
+  const references = [];
+  if (config.casting?.defaultProtocol) references.push(['casting.defaultProtocol', config.casting.defaultProtocol]);
+  for (const [screenId, screen] of Object.entries(config.screens || {})) {
+    if (screen.castProtocol) references.push([`screens.${screenId}.castProtocol`, screen.castProtocol]);
+    for (const [index, target] of (screen.targets || []).entries()) {
+      if (typeof target === 'object' && target.protocol) references.push([`screens.${screenId}.targets[${index}].protocol`, target.protocol]);
+    }
+  }
+  for (const [location, protocolId] of references) {
+    if (!enabled.has(protocolId)) throw new Error(`${location} references disabled or missing cast protocol: ${protocolId}`);
   }
   return protocols;
 }

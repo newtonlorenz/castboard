@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import { once } from 'node:events';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -10,13 +11,24 @@ import { loadConfig } from '../src/core/config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+function requestStatus(baseUrl, host) {
+  const target = new URL(baseUrl);
+  return new Promise((resolve, reject) => {
+    const request = http.get({ hostname: target.hostname, port: target.port, path: '/api/health', headers: { Host: host } }, response => {
+      response.resume();
+      response.once('end', () => resolve(response.statusCode));
+    });
+    request.once('error', reject);
+  });
+}
+
 async function fixture() {
   const config = {
     server: { host: '127.0.0.1', port: 8787 },
     branding: { name: 'Testboard', timeZone: 'UTC' },
     defaultScreen: 'clock-screen',
     screens: { 'clock-screen': { path: '/screens/clock', type: 'grid', targets: [{ name: 'Private clock display', device: 'clock-device' }], layout: { columns: 2, rows: 1 }, panels: [{ id: 'clock', plugin: 'clock', position: { column: 1, row: 1, width: 2, height: 1 } }] } },
-    plugins: { clock: { enabled: true, privateValue: 'never-public' } },
+    plugins: { clock: { enabled: true, privateValue: 'never-public' }, spotify: { enabled: true, provider: 'demo' } },
   };
   const app = await createApp({ loadedConfig: { config, configPath: '/tmp/test-config.json', configDir: '/tmp' }, logger: { error() {} } });
   app.server.listen(0, '127.0.0.1');
@@ -29,7 +41,7 @@ test('server exposes health, public config, and widget module', async t => {
   const app = await fixture();
   t.after(() => app.server.close());
   const health = await (await fetch(`${app.baseUrl}/api/health`)).json();
-  assert.deepEqual(health.plugins, ['clock']);
+  assert.deepEqual(health.plugins, ['clock', 'spotify']);
 
   const configResponse = await fetch(`${app.baseUrl}/api/config`);
   const config = await configResponse.json();
@@ -53,8 +65,12 @@ test('unknown and traversal-like routes do not expose files', async t => {
   const app = await fixture();
   t.after(() => app.server.close());
   assert.equal((await fetch(`${app.baseUrl}/package.json`)).status, 404);
+  assert.equal(await requestStatus(app.baseUrl, 'attacker.example'), 421);
   assert.equal((await fetch(`${app.baseUrl}/plugins/not-installed/widget.js`)).status, 404);
   assert.equal((await fetch(`${app.baseUrl}/api/plugins/clock/action`, { method: 'POST', body: '{}' })).status, 405);
+  assert.equal((await fetch(`${app.baseUrl}/api/plugins/spotify/action`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: '{"action":"toggle"}' })).status, 415);
+  const action = await fetch(`${app.baseUrl}/api/plugins/spotify/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"action":"toggle"}' });
+  assert.equal(action.status, 200);
 });
 
 test('admin studio exposes only the editable design catalog', async t => {
@@ -67,7 +83,7 @@ test('admin studio exposes only the editable design catalog', async t => {
   const payload = await response.json();
   const serialized = JSON.stringify(payload);
   assert.equal(payload.design.screens['clock-screen'].title, undefined);
-  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', name: 'Clock' }]);
+  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', name: 'Clock' }, { id: 'spotify', name: 'Spotify / media' }]);
   assert.equal(serialized.includes('never-public'), false);
   assert.equal(serialized.includes('Private clock display'), false);
   assert.equal(serialized.includes('clock-device'), false);

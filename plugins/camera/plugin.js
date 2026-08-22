@@ -1,11 +1,14 @@
-import { demoTimestamp, fetchJson, proxyStream } from '../../src/core/providers.js';
+import { demoTimestamp, fetchJson, proxyStream, validateProviderConfig } from '../../src/core/providers.js';
 
 export function createPlugin({ config }) {
+  validateProviderConfig('camera', config, ['demo', 'stream', 'camera-service']);
+  if (config.provider === 'stream' && !config.streamUrl) throw new Error('Plugin camera stream provider requires streamUrl');
+  if (config.provider === 'camera-service' && !config.baseUrl) throw new Error('Plugin camera camera-service provider requires baseUrl');
   let selectedCamera = null;
   async function resolveCamera() {
     if (config.provider !== 'camera-service') return null;
     const base = String(config.baseUrl).replace(/\/$/, '');
-    const payload = await fetchJson(`${base}${config.listPath || '/api/cameras'}`, { headers: config.headers || {} });
+    const payload = await fetchJson(`${base}${config.listPath || '/api/cameras'}`, { headers: config.headers || {} }, config.timeoutMs || 8000);
     const cameras = payload.cameras || payload.data || payload;
     const list = Array.isArray(cameras) ? cameras : [];
     selectedCamera = list.find(item => String(item.id) === String(config.preferredId)) || list[0];

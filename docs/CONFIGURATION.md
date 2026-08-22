@@ -22,6 +22,8 @@ Any string may include `${VARIABLE_NAME}`. Expansion happens before validation, 
 
 - `server.host`: use `0.0.0.0` so a Cast device can reach the service.
 - `server.port`: LAN port, from 1 to 65535.
+- `server.publicUrl`: optional `http(s)` base URL used in cast plans when auto-detecting a LAN address is unsuitable (reverse proxy, HTTPS, VLAN, or container routing).
+- `server.allowedHosts`: optional custom DNS hostnames accepted by the HTTP server. Direct IPs, localhost, single-label names, `.local`, `.home.arpa`, and the `publicUrl` hostname work automatically.
 - `branding.name`, `subtitle`, `location`, `accent`, `timeZone`: public display settings.
 - `defaultScreen`: screen shown at `/` when that path does not identify another configured screen.
 
@@ -40,6 +42,8 @@ To use it from another trusted device on the LAN, require an environment-backed 
 ```
 
 The token is entered when the studio opens and retained only in that browser tab. Do not enable LAN editing without a token, and do not expose the studio to the public internet.
+
+`CASTBOARD_ADMIN_TOKEN` is also a runtime override that enables token-protected LAN editing without placing the token in the JSON file. The Docker Compose setup uses this path because requests crossing the container network are not loopback requests. LAN tokens must contain at least 16 characters.
 
 ## Screens
 
@@ -103,6 +107,8 @@ A screen accent overrides the shared branding accent. Panels inherit the screen 
 
 `targets` stays server-side and accepts zero, one, or many structured targets. The screen's `castProtocol` is the default; a target's `protocol` overrides it. Run `npm run cast -- screen-id`, `npm run cast -- --all`, or temporarily override every selected target with `npm run cast -- screen-id --protocol url`.
 
+Protocol options may appear before or after the screen ID. Protocol and target `timeoutMs` settings must be positive. Every configured protocol reference is checked before casting begins.
+
 ### News panel views
 
 News is an ordinary plugin-backed panel. Its `options.view` may be:
@@ -150,6 +156,8 @@ The backend may override `actions.previous`, `actions.toggle`, `actions.next`, `
 ```
 
 The same `http-json` and `file-json` providers work for weather, solar, recovery, stocks, calendar, and news. Files resolve relative to the configuration file.
+
+Enabled first-party plugins validate their provider and required connection settings during startup. JSON, ICS, and Markdown provider bodies are limited to 1 MiB each, and HTTP timeouts cover both headers and body reads.
 
 ### Camera stream
 

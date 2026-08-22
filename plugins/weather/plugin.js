@@ -1,4 +1,4 @@
-import { demoTimestamp, readJsonSource } from '../../src/core/providers.js';
+import { demoTimestamp, fetchJson, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 const CONDITIONS = {
   0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 48: 'Freezing fog',
@@ -7,6 +7,8 @@ const CONDITIONS = {
 };
 
 export function createPlugin({ config, context }) {
+  validateProviderConfig('weather', config, ['demo', 'open-meteo', 'http-json', 'file-json']);
+  if (config.provider === 'open-meteo' && (!Number.isFinite(Number(config.latitude)) || !Number.isFinite(Number(config.longitude)))) throw new Error('Plugin weather open-meteo provider requires numeric latitude and longitude');
   return {
     id: 'weather',
     name: 'Weather',
@@ -19,9 +21,7 @@ export function createPlugin({ config, context }) {
         url.searchParams.set('longitude', config.longitude);
         url.searchParams.set('current', 'temperature_2m,weather_code,wind_speed_10m');
         url.searchParams.set('timezone', 'auto');
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Open-Meteo returned HTTP ${response.status}`);
-        const data = await response.json();
+        const data = await fetchJson(url, {}, config.timeoutMs || 10000);
         return { temperatureC: data.current?.temperature_2m, condition: CONDITIONS[data.current?.weather_code] || 'Unknown', code: data.current?.weather_code, windKph: data.current?.wind_speed_10m, label: config.label || data.timezone_abbreviation || '', updatedAt: data.current?.time || demoTimestamp() };
       }
       return readJsonSource(config, context);

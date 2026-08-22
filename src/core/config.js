@@ -51,6 +51,7 @@ export function validateConfig(config) {
   if (config.admin !== undefined) {
     assertObject(config.admin, 'admin');
     if (config.admin.allowLan === true && !config.admin.token) throw new Error('admin.token is required when admin.allowLan is true');
+    if (config.admin.allowLan === true && String(config.admin.token).length < 16) throw new Error('admin.token must be at least 16 characters when LAN access is enabled');
   }
   if (config.casting !== undefined) assertObject(config.casting, 'casting');
   if (config.casting?.protocols !== undefined) assertObject(config.casting.protocols, 'casting.protocols');
@@ -58,9 +59,18 @@ export function validateConfig(config) {
   for (const [protocolId, protocolConfig] of Object.entries(config.casting?.protocols || {})) {
     if (!/^[a-z][a-z0-9-]*$/.test(protocolId)) throw new Error(`Invalid cast protocol ID: ${protocolId}`);
     assertObject(protocolConfig, `casting.protocols.${protocolId}`);
+    if (protocolConfig.timeoutMs !== undefined && (!Number.isFinite(Number(protocolConfig.timeoutMs)) || Number(protocolConfig.timeoutMs) < 1)) throw new Error(`casting.protocols.${protocolId}.timeoutMs must be positive`);
   }
   const port = Number(config.server.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('server.port must be an integer from 1 to 65535');
+  if (config.server.allowedHosts !== undefined) {
+    if (!Array.isArray(config.server.allowedHosts) || config.server.allowedHosts.some(host => typeof host !== 'string' || !/^[a-z0-9.-]+$/i.test(host))) throw new Error('server.allowedHosts must be an array of hostnames without ports');
+  }
+  if (config.server.publicUrl !== undefined) {
+    let publicUrl;
+    try { publicUrl = new URL(config.server.publicUrl); } catch { throw new Error('server.publicUrl must be a valid http(s) URL'); }
+    if (!['http:', 'https:'].includes(publicUrl.protocol)) throw new Error('server.publicUrl must use http or https');
+  }
   const screenEntries = Object.entries(config.screens);
   if (!screenEntries.length) throw new Error('screens must contain at least one screen');
   const paths = new Set();
@@ -92,6 +102,7 @@ export function validateConfig(config) {
       if (!target || typeof target !== 'object' || Array.isArray(target)) throw new Error(`screens.${screenId}.targets[${index}] must be a string or object`);
       if (!target.name && !target.device && !target.endpoint) throw new Error(`screens.${screenId}.targets[${index}] requires name, device, or endpoint`);
       if (target.protocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(target.protocol)) throw new Error(`Invalid target protocol: ${target.protocol}`);
+      if (target.timeoutMs !== undefined && (!Number.isFinite(Number(target.timeoutMs)) || Number(target.timeoutMs) < 1)) throw new Error(`screens.${screenId}.targets[${index}].timeoutMs must be positive`);
     }
   }
   if (config.defaultScreen && !config.screens[config.defaultScreen]) throw new Error(`defaultScreen references an unknown screen: ${config.defaultScreen}`);
@@ -114,7 +125,11 @@ export function loadConfig({ cwd = process.cwd(), env = process.env, configPath 
   } catch (error) {
     throw new Error(`Unable to load configuration at ${filePath}: ${error.message}`);
   }
-  const config = validateConfig(expandEnvironment(raw, env));
+  const expanded = expandEnvironment(raw, env);
+  if (env.CASTBOARD_ADMIN_TOKEN) {
+    expanded.admin = { ...(expanded.admin || {}), enabled: true, allowLan: true, token: env.CASTBOARD_ADMIN_TOKEN };
+  }
+  const config = validateConfig(expanded);
   return { config, rawConfig: raw, configPath: filePath, configDir: path.dirname(filePath) };
 }
 
@@ -139,14 +154,20 @@ export function publicAppConfig(config, plugins, screenTypes = []) {
       panels: screen.panels,
     }])),
     screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, version: type.version || '1.0.0' })),
-    plugins: plugins.map(plugin => ({
-      id: plugin.id,
-      name: plugin.name,
-      version: plugin.version || '1.0.0',
-      hasData: typeof plugin.getData === 'function',
-      hasAction: typeof plugin.action === 'function',
-      hasStream: typeof plugin.stream === 'function',
-      config: typeof plugin.publicConfig === 'function' ? plugin.publicConfig() : {},
-    })),
+    plugins: plugins.map(plugin => {
+      const exposed = typeof plugin.publicConfig === 'function' ? plugin.publicConfig() : {};
+      if (!exposed || typeof exposed !== 'object' || Array.isArray(exposed) || typeof exposed.then === 'function') throw new Error(`Plugin ${plugin.id}.publicConfig() must return a synchronous object`);
+      let safeConfig;
+      try { safeConfig = JSON.parse(JSON.stringify(exposed)); } catch { throw new Error(`Plugin ${plugin.id}.publicConfig() must return JSON-safe data`); }
+      return {
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version || '1.0.0',
+        hasData: typeof plugin.getData === 'function',
+        hasAction: typeof plugin.action === 'function',
+        hasStream: typeof plugin.stream === 'function',
+        config: safeConfig,
+      };
+    }),
   };
 }

@@ -112,12 +112,20 @@ async function requestDesign(method = 'GET', payload) {
   const headers = {};
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
   if (payload) headers['Content-Type'] = 'application/json';
-  const response = await fetch('/api/admin/design', {
-    method,
-    headers,
-    cache: 'no-store',
-    body: payload ? JSON.stringify(payload) : undefined,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  let response;
+  try {
+    response = await fetch('/api/admin/design', {
+      method,
+      headers,
+      cache: 'no-store',
+      body: payload ? JSON.stringify(payload) : undefined,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(result.error?.message || `Request failed (${response.status})`);

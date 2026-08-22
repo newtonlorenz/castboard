@@ -7,7 +7,7 @@ import { expandEnvironment, loadConfig, publicAppConfig, validateConfig } from '
 import { discoverPlugins, pluginMap } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
-import { authorizeAdmin, configRevision, extractDesign, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
+import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -44,16 +44,22 @@ async function sendFile(res, filePath, cache = false) {
 
 async function readBody(req) {
   let raw = '';
+  let bytes = 0;
   for await (const chunk of req) {
+    bytes += chunk.length;
+    if (bytes > 512 * 1024) throw Object.assign(new Error('Request body exceeds 512 KiB'), { statusCode: 413, code: 'BODY_TOO_LARGE' });
     raw += chunk;
-    if (raw.length > 512 * 1024) throw new Error('Request body exceeds 512 KiB');
   }
   if (!raw) return {};
   try {
     return JSON.parse(raw);
   } catch {
-    throw new Error('Request body must be valid JSON');
+    throw Object.assign(new Error('Request body must be valid JSON'), { statusCode: 400, code: 'INVALID_JSON' });
   }
+}
+
+function acceptsJson(req) {
+  return String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json');
 }
 
 export async function createApp(options = {}) {
@@ -82,8 +88,18 @@ export async function createApp(options = {}) {
 
   const server = http.createServer(async (req, res) => {
     securityHeaders(res);
-    const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    let url;
     try {
+      try {
+        url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+      } catch {
+        return jsonResponse(res, 400, { error: { code: 'INVALID_REQUEST_TARGET', message: 'Request target is invalid' } });
+      }
+      const publicHostname = runtimeConfig.server.publicUrl ? new URL(runtimeConfig.server.publicUrl).hostname : null;
+      const allowedHosts = [...(runtimeConfig.server.allowedHosts || []), ...(publicHostname ? [publicHostname] : [])];
+      if (!isAllowedApplicationHost(req.headers.host, allowedHosts)) {
+        return jsonResponse(res, 421, { error: { code: 'HOST_NOT_ALLOWED', message: 'Request host is not allowed' } });
+      }
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
       }
@@ -92,7 +108,7 @@ export async function createApp(options = {}) {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Admin access requires localhost or an authorized LAN token' } });
         if (req.method === 'GET') return jsonResponse(res, 200, { ok: true, ...adminPayload() });
         if (req.method !== 'PUT') return jsonResponse(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Use GET or PUT' } });
-        if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Admin saves require application/json' } });
+        if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Admin saves require application/json' } });
         const body = await readBody(req);
         const currentRevision = configRevision(rawConfig);
         if (body.revision !== currentRevision) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'The configuration changed after this editor loaded. Reload before saving.' }, revision: currentRevision });
@@ -121,20 +137,28 @@ export async function createApp(options = {}) {
         const [, id, operation] = apiMatch;
         const plugin = byId.get(id);
         if (!plugin) return jsonResponse(res, 404, { error: { code: 'PLUGIN_NOT_FOUND', message: `Plugin not found: ${id}` } });
-        if (operation === 'data' && req.method === 'GET' && plugin.getData) {
-          return jsonResponse(res, 200, { ok: true, data: await plugin.getData({ url, req }) });
+        try {
+          if (operation === 'data' && req.method === 'GET' && plugin.getData) {
+            return jsonResponse(res, 200, { ok: true, data: await plugin.getData({ url, req }) });
+          }
+          if (operation === 'action' && req.method === 'POST' && plugin.action) {
+            if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Plugin actions require application/json' } });
+            return jsonResponse(res, 200, { ok: true, data: await plugin.action(await readBody(req), { url, req }) });
+          }
+          if (operation === 'stream' && req.method === 'GET' && plugin.stream) return await plugin.stream(req, res, { url });
+        } catch (error) {
+          if (error.statusCode) throw error;
+          context.logger.error(`[${req.method}] ${url.pathname}:`, error.message);
+          if (!res.headersSent) return jsonResponse(res, 502, { error: { code: 'PROVIDER_ERROR', message: `${plugin.name} provider is unavailable` } });
+          return res.destroy(error);
         }
-        if (operation === 'action' && req.method === 'POST' && plugin.action) {
-          return jsonResponse(res, 200, { ok: true, data: await plugin.action(await readBody(req), { url, req }) });
-        }
-        if (operation === 'stream' && req.method === 'GET' && plugin.stream) return plugin.stream(req, res, { url });
         return jsonResponse(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Operation is not supported by this plugin' } });
       }
 
       const widgetMatch = url.pathname.match(/^\/plugins\/([a-z][a-z0-9-]*)\/widget\.js$/);
       if (req.method === 'GET' && widgetMatch) {
         const plugin = byId.get(widgetMatch[1]);
-        if (!plugin) return jsonResponse(res, 404, { error: { code: 'PLUGIN_NOT_FOUND', message: 'Plugin not found' } });
+        if (!plugin || !plugin.hasWidget) return jsonResponse(res, 404, { error: { code: 'PLUGIN_NOT_FOUND', message: 'Plugin widget not found' } });
         return sendFile(res, path.join(plugin.directory, 'widget.js'), true);
       }
 
@@ -153,8 +177,9 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
       return jsonResponse(res, 404, { error: { code: 'NOT_FOUND', message: 'Route not found' } });
     } catch (error) {
-      context.logger.error(`[${req.method}] ${url.pathname}:`, error.message);
-      if (!res.headersSent) jsonResponse(res, 502, { error: { code: 'PROVIDER_ERROR', message: error.message } });
+      context.logger.error(`[${req.method}] ${url?.pathname || req.url || '/'}:`, error.message);
+      const status = error.statusCode || 502;
+      if (!res.headersSent) jsonResponse(res, status, { error: { code: error.code || 'PROVIDER_ERROR', message: error.message } });
       else res.destroy(error);
     }
   });

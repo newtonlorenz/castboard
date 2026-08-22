@@ -17,3 +17,11 @@ test('cast protocols are enabled and discovered from configuration', async () =>
     target: 'Tablet', url: 'http://castboard.local/', message: 'Open http://castboard.local/ on the target screen',
   });
 });
+
+test('configured delivery references must resolve to enabled protocols', async () => {
+  const config = {
+    casting: { protocols: { url: { enabled: true } }, defaultProtocol: 'missing' },
+    screens: { home: { path: '/', panels: [], targets: [] } },
+  };
+  await assert.rejects(discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config }), /defaultProtocol references disabled or missing/);
+});

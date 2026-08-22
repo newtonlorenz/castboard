@@ -7,6 +7,8 @@ import {
   authorizeAdmin,
   configRevision,
   extractDesign,
+  isAllowedApplicationHost,
+  isLocalAdminHost,
   mergeDesign,
   writableConfigPath,
   writeConfigAtomic,
@@ -66,14 +68,25 @@ test('revisions change with configuration content', () => {
 });
 
 test('admin access is local by default and token-protected on the LAN', () => {
-  const request = (address, authorization = '') => ({ socket: { remoteAddress: address }, headers: { authorization } });
+  const request = (address, authorization = '', host = 'localhost:8787') => ({ socket: { remoteAddress: address }, headers: { authorization, host } });
   assert.equal(authorizeAdmin(request('127.0.0.1'), { admin: {} }), true);
   assert.equal(authorizeAdmin(request('::ffff:127.0.0.1'), { admin: {} }), true);
+  assert.equal(authorizeAdmin(request('127.0.0.1', '', 'attacker.example'), { admin: {} }), false);
+  assert.equal(isLocalAdminHost('[::1]:8787'), true);
+  assert.equal(isLocalAdminHost('localhost.attacker.example'), false);
   assert.equal(authorizeAdmin(request('192.168.1.20'), { admin: {} }), false);
-  const config = { admin: { allowLan: true, token: 'correct-horse' } };
+  const config = { admin: { allowLan: true, token: 'correct-horse-battery' } };
   assert.equal(authorizeAdmin(request('192.168.1.20', 'Bearer wrong'), config), false);
-  assert.equal(authorizeAdmin(request('192.168.1.20', 'Bearer correct-horse'), config), true);
+  assert.equal(authorizeAdmin(request('192.168.1.20', 'Bearer correct-horse-battery'), config), true);
   assert.equal(authorizeAdmin(request('127.0.0.1'), { admin: { enabled: false } }), false);
+});
+
+test('application hosts reject public DNS rebinding names unless explicitly allowed', () => {
+  for (const host of ['localhost:8787', '127.0.0.1:8787', '[::1]:8787', 'castboard.local:8787', 'home-server:8787']) {
+    assert.equal(isAllowedApplicationHost(host), true, host);
+  }
+  assert.equal(isAllowedApplicationHost('attacker.example:8787'), false);
+  assert.equal(isAllowedApplicationHost('dashboard.example.test:8787', ['dashboard.example.test']), true);
 });
 
 test('example config saves to an ignored local config using an atomic write', async t => {

@@ -1,7 +1,9 @@
-import { demoTimestamp, fetchWithTimeout, readJsonSource } from '../../src/core/providers.js';
+import { demoTimestamp, fetchText, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 import { parseIcs } from '../../src/core/ics.js';
 
 export function createPlugin({ config, context }) {
+  validateProviderConfig('calendar', config, ['demo', 'ics', 'http-json', 'file-json']);
+  if (config.provider === 'ics' && !config.url) throw new Error('Plugin calendar ics provider requires url');
   return {
     id: 'calendar',
     name: 'Calendar',
@@ -14,9 +16,9 @@ export function createPlugin({ config, context }) {
       }
       if (config.provider === 'ics') {
         if (!config.url) throw new Error('ics provider requires url');
-        const response = await fetchWithTimeout(config.url, { headers: { Accept: 'text/calendar' } }, config.timeoutMs || 12000);
+        const { response, text } = await fetchText(config.url, { headers: { Accept: 'text/calendar' } }, config.timeoutMs || 12000);
         if (!response.ok) throw new Error(`Calendar provider returned HTTP ${response.status}`);
-        return { events: parseIcs(await response.text()), updatedAt: demoTimestamp() };
+        return { events: parseIcs(text), updatedAt: demoTimestamp() };
       }
       return readJsonSource(config, context);
     },

@@ -29,7 +29,7 @@ Docker is optional:
 docker compose up --build
 ```
 
-The supplied Compose service runs the demo as an unprivileged user. For a private configuration, mount it read-only at `/app/castboard.config.json`, set `CASTBOARD_CONFIG` to that path, and supply integration environment variables through your secret manager or an ignored `.env` file.
+The supplied Compose service runs as an unprivileged user and seeds an editable configuration into the persistent `castboard-data` volume on first start. Set `CASTBOARD_ADMIN_TOKEN` in an ignored `.env` file to unlock Studio through container/LAN networking, then enter that token in the browser. For a separately managed private configuration, mount it at `/data/castboard.config.json` and supply integration values through your secret manager.
 
 To cast a configured screen:
 

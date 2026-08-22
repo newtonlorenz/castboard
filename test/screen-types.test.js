@@ -24,4 +24,10 @@ test('grid and single screen-type validation rejects invalid layouts', async () 
   await assert.rejects(() => discoverScreenTypes({ screenTypesDir: path.join(ROOT, 'screen-types'), config: { screens: {
     bad: { type: 'single', panels: [basePanel, { ...basePanel, id: 'two' }] },
   } } }), /exactly one panel/);
+  await assert.rejects(() => discoverScreenTypes({ screenTypesDir: path.join(ROOT, 'screen-types'), config: { screens: {
+    bad: { type: 'grid', layout: { columns: 4, rows: 2 }, panels: [
+      { ...basePanel, position: { column: 1, row: 1, width: 2, height: 1 } },
+      { ...basePanel, id: 'two', position: { column: 2, row: 1, width: 2, height: 1 } },
+    ] },
+  } } }), /panels clock and two overlap/);
 });

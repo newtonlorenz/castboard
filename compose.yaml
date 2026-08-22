@@ -5,4 +5,9 @@ services:
     ports:
       - "8787:8787"
     environment:
-      CASTBOARD_CONFIG: /app/castboard.config.example.json
+      CASTBOARD_ADMIN_TOKEN: "${CASTBOARD_ADMIN_TOKEN:-}"
+    volumes:
+      - castboard-data:/data
+
+volumes:
+  castboard-data:
