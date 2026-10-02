@@ -58,12 +58,12 @@ export function parseCastArgs(argv, fallbackScreen) {
 }
 
 async function main() {
-  const { config } = loadConfig({ cwd: ROOT });
+  const { config, configDir } = loadConfig({ cwd: ROOT });
   const address = localAddress();
   if (!address) throw new Error('Unable to find a LAN IPv4 address');
   const fallback = config.defaultScreen || Object.keys(config.screens)[0];
   const { requested, protocolOverride } = parseCastArgs(process.argv.slice(2), fallback);
-  const protocols = await discoverCastProtocols({ protocolsDir: PROTOCOLS_DIR, config });
+  const protocols = await discoverCastProtocols({ protocolsDir: PROTOCOLS_DIR, config, context: { configDir } });
   const protocolsById = new Map(protocols.map(protocol => [protocol.id, protocol]));
   const plan = buildCastPlan(config, address, requested, protocolOverride);
   await Promise.all(plan.map(async item => {

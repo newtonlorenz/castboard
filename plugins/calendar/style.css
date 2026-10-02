@@ -1,0 +1,9 @@
+/* Calendar */
+.calendar-list { display: grid; gap: 5px; margin-top: 8px; }
+.calendar-event { display: grid; grid-template-columns: 42px 1fr; gap: 8px; align-items: center; min-width: 0; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.055); }
+.calendar-event time { color: var(--accent); font-size: .625em; }
+.calendar-event div { min-width: 0; }
+.calendar-event strong, .calendar-event span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.calendar-event strong { font-size: .6875em; }
+.calendar-event span { margin-top: 2px; color: var(--muted); font-size: .5em; }
+

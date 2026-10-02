@@ -6,6 +6,8 @@ export function createPlugin({ config, context }) {
   if (config.provider === 'ics' && !config.url) throw new Error('Plugin calendar ics provider requires url');
   return {
     id: 'calendar',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'Calendar',
     publicConfig: () => ({ title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),
     async getData() {

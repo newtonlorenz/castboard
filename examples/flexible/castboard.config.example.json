@@ -1,0 +1,102 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8788
+  },
+  "branding": {
+    "name": "Flexible example",
+    "timeZone": "UTC"
+  },
+  "extensions": {
+    "plugins": [
+      "extensions/plugins"
+    ],
+    "screenTypes": [
+      "extensions/screen-types"
+    ]
+  },
+  "plugins": {
+    "north": {
+      "type": "readings",
+      "value": 12,
+      "maximum": 100,
+      "cacheMs": 1000
+    },
+    "south": {
+      "type": "readings",
+      "value": 75,
+      "maximum": 100,
+      "cacheMs": 1000
+    },
+    "number": {
+      "type": "number-view"
+    },
+    "gauge": {
+      "type": "bar-view"
+    }
+  },
+  "screens": {
+    "home": {
+      "path": "/",
+      "type": "area-grid",
+      "layout": {
+        "areas": [
+          "first first second second",
+          "third third fourth fourth"
+        ],
+        "rows": [
+          1,
+          1
+        ],
+        "padding": 24,
+        "gap": 16
+      },
+      "panels": [
+        {
+          "id": "first",
+          "plugin": "number",
+          "source": "north",
+          "position": {
+            "area": "first"
+          },
+          "options": {
+            "label": "North \u00b7 number"
+          }
+        },
+        {
+          "id": "second",
+          "plugin": "gauge",
+          "source": "north",
+          "position": {
+            "area": "second"
+          },
+          "options": {
+            "label": "North \u00b7 gauge"
+          }
+        },
+        {
+          "id": "third",
+          "plugin": "number",
+          "source": "south",
+          "position": {
+            "area": "third"
+          },
+          "options": {
+            "label": "South \u00b7 number"
+          }
+        },
+        {
+          "id": "fourth",
+          "plugin": "gauge",
+          "source": "south",
+          "position": {
+            "area": "fourth"
+          },
+          "options": {
+            "label": "South \u00b7 gauge"
+          }
+        }
+      ]
+    }
+  }
+}

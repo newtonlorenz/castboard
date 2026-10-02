@@ -85,7 +85,11 @@ export function authorizeAdmin(req, config) {
   if (config.admin?.enabled === false) return false;
   // A loopback socket alone is not enough: a hostile DNS name can resolve to
   // 127.0.0.1 and otherwise inherit passwordless local-admin access.
-  if (isLoopbackAddress(req.socket?.remoteAddress) && isLocalAdminHost(req.headers.host)) return true;
+  const socketAddress = req.socket?.remoteAddress?.replace(/^::ffff:/, '');
+  const forwarded = req.headers['x-castboard-receiver'];
+  // A trusted proxy's remote receiver must not inherit its loopback privilege.
+  const address = config.server?.trustedProxyAddresses?.includes(socketAddress) && typeof forwarded === 'string' && isIP(forwarded) ? forwarded : socketAddress;
+  if (isLoopbackAddress(address) && isLocalAdminHost(req.headers.host)) return true;
   if (config.admin?.allowLan !== true || !config.admin?.token) return false;
   const authorization = req.headers.authorization || '';
   return authorization.startsWith('Bearer ') && secureEqual(authorization.slice(7), config.admin.token);

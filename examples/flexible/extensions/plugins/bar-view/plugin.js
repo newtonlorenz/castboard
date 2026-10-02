@@ -1,0 +1,1 @@
+export function createPlugin(){return {id:'bar-view',name:'Gauge',inputContract:'readings@1',assets:['style.css'],styles:['style.css'],optionSchema:{type:'object',properties:{label:{type:'string'},color:{type:'string'}}}};}

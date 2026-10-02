@@ -6,10 +6,10 @@ function money(value, currency) {
   return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'EUR', maximumFractionDigits: 0 }).format(number);
 }
 
-export function mount({ element, config }) {
+export function mount({ element, config, context }) {
   const load = async () => {
     try {
-      const data = await getPluginData('stocks');
+      const data = await context.data();
       const positions = (data.positions || []).slice(0, config.maxRows || 6);
       const change = Number(data.dailyChange);
       const watchlist = data.mode === 'watchlist' || config.mode === 'watchlist';
@@ -19,5 +19,5 @@ export function mount({ element, config }) {
       element.innerHTML = `${title(config.title || (watchlist ? 'Markets' : 'Portfolio'), data.updatedAt ? 'Updated' : '')}${summary}<table class="stocks-table"><tbody>${positions.map(item => `<tr><td><strong>${escapeHtml(item.symbol)}</strong><small>${escapeHtml(item.name || '')}</small></td><td>${formatNumber(item.price, 2)}</td>${watchlist ? '' : `<td>${money(item.value, item.currency || config.currency)}</td>`}<td class="change ${Number(item.changePct) < 0 ? 'negative' : ''}">${Number(item.changePct) >= 0 ? '+' : ''}${formatNumber(item.changePct, 1)}%</td></tr>`).join('')}</tbody></table>`;
     } catch (error) { unavailable(element, config.title || 'Portfolio', error); }
   };
-  schedule(load, 30000);
+  context.schedule(load, 30000);
 }

@@ -4,6 +4,8 @@ export function createPlugin({ config, context }) {
   validateProviderConfig('recovery', config, ['demo', 'http-json', 'file-json']);
   return {
     id: 'recovery',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'Recovery',
     publicConfig: () => ({ title: config.title || 'Recovery' }),
     async getData() {

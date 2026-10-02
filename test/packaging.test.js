@@ -20,3 +20,15 @@ test('Docker build context excludes local configuration and secret files', async
   assert.match(compose, /castboard-data:\/data/);
   assert.match(compose, /CASTBOARD_ADMIN_TOKEN/);
 });
+
+
+test('public flexible example starts from its publishable configuration',async t=>{
+ const {createApp}=await import('../src/server.js');
+ const app=await createApp({configPath:path.join(ROOT,'examples/flexible/castboard.config.example.json')});
+ t.after(()=>app.dispose());
+ assert.equal(app.plugins.find(p=>p.id==='north').type,'readings');
+ assert.equal((await app.plugins.find(p=>p.id==='north').getData()).value,12);
+ assert.equal((await app.plugins.find(p=>p.id==='south').getData()).value,75);
+ assert.equal(app.publicConfig.screens.home.panels.length,4);
+ assert.equal(app.screenTypes.some(type=>type.id==='area-grid'),true);
+});

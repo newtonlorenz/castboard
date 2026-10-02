@@ -9,5 +9,5 @@ export function mount({ element, config, context }) {
     element.innerHTML = `${title(context.app.branding.name, context.app.branding.location)}<div class="clock-time">${time}</div><div class="clock-date">${date}</div>`;
   };
   render();
-  setInterval(render, config.showSeconds ? 1000 : 15000);
+  context.schedule(render, config.showSeconds ? 1000 : 15000);
 }

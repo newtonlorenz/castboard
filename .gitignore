@@ -5,3 +5,16 @@ node_modules/
 coverage/
 *.log
 *.pid
+
+# Local credentials stay outside the public source tree.
+.env.*
+!.env.example
+.npmrc
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+service-account.json
+secrets.json
+secrets.yaml

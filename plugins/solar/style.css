@@ -1,0 +1,16 @@
+/* Solar */
+.solar-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+.solar-metric { min-width: 0; }
+.solar-metric strong { display: block; font-size: 1.0625em; letter-spacing: -.03em; }
+.solar-metric span { display: block; margin-top: 2px; color: var(--muted); font-size: .5625em; }
+.solar-flow { height: 2px; margin-top: 7px; overflow: hidden; border-radius: 2px; background: rgba(255,255,255,.06); }
+.solar-flow::after { content: ""; display: block; width: var(--solar-share, 60%); height: 100%; background: var(--accent); }
+
+@container (max-height: 90px) {
+  .widget-solar .widget-head { font-size: .5em; }
+  .solar-metrics { margin-top: 3px; }
+  .solar-metric strong { font-size: .75em; }
+  .solar-metric span { margin-top: 0; font-size: .4375em; }
+  .solar-flow { margin-top: 3px; }
+}
+

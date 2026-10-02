@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { isIP } from 'node:net';
+import { extensionMetadata } from './extensions.js';
 
 const ENV_PATTERN = /\$\{([A-Z_][A-Z0-9_]*)\}/g;
 
@@ -67,6 +69,16 @@ export function validateConfig(config) {
   assertObject(config.server, 'server');
   assertObject(config.screens, 'screens');
   assertObject(config.plugins, 'plugins');
+  if (config.extensions !== undefined) {
+    assertObject(config.extensions, 'extensions');
+    for (const kind of ['plugins', 'screenTypes', 'protocols']) if (config.extensions[kind] !== undefined && (!Array.isArray(config.extensions[kind]) || config.extensions[kind].some(root => typeof root !== 'string' || !root))) throw new Error(`extensions.${kind} must be an array of directories`);
+  }
+  for (const [id, plugin] of Object.entries(config.plugins)) {
+    assertObject(plugin, `plugins.${id}`);
+    if (plugin.type !== undefined && !/^[a-z][a-z0-9-]*$/.test(plugin.type)) throw new Error(`plugins.${id}.type must be an extension ID`);
+    if (plugin.bindings !== undefined && (!plugin.bindings || Object.values(plugin.bindings).some(value => typeof value !== 'string' || !/^[a-z][a-z0-9-]*$/.test(value)))) throw new Error(`plugins.${id}.bindings must reference instance IDs`);
+    if (plugin.cacheMs !== undefined && (!Number.isFinite(plugin.cacheMs) || plugin.cacheMs < 0)) throw new Error(`plugins.${id}.cacheMs must be nonnegative`);
+  }
   if (config.admin !== undefined) {
     assertObject(config.admin, 'admin');
     if (config.admin.allowLan === true && !config.admin.token) throw new Error('admin.token is required when admin.allowLan is true');
@@ -82,6 +94,7 @@ export function validateConfig(config) {
   }
   const port = Number(config.server.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('server.port must be an integer from 1 to 65535');
+  if (config.server.trustedProxyAddresses !== undefined && (!Array.isArray(config.server.trustedProxyAddresses) || config.server.trustedProxyAddresses.some(address => typeof address !== 'string' || !isIP(address)))) throw new Error('server.trustedProxyAddresses must be an array of IP addresses');
   if (config.server.allowedHosts !== undefined) {
     if (!Array.isArray(config.server.allowedHosts) || config.server.allowedHosts.some(host => typeof host !== 'string' || !/^[a-z0-9.-]+$/i.test(host))) throw new Error('server.allowedHosts must be an array of hostnames without ports');
   }
@@ -110,6 +123,8 @@ export function validateConfig(config) {
       if (!panel.id || panelIds.has(panel.id)) throw new Error(`screens.${screenId} panel IDs must be present and unique`);
       panelIds.add(panel.id);
       if (!panel.plugin) throw new Error(`screens.${screenId}.panels[${index}].plugin is required`);
+      if (panel.source !== undefined && !/^[a-z][a-z0-9-]*$/.test(panel.source)) throw new Error(`Panel ${panel.id} source must be an instance ID`);
+      if (panel.bindings !== undefined && (!panel.bindings || Object.values(panel.bindings).some(id => typeof id !== 'string' || !/^[a-z][a-z0-9-]*$/.test(id)))) throw new Error(`Panel ${panel.id} bindings must reference instance IDs`);
       if (panel.position !== undefined) assertObject(panel.position, `screens.${screenId}.panels[${index}].position`);
       if (panel.size !== undefined) assertObject(panel.size, `screens.${screenId}.panels[${index}].size`);
       if (panel.options !== undefined) {
@@ -122,7 +137,7 @@ export function validateConfig(config) {
     for (const [index, target] of (screen.targets || []).entries()) {
       if (typeof target === 'string' && target.trim()) continue;
       if (!target || typeof target !== 'object' || Array.isArray(target)) throw new Error(`screens.${screenId}.targets[${index}] must be a string or object`);
-      if (!target.name && !target.device && !target.endpoint) throw new Error(`screens.${screenId}.targets[${index}] requires name, device, or endpoint`);
+      if (!target.address && !target.name && !target.device && !target.endpoint) throw new Error(`screens.${screenId}.targets[${index}] requires address, name, device, or endpoint`);
       if (target.protocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(target.protocol)) throw new Error(`Invalid target protocol: ${target.protocol}`);
       if (target.timeoutMs !== undefined && (!Number.isFinite(Number(target.timeoutMs)) || Number(target.timeoutMs) < 1)) throw new Error(`screens.${screenId}.targets[${index}].timeoutMs must be positive`);
     }
@@ -178,7 +193,7 @@ export function publicAppConfig(config, plugins, screenTypes = []) {
       appearance: screen.appearance || {},
       panels: screen.panels,
     }])),
-    screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, version: type.version || '1.0.0' })),
+    screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, version: type.version || '1.0.0', ...extensionMetadata(type) })),
     plugins: plugins.map(plugin => {
       const exposed = typeof plugin.publicConfig === 'function' ? plugin.publicConfig() : {};
       if (!exposed || typeof exposed !== 'object' || Array.isArray(exposed) || typeof exposed.then === 'function') throw new Error(`Plugin ${plugin.id}.publicConfig() must return a synchronous object`);
@@ -186,12 +201,16 @@ export function publicAppConfig(config, plugins, screenTypes = []) {
       try { safeConfig = JSON.parse(JSON.stringify(exposed)); } catch { throw new Error(`Plugin ${plugin.id}.publicConfig() must return JSON-safe data`); }
       return {
         id: plugin.id,
+        type: plugin.type || plugin.id,
         name: plugin.name,
         version: plugin.version || '1.0.0',
         hasData: typeof plugin.getData === 'function',
         hasAction: typeof plugin.action === 'function',
         hasStream: typeof plugin.stream === 'function',
         config: safeConfig,
+        ...(plugin.styles?.length ? {styles: plugin.styles} : {}),
+        ...(Object.keys(plugin.bindings || {}).length ? { bindings: plugin.bindings } : {}),
+        ...extensionMetadata(plugin),
       };
     }),
   };

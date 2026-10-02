@@ -8,10 +8,10 @@ export function mount({ element, config, context }) {
   };
   const load = async () => {
     try {
-      const data = await getPluginData('calendar');
+      const data = await context.data();
       const events = (data.events || []).filter(event => !event.end || new Date(event.end).getTime() > Date.now()).slice(0, config.maxEvents || 5);
       element.innerHTML = `${title(config.title || 'Today', `${events.length} events`)}<div class="calendar-list">${events.length ? events.map(event => `<div class="calendar-event"><time>${formatTime(event.start)}</time><div><strong>${escapeHtml(event.title)}</strong><span>${escapeHtml(event.source || 'Calendar')}</span></div></div>`).join('') : '<div class="empty-state"><strong>Clear day</strong><span>No upcoming events</span></div>'}</div>`;
     } catch (error) { unavailable(element, config.title || 'Today', error); }
   };
-  schedule(load, 60000);
+  context.schedule(load, 60000);
 }

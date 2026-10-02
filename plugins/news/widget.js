@@ -1,6 +1,6 @@
 import { escapeHtml, getPluginData, markdownLite, schedule, title } from '/widget-kit.js';
 
-export function mount({ element, config }) {
+export function mount({ element, config, context }) {
   let index = 0;
   let stories = [];
   let category = 'All';
@@ -64,11 +64,12 @@ export function mount({ element, config }) {
     else renderCompact();
   };
   const load = async () => {
-    const data = await getPluginData('news');
+    const data = await context.data();
     stories = (data.stories || []).slice(0, config.maxStories || 40);
     index %= Math.max(1, stories.length);
     render();
   };
-  schedule(() => load().catch(render), 60000);
-  if (view === 'compact') setInterval(() => { if (stories.length) { index = (index + 1) % stories.length; render(); } }, (Number(config.rotationSeconds) || 12) * 1000);
+  context.schedule(() => load().catch(render), 60000);
+  context.onDispose(() => clearTimeout(rotationTimer));
+  if (view === 'compact') context.schedule(() => { if (stories.length) { index = (index + 1) % stories.length; render(); } }, (Number(config.rotationSeconds) || 12) * 1000);
 }

@@ -17,6 +17,8 @@ export function createPlugin({ config }) {
   }
   return {
     id: 'camera',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'Camera',
     publicConfig: () => ({ title: config.title || 'Camera', name: config.name || 'Camera' }),
     async getData() {

@@ -57,6 +57,8 @@ export function createPlugin({ config, context }) {
   }
   return {
     id: 'news',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'News and briefings',
     publicConfig: () => ({ title: config.title || 'Briefings', maxStories: config.maxStories || 40 }),
     async getData() {

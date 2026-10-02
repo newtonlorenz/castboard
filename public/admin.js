@@ -1,3 +1,5 @@
+import { schemaFields } from '/schema-fields.js';
+
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -254,6 +256,12 @@ function renderInspector() {
   for (const input of $$('[data-layout]')) input.value = screen.layout?.[input.dataset.layout] ?? '';
   $('#custom-layout').value = JSON.stringify(screen.layout || {}, null, 2);
   $('#custom-layout-error').textContent = '';
+  schemaFields($('#extension-layout-fields'), state.catalog.screenTypes.find(type => type.id === screen.type)?.layoutSchema, screen.layout || {}, (key, value) => {
+    screen.layout ||= {};
+    screen.layout[key] = value;
+    $('#custom-layout').value = JSON.stringify(screen.layout, null, 2);
+    markDirty('Layout changed'); renderCanvas();
+  });
 
   const appearance = screen.appearance || {};
   const fallbacks = {
@@ -287,11 +295,22 @@ function renderPanelInspector() {
 
   setInput('#panel-id', panel.id);
   setInput('#panel-plugin', panel.plugin);
+  const viewContract = state.catalog.plugins.find(plugin => plugin.id === panel.plugin)?.inputContract;
+  const sources = (state.catalog.sources || []).filter(source => !viewContract || source.contract === viewContract);
+  $('#panel-source').replaceChildren(...[{ id: '', name: 'Module default' }, ...sources].map(source => {
+    const option = document.createElement('option'); option.value = source.id; option.textContent = source.name; return option;
+  }));
+  setInput('#panel-source', panel.source || '');
   setInput('#panel-title', panel.options?.title || '');
   setInput('#panel-view', panel.options?.view || '');
   $('#panel-fit-content').checked = panel.options?.fitContent === true;
   $('#panel-options').value = JSON.stringify(panel.options || {}, null, 2);
   $('#options-error').textContent = '';
+  schemaFields($('#extension-option-fields'), state.catalog.plugins.find(plugin => plugin.id === panel.plugin)?.optionSchema, panel.options || {}, (key, value) => {
+    panel.options ||= {}; panel.options[key] = value;
+    $('#panel-options').value = JSON.stringify(panel.options, null, 2);
+    markDirty('Module options changed'); renderCanvas();
+  });
 
   $('#panel-geometry').hidden = screen.type === 'single';
   $('#grid-panel-fields').hidden = screen.type !== 'grid';
@@ -303,6 +322,11 @@ function renderPanelInspector() {
   $('#custom-position').value = JSON.stringify(panel.position || {}, null, 2);
   $('#custom-size').value = JSON.stringify(panel.size || {}, null, 2);
   $('#custom-panel-error').textContent = '';
+  const screenType = state.catalog.screenTypes.find(type => type.id === screen.type);
+  for (const key of ['position', 'size']) schemaFields($(`#extension-${key}-fields`), screenType?.[`${key}Schema`], panel[key] || {}, (field, value) => {
+    panel[key] ||= {}; panel[key][field] = value; $(`#custom-${key}`).value = JSON.stringify(panel[key], null, 2);
+    markDirty('Panel placement changed'); renderCanvas();
+  });
   renderPanelAppearance(panel, screen);
   const index = screen.panels.indexOf(panel);
   $('#panel-earlier').disabled = index <= 0;
@@ -1026,6 +1050,11 @@ function bindEvents() {
       $('#options-error').textContent = error.message;
     }
   });
+  $('#panel-source').addEventListener('change', () => {
+    if ($('#panel-source').value) currentPanel().source = $('#panel-source').value;
+    else delete currentPanel().source;
+    markDirty('Data source changed');
+  });
 
   $('#custom-layout').addEventListener('input', () => {
     try {
@@ -1046,6 +1075,11 @@ function bindEvents() {
         if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${field} must be a JSON object`);
         currentPanel()[field] = value;
         $('#custom-panel-error').textContent = '';
+  const screenType = state.catalog.screenTypes.find(type => type.id === screen.type);
+  for (const key of ['position', 'size']) schemaFields($(`#extension-${key}-fields`), screenType?.[`${key}Schema`], panel[key] || {}, (field, value) => {
+    panel[key] ||= {}; panel[key][field] = value; $(`#custom-${key}`).value = JSON.stringify(panel[key], null, 2);
+    markDirty('Panel placement changed'); renderCanvas();
+  });
         markDirty(`Custom panel ${field} changed · unsaved`);
       } catch (error) {
         $('#custom-panel-error').textContent = error.message;

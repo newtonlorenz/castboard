@@ -180,7 +180,7 @@ export function createPlugin({ config }) {
 }
 ```
 
-Castboard validates extension IDs and contracts during startup, serves only browser widgets, bounds provider payloads, and isolates refresh failures to the affected panel. Read [Writing a plugin](docs/PLUGINS.md) and the [canonical data contracts](docs/PLUGIN-CONTRACTS.md).
+Castboard validates extension IDs and contracts during startup, serves browser widgets and declared public assets, bounds provider payloads, and isolates refresh failures to the affected panel. Read [Writing a plugin](docs/PLUGINS.md) and the [canonical data contracts](docs/PLUGIN-CONTRACTS.md).
 
 ## Spotify with local speakers
 
@@ -299,3 +299,9 @@ If Castboard gives an old screen a new job, **star the project and show people w
 <p align="center">
   <sub>Built for calm screens, local data, and people who would rather own their dashboard.</sub>
 </p>
+
+### Bring your own dashboard
+
+Castboard can load external source, view, layout and delivery packages. Multiple configured instances can use one plugin definition, and several views can share one source. Modules own their CSS, schemas, data semantics and actions; the dashboard frame is independent of any particular design.
+
+See [extension contracts and lifecycle](docs/extensions.md) and [the flexible deployment example](examples/flexible/README.md). Private integrations and presets can live outside this repository.

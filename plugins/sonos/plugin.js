@@ -21,6 +21,8 @@ export function createPlugin({ config, context }) {
   const controllable = config.provider === 'demo' || config.provider === 'sonos-http';
   return {
     id: 'sonos',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'Sonos',
     publicConfig: () => ({ title: config.title || 'Sonos', controllable }),
     async getData() {

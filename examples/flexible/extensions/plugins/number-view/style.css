@@ -1,0 +1,2 @@
+.widget-number-view {display:flex;flex-direction:column;justify-content:center;gap:12px;text-align:center;background:#fff8e9;color:#22190a;border:0;border-radius:0;box-shadow:none}
+.widget-number-view strong {font:600 clamp(32px,6vw,80px) Georgia,serif}

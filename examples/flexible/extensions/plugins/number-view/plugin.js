@@ -1,0 +1,1 @@
+export function createPlugin(){return {id:'number-view',name:'Number',inputContract:'readings@1',assets:['style.css'],styles:['style.css'],optionSchema:{type:'object',properties:{label:{type:'string'},unit:{type:'string'},digits:{type:'integer',minimum:0,maximum:3}}}};}

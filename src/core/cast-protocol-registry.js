@@ -1,18 +1,19 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { extensionDirectories } from './extensions.js';
 
 const VALID_ID = /^[a-z][a-z0-9-]*$/;
 
 export async function discoverCastProtocols({ protocolsDir, config, context = {} }) {
   const configured = config.casting?.protocols || {};
-  const entries = await fs.readdir(protocolsDir, { withFileTypes: true });
+  const directories = await extensionDirectories(protocolsDir, config, 'protocols', context.configDir);
   const protocols = [];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory() || !VALID_ID.test(entry.name)) continue;
+  for (const [id, directory] of directories) {
+    const entry = { name: id };
     const protocolConfig = configured[entry.name];
     if (!protocolConfig || protocolConfig.enabled === false) continue;
-    const modulePath = path.join(protocolsDir, entry.name, 'protocol.js');
+    const modulePath = path.join(directory, 'protocol.js');
     try { await fs.access(modulePath); } catch { continue; }
     const module = await import(pathToFileURL(modulePath));
     if (typeof module.createProtocol !== 'function') throw new Error(`Cast protocol ${entry.name} must export createProtocol()`);

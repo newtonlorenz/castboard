@@ -8,6 +8,8 @@ export function createPlugin({ config, context }) {
   if (config.provider === 'fronius' && !config.baseUrl) throw new Error('Plugin solar fronius provider requires baseUrl');
   return {
     id: 'solar',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'Solar',
     publicConfig: () => ({ title: config.title || 'Solar' }),
     async getData() {

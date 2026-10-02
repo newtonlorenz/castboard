@@ -101,3 +101,17 @@ test('example config saves to an ignored local config using an atomic write', as
   assert.equal((await fs.stat(target)).mode & 0o777, 0o600);
   assert.deepEqual((await fs.readdir(directory)).sort(), ['castboard.config.json']);
 });
+
+
+test('trusted proxy receivers do not inherit local administrator privileges',()=>{
+ const config={server:{trustedProxyAddresses:['127.0.0.1']},admin:{allowLan:true,token:'correct-horse-battery'}};
+ const req={socket:{remoteAddress:'127.0.0.1'},headers:{host:'localhost','x-castboard-receiver':'192.0.2.20'}};
+ assert.equal(authorizeAdmin(req,config),false);
+ req.headers.authorization='Bearer correct-horse-battery';
+ assert.equal(authorizeAdmin(req,config),true);
+ delete req.headers.authorization;
+ req.headers['x-castboard-receiver']='127.0.0.1';
+ assert.equal(authorizeAdmin(req,config),true);
+ req.socket.remoteAddress='192.0.2.20';
+ assert.equal(authorizeAdmin(req,config),false);
+});

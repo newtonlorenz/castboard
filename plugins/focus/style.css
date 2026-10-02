@@ -1,0 +1,9 @@
+/* Focus */
+.widget-focus { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 12px; align-items: center; padding: 9px 14px; }
+.focus-kicker { color: var(--accent); font-size: .625em; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.focus-value { min-width: 0; font-size: .875em; font-weight: 680; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.focus-meta { color: var(--muted); font-size: .6875em; white-space: nowrap; }
+.focus-divider { width: 1px; height: 30px; background: var(--line); }
+
+
+@media (max-width:800px){.focus-meta{display:none}}

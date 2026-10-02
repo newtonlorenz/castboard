@@ -30,10 +30,10 @@ The companion widget exports `mount()`:
 
 ```js
 // plugins/air-quality/widget.js
-import { escapeHtml, getPluginData, title } from '/widget-kit.js';
+import { escapeHtml, title } from '/widget-kit.js';
 
 export async function mount({ element, config, context }) {
-  const data = await getPluginData('air-quality');
+  const data = await context.data();
   element.innerHTML = `${title(config.title)}<strong>${escapeHtml(data.aqi)} · ${escapeHtml(data.label)}</strong>`;
 }
 ```
@@ -42,10 +42,12 @@ Add the plugin to `plugins` and place it in any screen's `panels` with an explic
 
 ## Lifecycle and error behavior
 
-- `createPlugin()` runs once during startup and may validate settings or prepare a client.
-- `getData()` runs for each standardized data request.
+- `createPlugin()` runs once per configured instance during startup and may validate settings or prepare a client.
+- `getData()` runs for standardized data requests; in-flight requests may be shared and optional `cacheMs` reuses successful reads.
 - `action()` must allowlist actions and validate its payload.
 - `stream()` owns the response lifecycle.
 - Throw an `Error` with a non-sensitive message for upstream failure. The core converts it to a structured provider error.
 - Widgets should use `unavailable()` and continue refreshing after transient failure. The shared `schedule()` helper prevents overlapping refreshes when a provider is slow.
 - Use the bounded helpers in `src/core/providers.js` for remote or file-backed data. Do not call unbounded `response.text()`/`response.json()` for provider payloads.
+
+For external packages, independently configured instances, separate sources and views, schema-driven options, declared assets and managed cleanup, see [extension contracts and lifecycle](extensions.md).

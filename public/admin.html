@@ -110,6 +110,7 @@
           <div id="single-layout-fields" hidden>
             <label class="field"><span>Padding</span><input type="number" min="0" max="64" data-layout="padding"></label>
           </div>
+          <div id="extension-layout-fields" class="field-grid" hidden></div>
           <div id="custom-layout-fields" hidden>
             <label class="field"><span>Custom layout · JSON</span><textarea id="custom-layout" rows="7" spellcheck="false"></textarea></label>
             <p id="custom-layout-error" class="field-error" role="alert"></p>
@@ -178,6 +179,8 @@
           <span>□</span><strong>No panel selected</strong><p>Select a panel on the canvas or add one from the library.</p>
         </div>
         <div id="panel-fields" hidden>
+          <label class="field"><span>Data source</span><select id="panel-source"></select></label>
+          <div id="extension-option-fields" class="field-grid" hidden></div>
           <section>
             <span class="eyebrow">Panel</span>
             <label class="field"><span>Panel ID</span><input id="panel-id" data-panel="id" autocomplete="off"></label>
@@ -204,6 +207,8 @@
               <button id="panel-later" class="button secondary" type="button">Move later</button>
             </div>
             <div id="custom-panel-fields" hidden>
+              <div id="extension-position-fields" class="field-grid" hidden></div>
+              <div id="extension-size-fields" class="field-grid" hidden></div>
               <label class="field"><span>Position · JSON</span><textarea id="custom-position" rows="5" spellcheck="false"></textarea></label>
               <label class="field"><span>Size · JSON</span><textarea id="custom-size" rows="5" spellcheck="false"></textarea></label>
               <p id="custom-panel-error" class="field-error" role="alert"></p>

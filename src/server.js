@@ -2,13 +2,15 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isIP } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { environmentWithDotEnv, expandEnvironment, loadConfig, publicAppConfig, validateConfig } from './core/config.js';
-import { discoverPlugins, pluginMap } from './core/plugin-registry.js';
+import { discoverPlugins, pluginMap, validatePanels } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
 import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
 import { buildSetupReport, discoverCastDevices, testPluginConnection } from './core/setup.js';
+import { publicAsset, extensionMetadata, validateSchema } from './core/extensions.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -24,13 +26,16 @@ const CONTENT_TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
+  '.webp': 'image/webp',
 };
 
 function securityHeaders(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; media-src 'self'; frame-ancestors 'self'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; media-src 'self'; frame-src 'self'; frame-ancestors 'self'");
 }
 
 async function sendFile(res, filePath, cache = false) {
@@ -71,10 +76,41 @@ export async function createApp(options = {}) {
   let runtimeConfig = loaded.config;
   let rawConfig = loaded.rawConfig || JSON.parse(JSON.stringify(loaded.config));
   let configPath = loaded.configPath;
-  let screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: runtimeConfig });
+  let screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: runtimeConfig, configDir: loaded.configDir });
   let screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
+  let byId = new Map();
+  const reads = new Map();
+  const screenRequests = Object.create(null);
+  const clients = new Map();
+  function clientAddress(req) {
+    const socket=req.socket.remoteAddress?.replace(/^::ffff:/,'');
+    const forwarded=req.headers['x-castboard-receiver'];
+    return runtimeConfig.server.trustedProxyAddresses?.includes(socket) && typeof forwarded==='string' && isIP(forwarded) ? forwarded : req.socket.remoteAddress;
+  }
+  context.getPlugin = id => byId.get(id);
+  context.read = async (id, request = {}) => {
+    const plugin = byId.get(id);
+    if (!plugin?.getData) throw new Error(`Source is unavailable: ${id}`);
+    const key = `${id}:${request.url?.search || ''}`;
+    const entry = reads.get(key) || {};
+    if (entry.pending) return entry.pending;
+    const cacheMs = runtimeConfig.plugins[id]?.cacheMs || 0;
+    if (cacheMs && entry.expiresAt > Date.now()) return entry.value;
+    entry.pending = Promise.resolve().then(() => plugin.getData(request)).then(value => {
+      validateSchema(value, plugin.dataSchema, `Plugin ${id} data`);
+      entry.value = value;
+      entry.expiresAt = Date.now() + cacheMs;
+      return value;
+    }).finally(() => { entry.pending = null; });
+    if (reads.size >= 256 && !reads.has(key)) reads.delete(reads.keys().next().value);
+    reads.set(key, entry);
+    return entry.pending;
+  };
   const plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
-  const byId = pluginMap(plugins);
+  byId = pluginMap(plugins);
+  let disposed = false;
+  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
+
   let publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
 
   function adminPayload() {
@@ -82,8 +118,9 @@ export async function createApp(options = {}) {
       revision: configRevision(rawConfig),
       design: extractDesign(rawConfig),
       catalog: {
-        plugins: plugins.map(plugin => ({ id: plugin.id, name: plugin.name })),
-        screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name })),
+        plugins: plugins.filter(plugin => plugin.hasWidget).map(plugin => ({ id: plugin.id, name: plugin.name, ...extensionMetadata(plugin) })),
+        sources: plugins.filter(plugin => plugin.getData).map(plugin => ({ id: plugin.id, name: plugin.name, ...extensionMetadata(plugin) })),
+        screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, ...extensionMetadata(type) })),
       },
     };
   }
@@ -105,7 +142,21 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
       }
-      if (req.method === 'GET' && url.pathname === '/api/config') return jsonResponse(res, 200, publicConfig);
+      if (req.method === 'GET' && url.pathname === '/api/admin/health') {
+        if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, {error:{code:'ADMIN_FORBIDDEN',message:'Diagnostics require admin access'}});
+        return jsonResponse(res,200,{ok:true,screenRequests,clients:[...clients.values()]});
+      }
+      if (url.pathname === '/api/client-status' && req.method === 'POST') {
+        if (!acceptsJson(req)) return jsonResponse(res,415,{error:{code:'CONTENT_TYPE',message:'Status requires JSON'}});
+        const body=await readBody(req);
+        if(!Object.hasOwn(runtimeConfig.screens,body.screenId) || !Array.isArray(body.panels) || body.panels.length>100) return jsonResponse(res,422,{error:{code:'INVALID_STATUS',message:'Invalid screen status'}});
+        const remoteAddress=clientAddress(req);
+        const key=`${remoteAddress}:${body.screenId}`;
+        if(clients.size>=128&&!clients.has(key))clients.delete(clients.keys().next().value);
+        clients.set(key,{screenId:body.screenId,remoteAddress,lastSeenAt:new Date().toISOString(),panels:body.panels.map(panel=>({id:String(panel.id).slice(0,80),state:['live','stale','unavailable','loading'].includes(panel.state)?panel.state:'loading'}))});
+        return jsonResponse(res,200,{ok:true});
+      }
+      if (req.method === 'GET' && ['/api/config','/api/runtime-config'].includes(url.pathname)) return jsonResponse(res, 200, publicConfig);
       if (url.pathname.startsWith('/api/admin/setup')) {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Setup access requires localhost or an authorized LAN token' } });
         if (req.method === 'GET' && url.pathname === '/api/admin/setup') return jsonResponse(res, 200, { ok: true, ...(await buildSetupReport({ config: runtimeConfig, configPath, plugins })) });
@@ -128,8 +179,9 @@ export async function createApp(options = {}) {
         try {
           const nextRaw = mergeDesign(rawConfig, body.design);
           const nextConfig = validateConfig(expandEnvironment(nextRaw, runtimeEnv));
-          const nextScreenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig });
-          await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: nextConfig, context });
+          const nextScreenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
+          // Design saves must not recreate integration clients or their state.
+          validatePanels(nextConfig, plugins);
           const nextPath = writableConfigPath(configPath, path.dirname(configPath));
           await writeConfigAtomic(nextPath, nextRaw);
           rawConfig = nextRaw;
@@ -152,11 +204,20 @@ export async function createApp(options = {}) {
         if (!plugin) return jsonResponse(res, 404, { error: { code: 'PLUGIN_NOT_FOUND', message: `Plugin not found: ${id}` } });
         try {
           if (operation === 'data' && req.method === 'GET' && plugin.getData) {
-            return jsonResponse(res, 200, { ok: true, data: await plugin.getData({ url, req }) });
+            return jsonResponse(res, 200, { ok: true, data: await context.read(id, { url, req }) });
           }
           if (operation === 'action' && req.method === 'POST' && plugin.action) {
             if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Plugin actions require application/json' } });
-            return jsonResponse(res, 200, { ok: true, data: await plugin.action(await readBody(req), { url, req }) });
+            const body = await readBody(req);
+            if (plugin.actionSchemas) {
+              // Inherited object properties are not declared action names.
+              if (!body || typeof body.action !== 'string' || !Object.hasOwn(plugin.actionSchemas, body.action)) throw Object.assign(new Error('Unsupported action'), { statusCode: 422 });
+              const schema = plugin.actionSchemas[body.action];
+              try { validateSchema(body, schema, `Action ${body.action}`); } catch (error) { error.statusCode = 422; throw error; }
+            }
+            const result = await plugin.action(body, { url, req });
+            for (const key of reads.keys()) if (key.startsWith(`${id}:`)) reads.delete(key);
+            return jsonResponse(res, 200, { ok: true, data: result });
           }
           if (operation === 'stream' && req.method === 'GET' && plugin.stream) return await plugin.stream(req, res, { url });
         } catch (error) {
@@ -166,6 +227,15 @@ export async function createApp(options = {}) {
           return res.destroy(error);
         }
         return jsonResponse(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Operation is not supported by this plugin' } });
+      }
+
+      const assetMatch = url.pathname.match(/^\/(plugins|screen-types)\/([a-z][a-z0-9-]*)\/assets\/(.+)$/);
+      if (req.method === 'GET' && assetMatch) {
+        const extension = assetMatch[1] === 'plugins' ? byId.get(assetMatch[2]) : screenTypesById.get(assetMatch[2]);
+        let file;
+        try { file = extension && await publicAsset(extension, decodeURIComponent(assetMatch[3])); } catch {}
+        if (!file) return jsonResponse(res, 404, { error: { code: 'ASSET_NOT_FOUND', message: 'Extension asset not found' } });
+        return sendFile(res, file, true);
       }
 
       const widgetMatch = url.pathname.match(/^\/plugins\/([a-z][a-z0-9-]*)\/widget\.js$/);
@@ -187,11 +257,18 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
       if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
-      if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+      if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) {
+        const screen = Object.entries(publicConfig.screens).find(([,screen])=>screen.path===url.pathname)?.[0] || publicConfig.defaultScreen;
+        const entry=screenRequests[screen] ||= {count:0}; entry.count += 1; entry.lastRequestAt=new Date().toISOString(); entry.remoteAddress=clientAddress(req);
+        return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+      }
       if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
+      if (req.method === 'GET' && url.pathname === '/schema-fields.js') return sendFile(res, path.join(PUBLIC_DIR, 'schema-fields.js'), true);
       if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
       if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.png') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.png'), true);
       if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.svg') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.svg'), true);
+      // Trusted extension handlers cannot intercept core administration/code.
+      for (const plugin of plugins) if (plugin.handleRequest && await plugin.handleRequest(req, res, { url })) return;
       return jsonResponse(res, 404, { error: { code: 'NOT_FOUND', message: 'Route not found' } });
     } catch (error) {
       context.logger.error(`[${req.method}] ${url?.pathname || req.url || '/'}:`, error.message);
@@ -201,12 +278,14 @@ export async function createApp(options = {}) {
     }
   });
 
+  server.once('close', () => { void dispose(); });
   return {
     server,
     get config() { return runtimeConfig; },
     get rawConfig() { return rawConfig; },
     get configPath() { return configPath; },
     plugins,
+    dispose,
     get screenTypes() { return screenTypes; },
     get publicConfig() { return publicConfig; },
   };
@@ -227,7 +306,10 @@ export async function start(options = {}) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  start().catch(error => {
+  start().then(app => {
+    const shutdown = () => { app.server.close(); app.server.closeAllConnections(); void app.dispose(); };
+    process.once('SIGTERM', shutdown); process.once('SIGINT', shutdown);
+  }).catch(error => {
     console.error(error.message);
     process.exitCode = 1;
   });

@@ -19,7 +19,7 @@ Protocol references are resolved against the enabled registry before any target 
 
 ### `google-cast`
 
-Uses `catt cast_site` and requires a `device` or `name` on the target.
+Uses `catt cast_site` and requires an `address`, `device` or `name` on the target. A saved `address` takes precedence, with fallback to the friendly device/name on failure.
 
 Install it with `pipx install catt`. `/setup` can run `catt scan --json-output` and produce copy-ready target JSON; the starter configuration contains no placeholder receivers that could be mistaken for real devices.
 
@@ -77,3 +77,7 @@ export function createProtocol({ config }) {
 Add an enabled `casting.protocols.my-protocol` entry. Protocol drivers are trusted server-side code: do not install one you have not reviewed.
 
 If the server URL cannot be derived from the host's LAN interface, configure `server.publicUrl`; it becomes the base URL sent to every receiver.
+
+Google Cast accepts `attempts` on the target or protocol configuration (default 2, capped at 5). Set `resetBeforeCast:true` only for receivers that retain stale DashCast sessions; `resetDelayMs` defaults to 3000 and is capped at 10000 milliseconds. `CATT_BIN` overrides the configured executable. These settings affect delivery only, and do not change a screen’s layout or data providers.
+
+External drivers can be loaded from `extensions.protocols` roots relative to the configuration file; see [extension loading](extensions.md).

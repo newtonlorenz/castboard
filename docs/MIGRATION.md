@@ -1,56 +1,12 @@
-# Migration from Mission Control
+# Migrating an existing dashboard
 
-The original system should remain in place until Castboard has run beside it for several days. The new repository does not import or modify any live file.
+1. Capture the current modules, visual layout, endpoint callers, mutations, source semantics and restart behavior. Preserve the old files and serving configuration as a rollback reference.
+2. Package integrations as external sources. Preserve calculations and source-specific timezone handling with fixed fixtures. Use explicit versioned contracts; keep credentials and private configuration outside Castboard.
+3. Package independent views and theme assets. Select sources and bindings per panel. Use custom screen types where the original layout needs them. Treat a full-screen application as another view, not a special core dashboard mode.
+4. Run the candidate separately. Test first-party demo mode without private packages, independently configured instances, shared sources, editor validation, styles/assets and cleanup. Compare the old and new views against the same fixtures.
+5. Verify controls, dialogs, streaming/range seeking, failure recovery and restart behavior. A healthy HTTP endpoint alone does not prove receiver rendering or mutation success.
+6. Pilot one display at a time. Confirm it requests the candidate, sends healthy panel heartbeats and preserves its controls. Rehearse restoring the old URL. Keep independent collectors and integration services running.
+7. Observe for at least seven days. Retain the old serving stack and route compatibility while auditing callers. Distinguish inherited upstream outages from regressions, and roll back affected screens when the candidate repeatedly fails.
+8. After the observation and consumer gates pass, replace old API serving with the integration package's compatibility facade. Retain an archived rollback reference. The old dashboard process must no longer be required by sources or views.
 
-## Module map
-
-| Original module | Castboard plugin | Suggested provider |
-| --- | --- | --- |
-| Mission clock and location | `clock` | Browser-local |
-| Calendar/WHOOP focus lane | `focus` | Composes `calendar` + `recovery` |
-| Open-Meteo weather | `weather` | `open-meteo` |
-| Fronius power flow | `solar` | `fronius` |
-| WHOOP fetch script/cache | `recovery` | A small canonical JSON file or HTTP collector |
-| Spotify playback | `spotify` | `spotify-player` CLI |
-| Sonos room control | `sonos` | `sonos-http` bridge |
-| IBKR/crypto merged holdings | `stocks` | Canonical `file-json` produced by the existing collector |
-| Merged caches + ICS bridge | `calendar` | Prefer a single `ics` bridge; use canonical JSON if source labels must be preserved |
-| Camera discovery/MJPEG service | `camera` | `camera-service` |
-| Daily vault Markdown briefs | `news` | `markdown-directory` initially; canonical JSON for categories and full metadata |
-| Office Wire screen | Full-grid panel | `news` plugin with `view: "wire"` |
-
-## Recommended adapter phase
-
-Keep the existing collectors that already authenticate to IBKR, WHOOP, calendars, Sonos, and the camera vendor. Change their final output to the canonical contracts instead of moving credentials into Castboard. Spotify can instead move to the independent `spotify_player` CLI after it has been installed and authenticated on the host. This sharply reduces the initial migration risk.
-
-Example private configuration (values intentionally generic):
-
-```json
-{
-  "plugins": {
-    "weather": { "enabled": true, "provider": "open-meteo", "latitude": 0, "longitude": 0, "label": "Home" },
-    "solar": { "enabled": true, "provider": "fronius", "baseUrl": "${FRONIUS_URL}" },
-    "recovery": { "enabled": true, "provider": "file-json", "path": "../private/recovery.json" },
-    "spotify": { "enabled": true, "provider": "spotify-player", "executable": "spotify_player" },
-    "sonos": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_API_URL}" },
-    "stocks": { "enabled": true, "provider": "file-json", "path": "../private/portfolio.json", "currency": "EUR" },
-    "calendar": { "enabled": true, "provider": "ics", "url": "${CALENDAR_ICS_URL}" },
-    "camera": { "enabled": true, "provider": "camera-service", "baseUrl": "${CAMERA_SERVICE_URL}", "preferredId": "${CAMERA_ID}" },
-    "news": { "enabled": true, "provider": "markdown-directory", "path": "../private/briefings" }
-  }
-}
-```
-
-## Cutover checklist
-
-1. Copy the example config to the ignored private config and enable one real provider at a time.
-2. Compare every provider response with `docs/PLUGIN-CONTRACTS.md`; normalize in the collector if it contains account- or vendor-specific fields.
-3. Test every configured screen route in ordinary browsers at the exact display viewports.
-4. Run the server on a stable LAN address and confirm both displays can load `/api/health`.
-5. Cast each screen manually with `npm run cast -- <screen>`.
-6. Observe provider failures, stream recycling, and media actions for several days.
-7. Only then replace the old startup job. Keep the old system available for rollback through the first release.
-
-## Intentionally not migrated
-
-Apple Reminders, Super Productivity task mutation, system-health/webhook signals, trading theses, and World Monitor launch behavior were present in the backend but not essential to the two current display compositions. They are better added later as independent plugins rather than retained as dormant core routes.
+A migration is complete when the deployment uses Castboard as its frame, every current capability is retained, and the old monolith is no longer a required runtime dependency. Waiting periods, unavailable upstream services and physical receiver verification should be reported explicitly rather than marked complete from unit tests.

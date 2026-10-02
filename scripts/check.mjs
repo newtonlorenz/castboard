@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const directories = ['src', 'public', 'plugins', 'scripts', 'test'];
+const directories = ['src', 'public', 'plugins', 'screen-types', 'cast-protocols', 'scripts', 'test', 'examples'];
 
 function javascriptFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {

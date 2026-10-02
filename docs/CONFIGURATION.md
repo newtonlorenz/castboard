@@ -23,6 +23,7 @@ Any string may include `${VARIABLE_NAME}`. Castboard loads an optional ignored `
 - `server.host`: use `0.0.0.0` so a Cast device can reach the service.
 - `server.port`: LAN port, from 1 to 65535.
 - `server.publicUrl`: optional `http(s)` base URL used in cast plans when auto-detecting a LAN address is unsuitable (reverse proxy, HTTPS, VLAN, or container routing).
+- `server.trustedProxyAddresses`: optional IP addresses permitted to forward receiver identity with `X-Castboard-Receiver`. Use only a trusted proxy that replaces this header; forwarded receivers do not inherit loopback administrator access.
 - `server.allowedHosts`: optional custom DNS hostnames accepted by the HTTP server. Direct IPs, localhost, single-label names, `.local`, `.home.arpa`, and the `publicUrl` hostname work automatically.
 - `branding.name`, `subtitle`, `location`, `accent`, `timeZone`: public display settings.
 - `defaultScreen`: screen shown at `/` when that path does not identify another configured screen.
@@ -237,3 +238,5 @@ For a discovery service returning `{ "cameras": [{ "id", "name", "status" }] }`:
 ```
 
 Each `## Heading` becomes one story. For richer categories and metadata, use canonical JSON.
+
+For `extensions` roots, plugin `type`/instances, `source`/`bindings`, caching and schema-driven controls, see [extension contracts](extensions.md).

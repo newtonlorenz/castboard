@@ -1,0 +1,5 @@
+/* Clock */
+.widget-clock { display: flex; flex-direction: column; justify-content: space-between; }
+.clock-time { font-size: clamp(2.5em, 5.4vw, 3.875em); line-height: .86; font-weight: 400; letter-spacing: -.07em; }
+.clock-date { color: var(--muted); font-size: .75em; }
+

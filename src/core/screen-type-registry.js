@@ -1,16 +1,17 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { extensionDirectories, validateSchema } from './extensions.js';
 
 const VALID_ID = /^[a-z][a-z0-9-]*$/;
 
-export async function discoverScreenTypes({ screenTypesDir, config }) {
-  const entries = await fs.readdir(screenTypesDir, { withFileTypes: true });
+export async function discoverScreenTypes({ screenTypesDir, config, configDir }) {
+  const directories = await extensionDirectories(screenTypesDir, config, 'screenTypes', configDir);
   const types = [];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory() || !VALID_ID.test(entry.name)) continue;
-    const modulePath = path.join(screenTypesDir, entry.name, 'type.js');
-    const rendererPath = path.join(screenTypesDir, entry.name, 'renderer.js');
+  for (const [id, directory] of directories) {
+    const entry = { name: id };
+    const modulePath = path.join(directory, 'type.js');
+    const rendererPath = path.join(directory, 'renderer.js');
     try { await fs.access(modulePath); } catch { continue; }
     try { await fs.access(rendererPath); } catch { throw new Error(`Screen type ${entry.name} is missing renderer.js`); }
     const module = await import(pathToFileURL(modulePath));
@@ -27,6 +28,11 @@ export async function discoverScreenTypes({ screenTypesDir, config }) {
     const type = byId.get(typeId);
     if (!type) throw new Error(`Screen ${screenId} references missing screen type: ${typeId}`);
     if (typeof type.validateScreen === 'function') type.validateScreen(screen, screenId);
+    validateSchema(screen.layout || {}, type.layoutSchema, `screens.${screenId}.layout`);
+    for (const panel of screen.panels) {
+      if (type.positionSchema) validateSchema(panel.position || {}, type.positionSchema, `Panel ${panel.id} position`);
+      if (type.sizeSchema) validateSchema(panel.size || {}, type.sizeSchema, `Panel ${panel.id} size`);
+    }
   }
   return types;
 }

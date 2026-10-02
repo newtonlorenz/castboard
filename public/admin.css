@@ -164,3 +164,11 @@ dialog footer { display: flex; justify-content: flex-end; gap: 7px; margin-top: 
   .canvas-stage { padding: 22px; }
   .plugin-list { grid-template-columns: 1fr; }
 }
+
+/* Schema-driven controls need readable labels independent of compact chrome. */
+#extension-layout-fields .field > span, #extension-option-fields .field > span,
+#extension-position-fields .field > span, #extension-size-fields .field > span,
+.field:has(#panel-source) > span {font-size:12px;}
+#extension-layout-fields input, #extension-layout-fields textarea,
+#extension-option-fields input, #extension-option-fields textarea,
+#extension-position-fields input, #extension-size-fields input, #panel-source {font-size:14px;}

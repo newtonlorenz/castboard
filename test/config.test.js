@@ -67,7 +67,8 @@ test('base screen validation accepts many screen types and target protocols', ()
   const base = { server: { port: 8787 }, plugins: {}, defaultScreen: 'one' };
   const screen = (path, type) => ({ path, type, layout: {}, panels: [], targets: [{ name: 'Display', protocol: 'url' }] });
   assert.doesNotThrow(() => validateConfig({ ...base, screens: { one: screen('/', 'flow'), two: screen('/screens/two', 'single') } }));
-  assert.throws(() => validateConfig({ ...base, screens: { one: { ...screen('/', 'flow'), targets: [{ protocol: 'url' }] } } }), /requires name, device, or endpoint/);
+  assert.doesNotThrow(() => validateConfig({ ...base, screens: { one: { ...screen('/', 'flow'), targets: [{ address: '192.0.2.10', protocol: 'google-cast' }] } } }));
+  assert.throws(() => validateConfig({ ...base, screens: { one: { ...screen('/', 'flow'), targets: [{ protocol: 'url' }] } } }), /requires address, name, device, or endpoint/);
 });
 
 test('admin and screen appearance settings validate safe boundaries', () => {
@@ -81,4 +82,11 @@ test('admin and screen appearance settings validate safe boundaries', () => {
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', appearance: { fontScale: 200 } }] } } }), /fontScale must be from 60 to 180/);
   assert.doesNotThrow(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', options: { fitContent: true } }] } } }));
   assert.throws(() => validateConfig({ ...base, screens: { home: { path: '/', panels: [{ id: 'clock', plugin: 'clock', options: { fitContent: 'yes' } }] } } }), /fitContent must be a boolean/);
+});
+
+
+test('trusted proxy identities must be explicit IP addresses',()=>{
+ const config={server:{port:8787,trustedProxyAddresses:['127.0.0.1','::1']},plugins:{},screens:{home:{path:'/',panels:[]}}};
+ assert.doesNotThrow(()=>validateConfig(config));
+ for(const value of ['127.0.0.1',['proxy.example'],[null]]) assert.throws(()=>validateConfig({...config,server:{...config.server,trustedProxyAddresses:value}}),/array of IP addresses/);
 });

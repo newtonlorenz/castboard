@@ -48,6 +48,8 @@ export function createPlugin({ config, context }) {
   const controllable = config.provider === 'demo' || config.provider === 'spotify-player';
   return {
     id: 'spotify',
+    assets: ['style.css'],
+    styles: ['style.css'],
     name: 'Spotify',
     publicConfig: () => ({ title: config.title || 'Spotify', controllable }),
     async getData() {

@@ -117,7 +117,7 @@ export function jsonResponse(res, status, body) {
   res.end(payload);
 }
 
-export async function proxyStream(url, req, res, { headers = {}, timeoutMs = 12000 } = {}) {
+export async function proxyStream(url, req, res, { headers = {}, timeoutMs = 12000, ranges = true } = {}) {
   const controller = new AbortController();
   let completed = false;
   const abort = () => { if (!completed) controller.abort(); };
@@ -125,14 +125,17 @@ export async function proxyStream(url, req, res, { headers = {}, timeoutMs = 120
   res.once('close', abort);
   try {
     const response = await fetchWithTimeout(url, {
-      headers: { Accept: req.headers.accept || '*/*', ...headers },
+      headers: { Accept: req.headers.accept || '*/*', ...(ranges && req.headers.range ? { Range: req.headers.range } : {}), ...headers },
       signal: controller.signal,
     }, timeoutMs);
-    if (!response.ok || !response.body) throw new Error(`Stream provider returned HTTP ${response.status}`);
-    res.writeHead(200, {
+    if ((!response.ok && response.status !== 416) || !response.body) throw new Error(`Stream provider returned HTTP ${response.status}`);
+    const rangeHeaders = {};
+    for (const key of ['content-length', 'content-range', 'accept-ranges']) if (response.headers.has(key)) rangeHeaders[key] = response.headers.get(key);
+    res.writeHead(response.status, {
       'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
       'Cache-Control': 'no-store, no-cache, must-revalidate',
       Connection: 'keep-alive',
+      ...rangeHeaders,
     });
     await pipeline(Readable.fromWeb(response.body), res);
     completed = true;
