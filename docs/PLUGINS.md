@@ -51,3 +51,9 @@ Add the plugin to `plugins` and place it in any screen's `panels` with an explic
 - Use the bounded helpers in `src/core/providers.js` for remote or file-backed data. Do not call unbounded `response.text()`/`response.json()` for provider payloads.
 
 For external packages, independently configured instances, separate sources and views, schema-driven options, declared assets and managed cleanup, see [extension contracts and lifecycle](extensions.md).
+
+## Appearance and internal frames
+
+Studio passes explicit screen and panel appearance to each widget as inline styles and CSS variables. Use `--font-family`, `--heading-font-family`, `--accent`, `--text`, `--muted`, `--good`, `--bad`, `--line` and the `--panel-*` properties rather than hardcoded presentation. Explicit panel values override screen values; omitted values preserve plugin defaults. `--castboard-text-scale` contains the combined screen/panel scale for modules with fixed-pixel typography.
+
+A widget that draws its own frame may set `element.dataset.chrome = 'internal'` when mounting. This removes Castboard's default outer padding, border, background and shadow; explicit Studio frame styles are passed through the variables below to the internal frame, so padding and borders are applied once. Shadow-root modules should consume explicit `--castboard-fontFamily`, `--castboard-headingFontFamily`, `--castboard-background`, `--castboard-textColor`, `--castboard-mutedColor`, `--castboard-accent`, `--castboard-positiveColor`, `--castboard-negativeColor`, `--castboard-radius`, `--castboard-padding`, `--castboard-borderWidth`, `--castboard-borderColor` and `--castboard-shadow`, with their own defaults as fallbacks.

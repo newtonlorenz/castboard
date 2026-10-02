@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-02T14:12:16.203404+00:00",
+  "generatedAt": "2026-10-02T15:45:56.503768+00:00",
   "title": "Design System: Castboard Administration",
   "extensions": {
     "colorMeta": {
@@ -451,7 +451,7 @@
       "name": "Labeled input",
       "kind": "input",
       "refersTo": "input",
-      "description": "A legible field with nearby validation.",
+      "description": "A legible field with nearby validation; colour controls also expose an editable hex value.",
       "html": "<label class=\"ds-field\"><span>Screen title</span><input value=\"Kitchen display\"></label>",
       "css": ".ds-field{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;min-width:0}.ds-field>span{font-size:12px;font-weight:600;color:#465266}.ds-field input{font:inherit;width:100%;min-height:40px;padding:9px 10px;background:var(--paper,#fff);color:var(--ink,#202b3c);border:1px solid #bcc7d5;border-radius:5px}.ds-field input:hover{border-color:#71829a}.ds-field input:focus,.ds-field input:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:1px}.ds-field input:invalid{border-color:var(--error,#a82727)} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
     },
@@ -485,6 +485,13 @@
       "description": "Flat identity, configuration and explicit Test action.",
       "html": "<article class=\"ds-connection\"><div><h3>Weather</h3><span class=\"ds-provider\">weather \u00b7 open-meteo \u00b7 1 screen</span></div><div><span class=\"ds-connection-chip\">Configured</span><p>Use Test to check this connection.</p></div><div class=\"ds-row-actions\"><button>Test</button></div></article>",
       "css": ".ds-connection{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:grid;grid-template-columns:1.1fr 1.4fr 160px;gap:24px;padding:18px 16px;border-bottom:1px solid var(--line,#d9dfe8);background:var(--paper,#fff);color:var(--ink,#202b3c);align-items:start}.ds-connection h3{font-size:14px;margin:0}.ds-provider{display:block;font-size:12px;color:var(--muted,#556174);margin-top:5px}.ds-connection p{font-size:13px;color:var(--muted,#556174);margin:6px 0 0;overflow-wrap:anywhere}.ds-connection-chip{font-size:12px;font-weight:550;padding:3px 7px;background:#eaf0fc;color:#254a8a;border-radius:4px}.ds-row-actions{display:flex;justify-content:flex-end}.ds-row-actions button{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;font-weight:550;cursor:pointer;transition:background .15s,color .15s;padding:6px 12px;border-color:#bcc7d5;background:var(--paper,#fff);color:var(--ink,#202b3c)}.ds-row-actions button:hover{background:var(--wash,#f3f5f8)}.ds-row-actions button:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;}@media(max-width:720px){.ds-connection{grid-template-columns:1fr auto;gap:12px;padding:16px}.ds-connection>div:nth-child(2){grid-column:1/-1;grid-row:2}.ds-row-actions{grid-column:2;grid-row:1}} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+    },
+    {
+      "name": "Shared resize separator",
+      "kind": "custom",
+      "description": "An editor-enabled shared edge reveals its indicator on hover, focus and dragging; axis arrow keys resize its neighbours.",
+      "html": "<div class=\"ds-edge-sample\"><div class=\"ds-shared-edge\" tabindex=\"0\" role=\"separator\" aria-orientation=\"vertical\" aria-label=\"Resize between two panels\" aria-valuenow=\"1\"></div></div>",
+      "css": ".ds-edge-sample{position:relative;height:96px}.ds-shared-edge{position:absolute;left:50%;top:0;bottom:0;width:14px;transform:translateX(-50%);background:transparent;touch-action:none;cursor:col-resize}.ds-shared-edge::after{content:\"\";position:absolute;inset:20% 5px;background:var(--accent,#2459bb);opacity:0;border-radius:3px}.ds-shared-edge:hover::after,.ds-shared-edge:focus-visible::after,.ds-edge-sample.ds-dragging .ds-shared-edge::after{opacity:.65}.ds-shared-edge:focus-visible{outline:2px solid var(--focus,#2459bb);outline-offset:3px}"
     }
   ],
   "narrative": {
@@ -509,7 +516,7 @@
       },
       {
         "name": "The Plain Label Rule",
-        "body": "Use sentence-case task and field labels, compact headings and ordinary control text. Reserve monospace for JSON and commands.",
+        "body": "Use sentence-case task and field labels, compact headings and ordinary control text. Reserve monospace for JSON, commands and editable colour codes.",
         "section": "typography"
       },
       {
@@ -522,6 +529,8 @@
       "Do apply this system to admin controls while preserving independent dashboard and renderer styling.",
       "Do keep selection synchronized between the panel list, canvas overlay and contextual inspector.",
       "Do preserve selected viewport geometry when fitting the draft into available space.",
+      "Do retain renderer-owned appearance defaults until an explicit override is chosen.",
+      "Do keep drag changes reversible as one undo step and preserve keyboard focus after canvas updates.",
       "Do retain visible labels, focus outlines and explicit validation or failure messages.",
       "Do reflow tools into the mobile switcher and stack connection descriptions below identity and actions."
     ],

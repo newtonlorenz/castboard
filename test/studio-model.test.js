@@ -34,3 +34,35 @@ test('views choose a compatible source instance and prefer their own source when
  assert.equal(compatibleSource('gauge',catalog),'gauge');
  assert.equal(compatibleSource('missing',catalog),undefined);
 });
+
+import {shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, trackLines, trackDelta, validPlacement} from '../public/studio-model.js';
+import {editor as areaEditor} from '../examples/flexible/extensions/screen-types/area-grid/renderer.js';
+import {createScreenType as createAreaType} from '../examples/flexible/extensions/screen-types/area-grid/type.js';
+const tiled = () => ({columns:4,rows:2,gap:8,padding:8,positions:{a:{column:1,row:1,width:2,height:1},b:{column:3,row:1,width:2,height:1},c:{column:1,row:2,width:2,height:1},d:{column:3,row:2,width:2,height:1}}});
+test('moving into a full grid shuffles panels into the vacated space without altering the input',()=>{
+ const model=tiled(),before=JSON.stringify(model);const result=shuffleGrid(model,'a',{...model.positions.a,column:3});
+ assert.ok(result);assert.ok(validPlacement(result));assert.equal(result.positions.b.column,1);assert.equal(JSON.stringify(model),before);
+});
+test('an impossible enlargement leaves a full screen intact',()=>{
+ const model=tiled();assert.equal(shuffleGrid(model,'a',{column:1,row:1,width:3,height:2}),null);
+});
+test('shared resizing handles a T junction and clamps every neighbour to one cell',()=>{
+ const model={columns:6,rows:2,positions:{a:{column:1,row:1,width:3,height:2},b:{column:4,row:1,width:3,height:1},c:{column:4,row:2,width:3,height:1}}};
+ const edge=sharedEdges(model)[0];const result=resizeShared(model,edge,9);
+ assert.ok(validPlacement(result));assert.equal(result.positions.a.width,5);assert.equal(result.positions.b.width,1);assert.equal(result.positions.c.width,1);assert.equal(result.positions.c.column,6);
+});
+test('named-area swaps keep all rectangles valid, including unequal panel sizes',()=>{
+ const screen={layout:{areas:['a a b','c c b'],rows:[50,100],gap:12,padding:12},panels:[{id:'first',position:{area:'a'}},{id:'second',position:{area:'b'}},{id:'third',position:{area:'c'}}]};
+ const model=areaEditor.read(screen),result=swapGrid(model,'first','second');areaEditor.write(screen,result);
+ createAreaType().validateScreen(screen);assert.deepEqual(areaEditor.read(screen).positions.first,{column:3,row:1,width:1,height:2});
+ const resize=resizeTracks(result,'y',1,20,{width:600,height:400});areaEditor.write(screen,resize);createAreaType().validateScreen(screen);assert.ok(resize.rowWeights[0]>50);assert.equal(resize.rowWeights.reduce((a,b)=>a+b,0),150);
+});
+test('weighted geometry honours selected viewport and fitted scale',()=>{
+ const model={columns:2,rows:2,columnWeights:[1,3],rowWeights:[1,2],padding:10,gap:10};
+ assert.deepEqual(trackLines(2,[1,3],430,10,10),[10,120,430]);
+ assert.deepEqual(trackDelta(model,{width:430,height:330},.5,{column:1,row:1},55,55),{x:1,y:1});
+});
+test('many shuffled moves remain bounded and never lose panel identities',()=>{
+ let model=tiled();
+ for(let i=0;i<40;i++){const id=['a','b','c','d'][i%4],target={...model.positions[id],column:i%2?1:3,row:i%3?1:2};const next=shuffleGrid(model,id,target);if(next)model=next;assert.ok(validPlacement(model));assert.deepEqual(Object.keys(model.positions).sort(),['a','b','c','d']);}
+});

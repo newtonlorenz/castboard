@@ -14,3 +14,5 @@ export function place({ element, panel }) {
   element.style.gridColumn = `span ${panel.size?.columns || 1}`;
   element.style.gridRow = `span ${panel.size?.rows || 1}`;
 }
+
+export const editor = {incremental:true};

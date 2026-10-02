@@ -193,13 +193,13 @@ The scale prioritizes control legibility and factual headings. The body and cont
 - **Label:** field labels; secondary metadata uses the same size with regular weight.
 - **Code:** JSON textareas and server command strings; textareas resize vertically.
 
-**The Plain Label Rule.** Use sentence-case task and field labels, compact headings and ordinary control text. Reserve monospace for JSON and commands.
+**The Plain Label Rule.** Use sentence-case task and field labels, compact headings and ordinary control text. Reserve monospace for JSON, commands and editable colour codes.
 
 ## Layout
 
 The desktop header is (64px) high. The editor fills the remaining viewport with a left rail (228px), a flexible center with a minimum (280px), and an inspector (310px). Rails scroll independently. The center toolbar and helper area frame the stage; the renderer output scales uniformly from the selected viewport with its origin at the top left. Canvas padding is (24px), reducing to (16px) on smaller screens. Field columns split into two equal tracks with a (12px) gutter where appropriate; JSON textarea groups stack.
 
-At (1099px) and below, the header wraps, the editor stacks, and the Screens & panels / Canvas / Settings switcher exposes the relevant rail above the workspace. Tool rails have their own maximum height (52dvh); the inspector stays available through Settings. At (520px) and below, controls and brand simplify, screen lists become one column, and the action row wraps. Between (1100px) and (1400px), header gaps tighten rather than compromising the main editor geometry.
+At (1099px) and below, the header wraps, the editor stacks, and the Screens & panels / Canvas / Settings switcher exposes the relevant rail above the workspace. Tool rails have their own maximum height (52dvh); the inspector stays available through Settings. Tapping a panel selects its Module context and opens Settings; dragging keeps the Canvas tool available for arranging the draft. At (520px) and below, controls and brand simplify, screen lists become one column, and the action row wraps. Between (1100px) and (1400px), header gaps tighten rather than compromising the main editor geometry.
 
 Connections uses a centered container with a maximum width (1180px) and desktop padding (36px 28px 64px). Module rows align in three columns (1.1fr / 1.4fr / 160px) with (24px) gaps; delivery and server rows use (1fr / 2fr / auto). At (720px) and below, column headings hide, identity and action share the first line, and description, results and command details span the full width. Container padding becomes (24px 16px 40px), and search takes the available width.
 
@@ -229,11 +229,11 @@ Compact, familiar actions with a visible label. Primary, secondary and danger va
 
 ### Inputs / Fields
 
-White, full-width inputs have a distinct field stroke, minimum height (40px), and labels above with the field-gap token. Hover strengthens the border. Focus uses the working-blue outline (2px with a 1px offset). Invalid inputs use error strokes and nearby messages; error messages wrap rather than overflowing. Checkboxes use the accent and a native checked state. Color inputs expose a swatch and readable value alongside it.
+White, full-width inputs have a distinct field stroke, minimum height (40px), and labels above with the field-gap token. Hover strengthens the border. Focus uses the working-blue outline (2px with a 1px offset). Invalid inputs use error strokes and nearby messages; error messages wrap rather than overflowing. Checkboxes use the accent and a native checked state. Color inputs pair a swatch with an editable six-digit hex code including its leading hash. Both controls update the same draft value; invalid codes retain field validation. Reset actions use visible words. Appearance menus offer body and heading fonts with an Inherit choice; renderer-owned defaults remain intact until an explicit override is chosen.
 
 ### Navigation
 
-Screens and Connections are plain text links in the white header. The current page has blue text, medium weight and a bottom seam. Inspector tabs use the same seam with a sticky white tab bar; active context follows panel selection. The mobile tool switcher instead uses outlined controls and a pale selected surface. Edit / Preview uses a compact segmented control; the selected segment lifts slightly from its gray container.
+Screens and Connections are plain text links in the white header. The current page has blue text, medium weight and a bottom seam. Inspector tabs use the same seam with a sticky white tab bar; Screen and Module identify their contexts, and active context follows panel selection. The mobile tool switcher instead uses outlined controls and a pale selected surface. Edit / Preview uses a compact segmented control; the selected segment lifts slightly from its gray container.
 
 ### Status Chips
 
@@ -245,7 +245,11 @@ The durable pattern is a flat row or working rail, not a freestanding decorative
 
 ### Linked Selection and Proof
 
-Selecting an item in the panel roster selects its actual renderer-placed canvas overlay and opens the matching inspector. The overlay reveals a short panel title and inward blue outline without substituting admin styling for the panel itself. Grid renderers expose a lower-right resize handle; other renderer types keep their own placement controls. The selected viewport is fitted uniformly, and the preview renders the unsaved draft with screen actions disabled. Undo restores the previous draft. Save, error and empty states retain factual messages.
+Selecting an item in the panel roster selects its actual renderer-placed canvas overlay and opens the matching Module inspector. The module name, compatible source and schema-defined options precede placement controls. Appearance is immediately available; identity and advanced JSON remain disclosure sections. The overlay reveals a short panel title and inward blue outline without substituting admin styling for the panel itself.
+
+Renderers that support the editor contract expose their placement behavior directly. Grid dragging rearranges panels without overlaps; named-area layouts swap slots. Flow layouts reorder panels and expose a lower-right resize handle. Shared edges are focusable, labeled separators with orientation and a (14px) interaction strip. Their blue indicator appears on hover, keyboard focus and during dragging; the global focus outline remains visible. Arrow keys adjust a separator along its axis. On an editable panel, arrows move and Shift + arrows resize. Canvas rerenders restore focus to the same panel or separator so repeated keyboard adjustment remains possible.
+
+A completed drag records one undo step. Escape, pointer cancellation and lost pointer capture restore the initial geometry; an impossible placement keeps the prior layout and gives factual feedback. The selected viewport is fitted uniformly, and the preview renders the unsaved draft with screen actions disabled. Optional content fitting reduces text against actual rendered content, including supported module content inside the shadow root. It preserves the chosen appearance scale and leaves renderer geometry intact. Save, error and empty states retain factual messages.
 
 ### Dialogs and Transient Feedback
 
@@ -257,6 +261,8 @@ Dialogs use the dialog radius, padding (24px), maximum width (440px) and viewpor
 - **Do** apply this system to admin controls while preserving independent dashboard and renderer styling.
 - **Do** keep selection synchronized between the panel list, canvas overlay and contextual inspector.
 - **Do** preserve selected viewport geometry when fitting the draft into available space.
+- **Do** retain renderer-owned appearance defaults until an explicit override is chosen.
+- **Do** keep drag changes reversible as one undo step and preserve keyboard focus after canvas updates.
 - **Do** retain visible labels, focus outlines and explicit validation or failure messages.
 - **Do** reflow tools into the mobile switcher and stack connection descriptions below identity and actions.
 
@@ -268,4 +274,4 @@ Dialogs use the dialog radius, padding (24px), maximum width (440px) and viewpor
 - **Don't** propagate preview content fonts, colors or panel shapes into admin tokens.
 
 
-<!-- Evidence: public/admin.css, public/setup.css, public/admin.html, public/setup.html, public/admin.js, public/setup.js; .impeccable/review/desktop.png, mobile.png, mobile-settings.png, user-672.png, connections-desktop.png, connections-mobile.png. The implemented header is 64px; the direction brief's provisional 56px is not normative. Glyph-only close/reset controls are not canonical component guidance. -->
+<!-- Evidence: public/admin.css, public/setup.css, public/admin.html, public/setup.html, public/admin.js, public/setup.js; .impeccable/review/desktop.png, mobile.png, mobile-settings.png, user-672.png, connections-desktop.png, connections-mobile.png. The implemented header is 64px; the direction brief's provisional 56px is not normative. The Studio interaction extension is evidenced by public/studio-model.js, public/appearance-model.js and public/app.js; preview content remains outside this admin token system. -->

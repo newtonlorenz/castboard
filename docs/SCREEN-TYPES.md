@@ -66,4 +66,21 @@ export function place({ element, panel }) {
 
 Only `screen.type`, `screen.layout`, and panel display data reach this renderer. Targets and casting settings remain server-side.
 
-Castboard Studio lists every discovered type. It provides purpose-built controls for `grid`, `flow`, and `single`; an additional type receives controls from its declared schemas and optional JSON editors for `layout`, panel `position`, and panel `size`. Both the edit canvas and unsaved preview use its installed renderer. This means a new type is usable without modifying the studio. A future type-specific editor can be added as an enhancement without changing its runtime contract.
+Castboard Studio lists every discovered type. It provides purpose-built controls for `grid`, `flow`, and `single`; an additional type receives controls from its declared schemas and optional JSON editors for `layout`, panel `position`, and panel `size`. Both the edit canvas and unsaved preview use its installed renderer. This means a new type is usable without modifying the studio. A renderer may expose an optional `editor` adapter without changing its runtime contract:
+
+```js
+export const editor = {
+  // Opt in only if repeated prepare/place calls on mounted widgets are safe
+  // and do not allocate new cleanup work.
+  incremental: true,
+  read(screen) {
+    return { columns: 12, rows: 8, gap: 8, padding: 8,
+      positions: Object.fromEntries(screen.panels.map(p => [p.id, p.position])) };
+  },
+  write(screen, grid) {
+    for (const panel of screen.panels) panel.position = { ...grid.positions[panel.id] };
+  },
+};
+```
+
+Coordinates are positive, one-based integer rectangles keyed by panel ID. Studio validates bounds and overlap before using the adapter. `read` must be side-effect-free; `write` updates only layout and panel geometry in the draft. Optional `rowWeights` / `columnWeights` describe uneven tracks. `swapOnDrop: true` exchanges named areas, including areas of different sizes. `weightedResize: true` resizes adjacent tracks continuously; otherwise shared edges snap to cells. The flexible example shows a complete named-area adapter. Other renderers retain schema and JSON editing. An adapter may declare only `incremental: true` to enable appearance updates without providing a draggable grid.

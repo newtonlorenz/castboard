@@ -10,7 +10,7 @@ export function createScreenType() {
   return {
     id: 'grid',
     name: 'Fixed grid',
-    version: '1.0.0',
+    version: '1.1.0',
     validateScreen(screen, screenId) {
       const layout = screen.layout;
       if (!layout || typeof layout !== 'object' || Array.isArray(layout)) throw new Error(`screens.${screenId}.layout is required for grid screens`);

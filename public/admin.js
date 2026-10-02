@@ -1,5 +1,5 @@
-import { schemaFields } from '/schema-fields.js?v=0.8.0-2';
-import { History, gridSlot, gridDelta, compatibleSource, schemaDefaults } from '/studio-model.js?v=0.8.0';
+import { schemaFields } from '/schema-fields.js?v=0.9.0-2';
+import { History, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.9.0-2';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -129,6 +129,7 @@ function markDirty() {
   $('#save-design').disabled = !state.dirty || state.saving || Boolean(invalidField());
   setStatus(state.dirty ? 'Unsaved changes' : 'All changes saved', state.dirty ? 'dirty' : 'saved');
   updateHistory(); persistDraft(); updatePreview(); renderPanelList();
+  if (currentPanel()) $('#selected-module-name').textContent = currentPanel().options?.title || currentPanel().options?.label || pluginName(currentPanel().plugin);
 }
 function restoreHistory(direction) {
   state.design = state.history[direction]();
@@ -194,6 +195,7 @@ async function loadDesign() {
     state.selectedPanelId = '';
     state.dirty = false;
     populateCatalogControls();
+    setInspectorTab('screen');
     renderAll();
     setStatus('All changes saved', 'saved');
     updateHistory();
@@ -271,6 +273,7 @@ function renderBranding() {
   for (const input of $$('[data-branding]')) input.value = branding[input.dataset.branding] || '';
   const accent = branding.accent || '#8ee6c2';
   $('#brand-accent').value = normalizeColor(accent, '#8ee6c2');
+  const brandHex=$('#brand-accent').parentElement.querySelector('.hex-color');if(brandHex)brandHex.value=$('#brand-accent').value;
   $('#brand-accent-value').textContent = accent;
 
 }
@@ -319,6 +322,7 @@ function renderInspector() {
   for (const input of $$('[data-appearance]')) {
     const field = input.dataset.appearance;
     input.value = input.type === 'color' ? normalizeColor(appearance[field], fallbacks[field]) : appearance[field] ?? '';
+    const hex = input.closest('.color-field')?.querySelector('.hex-color');if(hex){hex.value=input.value;hex.setCustomValidity('');}
     const output = input.closest('.color-field')?.querySelector('output');
     if (output) output.textContent = appearance[field] || `Inherited · ${input.value}`;
   }
@@ -335,6 +339,9 @@ function renderPanelInspector() {
   $('#panel-fields').hidden = !panel;
   if (!panel || !screen) return;
 
+  $('#selected-module-name').textContent = panel.options?.title || panel.options?.label || pluginName(panel.plugin);
+  const optionSchema=state.catalog.plugins.find(plugin=>plugin.id===panel.plugin)?.optionSchema;
+  $('#panel-title').closest('label').hidden = Boolean(optionSchema?.properties?.title);
   setInput('#panel-id', panel.id);
   setInput('#panel-plugin', panel.plugin);
   const viewContract = state.catalog.plugins.find(plugin => plugin.id === panel.plugin)?.inputContract;
@@ -404,6 +411,7 @@ function renderPanelAppearance(panel, screen) {
     if (input.type === 'color') {
       input.value = normalizeColor(appearance[field], colorFallbacks[field]);
       const wrapper = input.closest('.color-field');
+      const hex=wrapper.querySelector('.hex-color');if(hex){hex.value=input.value;hex.setCustomValidity('');}
       wrapper.classList.toggle('inherited', appearance[field] === undefined);
       wrapper.querySelector('output').textContent = appearance[field] || `Inherit · ${input.value}`;
     } else {
@@ -457,37 +465,47 @@ function renderPanelList() {
 let canvasGeneration = 0;
 let releaseCanvas;
 async function renderCanvas() {
+  if (state.dragging) return;
   const generation = ++canvasGeneration;
   const screen = clone(currentScreen()); const surface = $('#design-surface');
   if (!screen) return;
+  const focused = surface.contains(document.activeElement) ? {panel:document.activeElement.dataset.panel,edge:document.activeElement.dataset.edge} : null;
   if (releaseCanvas) { releaseCanvas(); releaseCanvas = null; }
   surface.replaceChildren(); surface.className = 'design-surface'; surface.removeAttribute('style');
   surface.style.width = `${state.viewport.width}px`; surface.style.height = `${state.viewport.height}px`;
   surface.style.transform = `scale(${state.scale})`;
   const collisionIds = screen.type === 'grid' ? findCollisions(screen.panels) : new Set();
   try {
-    const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js`);
+    const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(state.catalog.screenTypes.find(type=>type.id===screen.type)?.version||'1')}`);
     if (generation !== canvasGeneration) return;
     const release = await renderer.prepare({ container: surface, screen });
     if (generation !== canvasGeneration) { if (typeof release === 'function') release(); return; }
     releaseCanvas = typeof release === 'function' ? release : null;
+    state.editor = renderer.editor || null;
+    const rawModel = typeof state.editor?.read === 'function' ? state.editor.read(screen) : null;
+    state.editorModel = rawModel ? {gap:8,padding:8,...rawModel} : null;
+    if (state.editorModel && !validPlacement(state.editorModel)) state.editorModel = null;
     for (const panel of screen.panels) {
       const element = document.createElement('div');
       element.className = `canvas-panel${panel.id === state.selectedPanelId ? ' selected' : ''}${collisionIds.has(panel.id) ? ' collision' : ''}`;
       element.tabIndex = 0; element.setAttribute('role', 'button');
-      element.setAttribute('aria-label', `Edit ${panel.options?.title || pluginName(panel.plugin)} panel`); element.dataset.panel = panel.id;
+      element.setAttribute('aria-label', `Edit ${panel.options?.title || panel.options?.label || pluginName(panel.plugin)} panel`); element.dataset.panel = panel.id;
       await renderer.place({container:surface, element, panel, screen});
       if (generation !== canvasGeneration) return;
-      const label = document.createElement('span'); label.className = 'canvas-panel-copy'; label.textContent = panel.options?.title || pluginName(panel.plugin); element.append(label);
-      if (screen.type === 'grid') {
+      const label = document.createElement('span'); label.className = 'canvas-panel-copy'; label.textContent = panel.options?.title || panel.options?.label || pluginName(panel.plugin); element.append(label);
+      if (state.editorModel || screen.type === 'flow') {
         const handle = document.createElement('span'); handle.className = 'resize-handle'; handle.setAttribute('aria-hidden','true'); element.append(handle);
-        element.addEventListener('pointerdown', event => beginPanelDrag(event, currentScreen().panels.find(item => item.id === panel.id), element));
+        handle.hidden = Boolean(state.editorModel?.weightedResize);
+        element.addEventListener('pointerdown', event => screen.type === 'flow' ? beginFlowDrag(event,panel.id,element) : beginPanelDrag(event,panel.id,element));
       }
       element.addEventListener('click', () => selectPanel(panel.id));
-      element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') {event.preventDefault();selectPanel(panel.id);} });
+      element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') {event.preventDefault();selectPanel(panel.id);} else if (state.editorModel && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {event.preventDefault(); keyboardPanel(event,panel.id);} });
       surface.append(element);
     }
-    $('#canvas-message').textContent = collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : screen.type === 'grid' ? 'Select a panel. Drag to move it; drag its corner to resize.' : 'Select a panel here or in the panel list. Edit its placement in Settings.';
+    renderSharedHandles(surface);
+    if(focused?.panel) surface.querySelector(`[data-panel="${CSS.escape(focused.panel)}"]`)?.focus({preventScroll:true});
+    else if(focused?.edge) surface.querySelector(`[data-edge="${CSS.escape(focused.edge)}"]`)?.focus({preventScroll:true});
+    $('#canvas-message').textContent = collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag the edges between panels to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize.' : 'Select a panel to edit its module and appearance.';
   } catch (error) {
     if (generation !== canvasGeneration) return;
     $('#canvas-message').textContent = `Cannot preview this layout: ${error.message}`;
@@ -515,49 +533,108 @@ function findCollisions(panels) {
   return hits;
 }
 
-function beginPanelDrag(event, panel, element) {
-  if (event.button !== 0) return;
-  event.preventDefault();
-  if (!canLeaveField()) return;
-  state.selectedPanelId = panel.id; setInspectorTab('panel'); renderPanelInspector(); renderPanelList();
-  for (const node of $$('.canvas-panel')) node.classList.toggle('selected', node.dataset.panel === panel.id);
-  const screen = currentScreen();
-  const layout = canvasLayout(screen);
+
+function applyEditorModel(model) {
+  state.editor.write(currentScreen(), model);
+  for (const node of $$('.canvas-panel')) {
+    const p = model.positions[node.dataset.panel];
+    node.style.gridArea = 'auto'; node.style.gridColumn = `${p.column} / span ${p.width}`; node.style.gridRow = `${p.row} / span ${p.height}`;
+  }
   const surface = $('#design-surface');
-
-  const position = panel.position || { column: 1, row: 1, width: 1, height: 1 };
-  panel.position = { ...position };
-  const start = { x: event.clientX, y: event.clientY, position: { ...panel.position } };
-  const resize = event.target.classList.contains('resize-handle');
-  let changed = false;
-  element.setPointerCapture(event.pointerId);
-
-  const move = moveEvent => {
-    const delta = gridDelta(layout, state.viewport, state.scale, moveEvent.clientX - start.x, moveEvent.clientY - start.y);
-    const dx = delta.x, dy = delta.y;
-    if (resize) {
-      panel.position.width = clamp(start.position.width + dx, 1, layout.columns - start.position.column + 1);
-      panel.position.height = clamp(start.position.height + dy, 1, layout.rows - start.position.row + 1);
+  if (model.columnWeights) surface.style.gridTemplateColumns = model.columnWeights.map(value=>`minmax(0,${value}fr)`).join(' ');
+  if (model.rowWeights) surface.style.gridTemplateRows = model.rowWeights.map(value=>`minmax(0,${value}fr)`).join(' ');
+  surface.style.gridTemplateAreas = 'none';
+  updatePreview();
+}
+function renderSharedHandles(surface) {
+  const model=state.editorModel; if(!model) return;
+  const xs=trackLines(model.columns,model.columnWeights,state.viewport.width,model.gap,model.padding);
+  const ys=trackLines(model.rows,model.rowWeights,state.viewport.height,model.gap,model.padding);
+  for(const edge of sharedEdges(model)) {
+    const handle=document.createElement('div');handle.className=`shared-edge shared-edge-${edge.axis}`;
+    handle.dataset.edge=`${edge.axis}:${edge.before}:${edge.after}`;handle.tabIndex=0;handle.setAttribute('role','separator');handle.setAttribute('aria-orientation',edge.axis==='x'?'vertical':'horizontal');
+    const edgeName=id=>{const p=currentScreen().panels.find(p=>p.id===id);return p.options?.title||p.options?.label||pluginName(p.plugin);};
+    handle.setAttribute('aria-label',`Resize between ${edgeName(edge.before)} and ${edgeName(edge.after)}`);
+    handle.setAttribute('aria-valuenow',String(edge.line-1));
+    if(edge.axis==='x') {handle.style.left=`${xs[edge.line-1]-model.gap/2}px`;handle.style.top=`${ys[edge.start-1]}px`;handle.style.height=`${ys[edge.end-1]-ys[edge.start-1]-model.gap}px`;}
+    else {handle.style.top=`${ys[edge.line-1]-model.gap/2}px`;handle.style.left=`${xs[edge.start-1]}px`;handle.style.width=`${xs[edge.end-1]-xs[edge.start-1]-model.gap}px`;}
+    handle.addEventListener('pointerdown',event=>beginSharedDrag(event,edge,handle));
+    handle.addEventListener('keydown',event=>{
+      const direction={ArrowLeft:-1,ArrowRight:1,ArrowUp:-1,ArrowDown:1}[event.key];
+      if(!direction || (edge.axis==='x'&&!['ArrowLeft','ArrowRight'].includes(event.key)) || (edge.axis==='y'&&!['ArrowUp','ArrowDown'].includes(event.key)) || !canLeaveField()) return;
+      event.preventDefault(); const next=model.weightedResize?resizeTracks(model,edge.axis,edge.line-1,direction*10,state.viewport):resizeShared(model,edge,direction);
+      applyEditorModel(next);markDirty();renderCanvas();renderPanelInspector();
+    });surface.append(handle);
+  }
+}
+function gesture(event,element,move,finish,cancel) {
+  state.dragging=true; $('.studio').classList.add('dragging'); element.setPointerCapture(event.pointerId);
+  const start={x:event.clientX,y:event.clientY};let moved=false;
+  const onMove=e=>{const dx=e.clientX-start.x,dy=e.clientY-start.y;moved ||= Math.hypot(dx,dy)>4;if(moved)move(e,dx,dy);};
+  const end=e=>{element.removeEventListener('pointermove',onMove);element.removeEventListener('pointerup',end);element.removeEventListener('pointercancel',end);element.removeEventListener('lostpointercapture',lost);document.removeEventListener('keydown',escape);state.dragging=false;$('.studio').classList.remove('dragging');if(e.type==='pointercancel')cancel();else finish(moved);renderCanvas();renderPanelInspector();};
+  const lost=()=>{if(state.dragging)end({type:'pointercancel'});};
+  const escape=e=>{if(e.key==='Escape'){e.preventDefault();end({type:'pointercancel'});}};
+  element.addEventListener('pointermove',onMove);element.addEventListener('pointerup',end);element.addEventListener('pointercancel',end);element.addEventListener('lostpointercapture',lost);document.addEventListener('keydown',escape);
+}
+function beginPanelDrag(event,id,element) {
+  if(event.button!==0 || !canLeaveField()) return;event.preventDefault();
+  selectPanel(id,false);renderPanelInspector();for(const node of $$('.canvas-panel'))node.classList.toggle('selected',node.dataset.panel===id);
+  const model=clone(state.editorModel),start=model.positions[id],before=clone(currentScreen());
+  const resize=event.target.classList.contains('resize-handle');let accepted=model,blocked=false,lastTarget='';
+  gesture(event,element,(e,dx,dy)=>{
+    let next;
+    if(model.swapOnDrop&&!resize) {
+      const rect=$('#design-surface').getBoundingClientRect();
+      const x=(e.clientX-rect.left)/state.scale,y=(e.clientY-rect.top)/state.scale;
+      const xs=trackLines(model.columns,model.columnWeights,state.viewport.width,model.gap,model.padding),ys=trackLines(model.rows,model.rowWeights,state.viewport.height,model.gap,model.padding);
+      const hit=Object.entries(model.positions).find(([key,p])=>key!==id&&x>=xs[p.column-1]&&x<xs[p.column+p.width-1]-model.gap&&y>=ys[p.row-1]&&y<ys[p.row+p.height-1]-model.gap);
+      if(hit)next=swapGrid(model,id,hit[0]);else{const delta=trackDelta(model,state.viewport,state.scale,start,dx,dy);next=shuffleGrid(model,id,{...start,column:clamp(start.column+delta.x,1,model.columns-start.width+1),row:clamp(start.row+delta.y,1,model.rows-start.height+1)});}
     } else {
-      panel.position.column = clamp(start.position.column + dx, 1, layout.columns - start.position.width + 1);
-      panel.position.row = clamp(start.position.row + dy, 1, layout.rows - start.position.height + 1);
+      const delta=trackDelta(model,state.viewport,state.scale,start,dx,dy);
+      const target={...start};
+      if(resize) {target.width=clamp(start.width+delta.x,1,model.columns-start.column+1);target.height=clamp(start.height+delta.y,1,model.rows-start.row+1);}
+      else {target.column=clamp(start.column+delta.x,1,model.columns-start.width+1);target.row=clamp(start.row+delta.y,1,model.rows-start.height+1);}
+      const key=JSON.stringify(target);if(key===lastTarget)return;lastTarget=key;next=shuffleGrid(model,id,target);
     }
-    changed ||= dx !== 0 || dy !== 0;
-    placeCanvasPanel(element, panel, screen);
-  };
-  const end = () => {
-    element.removeEventListener('pointermove', move);
-    element.removeEventListener('pointerup', end);
-    element.removeEventListener('pointercancel', end);
-    if (changed) {
-      markDirty(resize ? 'Panel resized · unsaved' : 'Panel moved · unsaved');
-      renderCanvas();
-      renderPanelInspector();
-    }
-  };
-  element.addEventListener('pointermove', move);
-  element.addEventListener('pointerup', end);
-  element.addEventListener('pointercancel', end);
+    blocked=!next; element.classList.toggle('blocked',blocked);
+    if(next&&JSON.stringify(next)!==JSON.stringify(accepted)){accepted=next;applyEditorModel(next);}
+  },moved=>{
+    if(!moved)selectPanel(id);
+    if(blocked){state.design.screens[state.selectedScreenId]=before;toast('No room at that position. The layout was kept.',true);}
+    else if(JSON.stringify(currentScreen())!==JSON.stringify(before))markDirty();
+    if(blocked)updatePreview();
+  },()=>{state.design.screens[state.selectedScreenId]=before;updatePreview();});
+}
+function beginSharedDrag(event,edge,handle) {
+  if(event.button!==0 || !canLeaveField())return;event.preventDefault();event.stopPropagation();
+  const model=clone(state.editorModel),before=clone(currentScreen());
+  gesture(event,handle,(e,dx,dy)=>{
+    let next;
+    if(model.weightedResize) next=resizeTracks(model,edge.axis,edge.line-1,(edge.axis==='x'?dx:dy)/state.scale,state.viewport);
+    else {const delta=gridDelta(model,state.viewport,state.scale,dx,dy);next=resizeShared(model,edge,edge.axis==='x'?delta.x:delta.y);}
+    applyEditorModel(next);
+    const lines=trackLines(edge.axis==='x'?model.columns:model.rows,edge.axis==='x'?next.columnWeights:next.rowWeights,state.viewport[edge.axis==='x'?'width':'height'],model.gap,model.padding);
+    handle.style[edge.axis==='x'?'left':'top']=`${model.weightedResize?lines[edge.line-1]-model.gap/2:(edge.axis==='x'?trackLines(model.columns,null,state.viewport.width,model.gap,model.padding)[next.positions[edge.after].column-1]:trackLines(model.rows,null,state.viewport.height,model.gap,model.padding)[next.positions[edge.after].row-1])-model.gap/2}px`;
+  },()=>{if(JSON.stringify(currentScreen())!==JSON.stringify(before))markDirty();},()=>{state.design.screens[state.selectedScreenId]=before;updatePreview();});
+}
+function keyboardPanel(event,id) {
+  if(!canLeaveField())return;
+  const model=state.editorModel,p=model.positions[id],target={...p};const direction={ArrowLeft:['column',-1],ArrowRight:['column',1],ArrowUp:['row',-1],ArrowDown:['row',1]}[event.key];
+  const key=event.shiftKey?(direction[0]==='column'?'width':'height'):direction[0];target[key]+=direction[1];
+  const next=shuffleGrid(model,id,target);
+  if(!next)return toast('No room for that change.',true);
+  applyEditorModel(next);markDirty();renderCanvas();renderPanelInspector();
+}
+function beginFlowDrag(event,id,element) {
+  if(event.button!==0||!canLeaveField())return;event.preventDefault();selectPanel(id,false);renderPanelInspector();
+  const before=clone(currentScreen()),resize=event.target.classList.contains('resize-handle');
+  const rect=element.getBoundingClientRect(),flowColumns=getComputedStyle($('#design-surface')).gridTemplateColumns.split(' ').length;
+  gesture(event,element,(e,dx,dy)=>{
+    const screen=currentScreen(),panel=screen.panels.find(p=>p.id===id);
+    if(resize){panel.size={columns:clamp((before.panels.find(p=>p.id===id).size?.columns||1)+Math.round(dx/(rect.width/(before.panels.find(p=>p.id===id).size?.columns||1))),1,flowColumns),rows:clamp((before.panels.find(p=>p.id===id).size?.rows||1)+Math.round(dy/(rect.height/(before.panels.find(p=>p.id===id).size?.rows||1))),1,12)};element.style.gridColumn=`span ${panel.size.columns}`;element.style.gridRow=`span ${panel.size.rows}`;}
+    else {const hit=$$('.canvas-panel').find(node=>{const r=node.getBoundingClientRect();return node.dataset.panel!==id&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;});if(hit){const source=screen.panels.indexOf(panel),target=screen.panels.findIndex(p=>p.id===hit.dataset.panel);screen.panels.splice(source,1);screen.panels.splice(target,0,panel);for(const p of screen.panels)$('#design-surface').append($$('.canvas-panel').find(node=>node.dataset.panel===p.id));}}
+    updatePreview();
+  },moved=>{if(!moved)selectPanel(id);if(JSON.stringify(currentScreen())!==JSON.stringify(before))markDirty();},()=>{state.design.screens[state.selectedScreenId]=before;updatePreview();});
 }
 
 function clamp(value, min, max) {
@@ -575,6 +652,7 @@ function selectScreen(id) {
 function selectPanel(id, rerender = true) {
   if (!canLeaveField()) return;
   state.selectedPanelId = id;
+  if (rerender && window.innerWidth < 1100) {$('.studio').dataset.tool='settings';for(const button of $$('[data-tool]'))button.setAttribute('aria-pressed',String(button.dataset.tool==='settings'));}
   setInspectorTab('panel');
   renderPanelList();
   if (rerender) {
@@ -823,7 +901,7 @@ function validateDesign() {
   for (const [id, screen] of screens) {
     if (!/^[a-z][a-z0-9-]*$/.test(id)) errors.push(`Screen ID “${id}” is invalid.`);
     if (!screen.path?.startsWith('/')) errors.push(`${screen.title || id} needs a path beginning with /.`);
-    if (['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js'].includes(screen.path) || /^\/(api|plugins|screen-types|assets)(\/|$)/.test(screen.path)) errors.push(`${screen.path} is reserved by Castboard.`);
+    if (['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js','/appearance-model.js'].includes(screen.path) || /^\/(api|plugins|screen-types|assets)(\/|$)/.test(screen.path)) errors.push(`${screen.path} is reserved by Castboard.`);
     if (paths.has(screen.path)) errors.push(`Screen path “${screen.path}” is duplicated.`);
     paths.add(screen.path);
     if (screen.type === 'single' && screen.panels.length !== 1) errors.push(`${screen.title || id} is a single screen and needs exactly one panel.`);
@@ -884,6 +962,15 @@ function downloadDraft() {
   const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'castboard-design-draft.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function bindEvents() {
+  for(const swatch of $$('input[type=color]')) {
+    const input=document.createElement('input');input.type='text';input.className='hex-color';input.pattern='#[0-9a-fA-F]{6}';input.maxLength=7;input.required=true;
+    const field=swatch.closest('label').querySelector('span').textContent;
+    input.setAttribute('aria-label',`${swatch.dataset.panelAppearance?'Module':'Screen'} ${field} hex colour`);
+    input.value=swatch.value;swatch.after(input);
+    input.addEventListener('input',()=>{if(input.validity.valid){swatch.value=input.value;swatch.dispatchEvent(new Event('input',{bubbles:true}));}else markDirty();});
+    swatch.addEventListener('input',()=>{input.value=swatch.value;});
+  }
+
   document.addEventListener('input', event => {if (event.target.closest('#screen-inspector,#panel-inspector,.branding-section')) queueMicrotask(() => markDirty());});
   window.addEventListener('message', event => { if (event.origin === window.location.origin && event.source === $('#live-preview').contentWindow && event.data?.type === 'castboard-preview-ready') {state.previewReady = true; sendDraft();} });
   $('#undo').addEventListener('click', () => restoreHistory('undo'));
@@ -912,6 +999,7 @@ function bindEvents() {
   $('#theme-preset').addEventListener('change', () => $('#theme-preset').value === 'inherit' ? resetTheme() : applyTheme($('#theme-preset').value));
   $('#reset-theme').addEventListener('click', resetTheme);
   $('#reset-panel-style').addEventListener('click', () => {
+    if(!canLeaveField())return;
     delete currentPanel().appearance;
     markDirty('Panel style overrides cleared · unsaved');
     renderPanelInspector();
@@ -950,7 +1038,7 @@ function bindEvents() {
     renderCanvas();
   });
 
-  for (const input of $$('[data-appearance]')) input.addEventListener('input', () => {
+  for (const input of $$('[data-appearance]')) input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
     if (!input.validity.valid) return;
     const screen = currentScreen();
     screen.appearance ||= {};
@@ -964,7 +1052,7 @@ function bindEvents() {
     renderCanvas();
   });
 
-  for (const input of $$('[data-panel-appearance]')) input.addEventListener('input', () => {
+  for (const input of $$('[data-panel-appearance]')) input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
     if (!input.validity.valid) return;
     const panel = currentPanel();
     panel.appearance ||= {};
@@ -982,6 +1070,7 @@ function bindEvents() {
   });
 
   for (const button of $$('[data-clear-panel-appearance]')) button.addEventListener('click', () => {
+    if(!canLeaveField())return;
     const panel = currentPanel();
     if (panel.appearance) delete panel.appearance[button.dataset.clearPanelAppearance];
     if (panel.appearance && !Object.keys(panel.appearance).length) delete panel.appearance;
@@ -993,6 +1082,7 @@ function bindEvents() {
   for (const input of $$('[data-panel]')) input.addEventListener('change', () => {
     const panel = currentPanel();
     const oldId = panel.id;
+    if(!canLeaveField())return;
     panel[input.dataset.panel] = input.value;
     if (input.dataset.panel === 'id') state.selectedPanelId = input.value;
     if (input.dataset.panel === 'plugin') {delete panel.source; delete panel.options; const source = compatibleSource(panel.plugin, state.catalog); if (source) panel.source = source; renderPanelInspector();}

@@ -1,24 +1,16 @@
-import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.8.0';
+import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.9.0-2';
 
 const dashboard = document.getElementById('dashboard');
 const cleanups = [];
 window.addEventListener('pagehide', () => { for (const cleanup of cleanups.splice(0)) cleanup(); });
 
-const FONT_STACKS = {
-  sans: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  rounded: '"Avenir Next Rounded", "Arial Rounded MT Bold", ui-rounded, sans-serif',
-  serif: 'Georgia, "Times New Roman", serif',
-  mono: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
-};
-
-const PANEL_SHADOWS = {
-  none: 'none',
-  soft: 'inset 0 1px rgba(255,255,255,.035), 0 8px 22px rgba(0,0,0,.14)',
-  deep: 'inset 0 1px rgba(255,255,255,.05), 0 18px 42px rgba(0,0,0,.42)',
-};
-
+import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.9.0-2';
+let previewMounted;
+let previewRenderer;
 function applyScreenAppearance(appearance, branding) {
   const root = document.documentElement;
+  root.style.setProperty('--bg',appearance.background || '#07100f');
+  root.style.removeProperty('--panel-background');
   root.style.fontSize = `${16 * ((appearance.fontScale || 100) / 100)}px`;
   root.style.setProperty('--font-family', FONT_STACKS[appearance.fontFamily] || FONT_STACKS.sans);
   root.style.setProperty('--heading-font-family', FONT_STACKS[appearance.headingFontFamily] || FONT_STACKS.serif);
@@ -35,49 +27,47 @@ function applyScreenAppearance(appearance, branding) {
   if (appearance.panelBackground) root.style.setProperty('--panel-background', appearance.panelBackground);
 }
 
+const panelStyleKeys = new WeakMap();
+const panelFitters = new WeakMap();
 function applyPanelAppearance(element, appearance = {}, screenAppearance = {}) {
-  if (appearance.fontFamily) element.style.setProperty('--font-family', FONT_STACKS[appearance.fontFamily]);
-  if (appearance.headingFontFamily) element.style.setProperty('--heading-font-family', FONT_STACKS[appearance.headingFontFamily]);
-  element.style.fontSize = `${16 * ((screenAppearance.fontScale || 100) / 100) * ((appearance.fontScale || 100) / 100)}px`;
-  const properties = {
-    accent: '--accent', textColor: '--text', mutedColor: '--muted', borderColor: '--line',
-    positiveColor: '--good', negativeColor: '--bad', background: '--panel-background',
-  };
-  for (const [field, property] of Object.entries(properties)) if (appearance[field]) element.style.setProperty(property, appearance[field]);
-  if (appearance.radius !== undefined) element.style.setProperty('--panel-radius', `${appearance.radius}px`);
-  if (appearance.padding !== undefined) element.style.setProperty('--panel-padding', `${appearance.padding}px`);
-  if (appearance.borderWidth !== undefined) element.style.setProperty('--panel-border-width', `${appearance.borderWidth}px`);
-  if (appearance.shadow) element.style.setProperty('--panel-shadow', PANEL_SHADOWS[appearance.shadow]);
+  for(const key of panelStyleKeys.get(element)||[])element.style.removeProperty(key);
+  const styles=panelStyle(appearance,screenAppearance);
+  for(const [key,value] of Object.entries(styles))element.style.setProperty(key,value);
+  for(const field of ['background','radius','padding','borderWidth','borderColor','shadow','fontFamily','headingFontFamily','textColor','mutedColor','accent','positiveColor','negativeColor'])element.toggleAttribute(`data-appearance-${field.toLowerCase()}`,styles[`--castboard-${field}`]!==undefined);
+  panelStyleKeys.set(element,Object.keys(styles));element.dataset.baseFontSize=String(parseFloat(styles['font-size']));element.dataset.baseTextScale=styles['--castboard-text-scale'];
+  panelFitters.get(element)?.();
 }
 
 function enablePanelAutoFit(element) {
-  const baseFontSize = Number.parseFloat(element.style.fontSize) || 16;
   const minimumScale = 0.55;
   let frame = 0;
 
-  const overflows = () => element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
+  const overflows = () => [element,...(element.shadowRoot?.querySelectorAll('.module-root,.card,.masthead,.lead-card,.side-card,.lead-content')||[])].some(node => node.clientWidth && node.clientHeight && (node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1));
   const fit = () => {
     frame = 0;
     if (!element.isConnected || !element.clientWidth || !element.clientHeight) return;
-    element.style.fontSize = `${baseFontSize}px`;
+    const baseFontSize=Number(element.dataset.baseFontSize)||16;
+    const baseTextScale=Number(element.dataset.baseTextScale)||1;
+    const applyScale=value=>{element.style.fontSize=`${baseFontSize*value}px`;element.style.setProperty('--castboard-text-scale',String(baseTextScale*value));};
+    applyScale(1);
     let scale = 1;
     if (overflows()) {
       let low = minimumScale;
       let high = 1;
-      element.style.fontSize = `${baseFontSize * low}px`;
+      applyScale(low);
       if (overflows()) {
         scale = low;
       } else {
         for (let index = 0; index < 8; index += 1) {
           const candidate = (low + high) / 2;
-          element.style.fontSize = `${baseFontSize * candidate}px`;
+          applyScale(candidate);
           if (overflows()) high = candidate;
           else low = candidate;
         }
         scale = low;
       }
     }
-    element.style.fontSize = `${baseFontSize * scale}px`;
+    applyScale(scale);
     element.dataset.fitScale = String(Math.round(scale * 100));
   };
   const scheduleFit = () => {
@@ -88,9 +78,11 @@ function enablePanelAutoFit(element) {
   element.dataset.fitContent = 'true';
   const resize = new ResizeObserver(scheduleFit);
   const mutation = new MutationObserver(scheduleFit);
+  panelFitters.set(element,scheduleFit);
   resize.observe(element);
   mutation.observe(element, { childList: true, characterData: true, subtree: true });
-  cleanups.push(() => { resize.disconnect(); mutation.disconnect(); cancelAnimationFrame(frame); });
+  if(element.shadowRoot)mutation.observe(element.shadowRoot,{childList:true,characterData:true,subtree:true});
+  cleanups.push(() => { panelFitters.delete(element);resize.disconnect(); mutation.disconnect(); cancelAnimationFrame(frame); });
   scheduleFit();
 }
 
@@ -178,7 +170,7 @@ async function boot(draft, screenId) {
       element.classList.add('widget-unavailable');
     }
   }));
-  if (studioPreview) return;
+  if (studioPreview) {previewMounted={config,screenId:screen.id};previewRenderer=renderer;return;}
   const statusTimer = schedule(async () => {
     try { await requestJson('/api/client-status', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screenId:screen.id,panels:[...dashboard.querySelectorAll('[data-panel]')].map(element=>({id:element.dataset.panel,state:element.dataset.freshness || (element.dataset.mounted ? 'live' : 'loading')}))})}); } catch {}
   }, 15000);
@@ -200,6 +192,20 @@ if (studioPreview) {
     rendering = true;
     while (pending) {
       const next = pending; pending = null;
+      const nextScreen=next.config.screens[next.screenId];
+      if(previewMounted && previewMounted.screenId===next.screenId && previewStructure(previewMounted.config,next.screenId)===previewStructure(next.config,next.screenId) && previewRenderer.editor?.incremental === true) {
+        try {
+          applyScreenAppearance(nextScreen.appearance||{},next.config.branding);
+          dashboard.style.backgroundColor=nextScreen.appearance?.background||'';
+          await previewRenderer.prepare({container:dashboard,screen:nextScreen});
+          for(const panel of nextScreen.panels) {
+            const element=[...dashboard.children].find(node=>node.dataset.panel===panel.id);
+            if(element){applyPanelAppearance(element,panel.appearance,nextScreen.appearance);await previewRenderer.place({container:dashboard,element,panel,screen:nextScreen});}
+          }
+          previewMounted={config:next.config,screenId:next.screenId};continue;
+        } catch { /* A failed incremental update falls back to a complete mount. */ }
+      }
+      previewMounted=null;
       for (const cleanup of cleanups.splice(0).reverse()) { try { cleanup(); } catch {} }
       dashboard.className = 'dashboard-grid';
       dashboard.removeAttribute('style');

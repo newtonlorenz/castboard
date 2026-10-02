@@ -2,7 +2,7 @@ export function createScreenType() {
   return {
     id: 'flow',
     name: 'Responsive flow',
-    version: '1.0.1',
+    version: '1.0.2',
     validateScreen(screen, screenId) {
       const layout = screen.layout || {};
       if (layout.minPanelWidth !== undefined && (!Number.isFinite(Number(layout.minPanelWidth)) || Number(layout.minPanelWidth) < 120 || Number(layout.minPanelWidth) > 2000)) throw new Error(`screens.${screenId}.layout.minPanelWidth must be from 120 to 2000`);

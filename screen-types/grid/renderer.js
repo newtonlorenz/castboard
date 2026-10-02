@@ -11,3 +11,10 @@ export function place({ element, panel }) {
   element.style.gridColumn = `${panel.position.column} / span ${panel.position.width}`;
   element.style.gridRow = `${panel.position.row} / span ${panel.position.height}`;
 }
+
+// Optional Studio contract; runtime rendering remains independent.
+export const editor = {
+  incremental: true,
+  read(screen) { return {...screen.layout, positions:Object.fromEntries(screen.panels.map(panel=>[panel.id,{...panel.position}]))}; },
+  write(screen, model) { for(const panel of screen.panels) panel.position={...model.positions[panel.id]}; },
+};

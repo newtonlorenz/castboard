@@ -1,7 +1,7 @@
 export function createScreenType() {
   return {
-    id: 'area-grid', name: 'Named area grid', version: '1.0.0',
-    layoutSchema: {type:'object',required:['areas','rows'],properties:{areas:{type:'array',items:{type:'string'},title:'Named area rows'},rows:{type:'array',items:{type:'number',minimum:1},title:'Row weights'},gap:{type:'number',minimum:0,title:'Panel gap'},padding:{type:'number',minimum:0,title:'Screen padding'}}},
+    id: 'area-grid', name: 'Named area grid', version: '1.1.0',
+    layoutSchema: {type:'object',required:['areas','rows'],properties:{areas:{type:'array',items:{type:'string'},title:'Named area rows'},rows:{type:'array',items:{type:'number',minimum:0.001},title:'Row weights'},columns:{type:'array',items:{type:'number',minimum:0.001},title:'Column weights'},gap:{type:'number',minimum:0,title:'Panel gap'},padding:{type:'number',minimum:0,title:'Screen padding'}}},
     positionSchema: {type:'object',required:['area'],properties:{area:{type:'string'}}},
     validateScreen(screen) {
       const rows=screen.layout.areas.map(row=>row.trim().split(/\s+/));
@@ -12,6 +12,7 @@ export function createScreenType() {
         const xs=cells.map(c=>c[0]),ys=cells.map(c=>c[1]);
         if(cells.length!==(Math.max(...xs)-Math.min(...xs)+1)*(Math.max(...ys)-Math.min(...ys)+1))throw new Error('Named areas must form rectangles');
       }
+      if(screen.layout.columns && (screen.layout.columns.length!==rows[0].length || screen.layout.columns.some(value=>!Number.isFinite(value)||value<=0)))throw new Error('Column weights must match the grid and be positive');
       const used=new Set();
       for(const panel of screen.panels){const area=panel.position?.area;if(!rows.flat().includes(area)||used.has(area))throw new Error(`Invalid or repeated panel area: ${area}`);used.add(area);}
     }

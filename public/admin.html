@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Castboard · Screens</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/admin.css?v=0.8.0">
+  <link rel="stylesheet" href="/admin.css?v=0.9.0-2">
 </head>
 <body>
   <header class="topbar">
@@ -82,7 +82,7 @@
     <aside class="sidebar inspector-sidebar">
       <div class="inspector-tabs" role="tablist" aria-label="Inspector">
         <button type="button" role="tab" class="active" data-inspector="screen">Screen</button>
-        <button type="button" role="tab" data-inspector="panel">Panel</button>
+        <button type="button" role="tab" data-inspector="panel">Module</button>
       </div>
 
       <div id="screen-inspector" class="inspector-pane">
@@ -176,21 +176,19 @@
 
       <div id="panel-inspector" class="inspector-pane" hidden>
         <div id="panel-empty" class="empty-inspector">
-          <span>□</span><strong>No panel selected</strong><p>Select a panel on the canvas or add one from the library.</p>
+          <span></span><strong>No panel selected</strong><p>Select a panel on the canvas or add one from the library.</p>
         </div>
         <div id="panel-fields" hidden>
+          <h2 id="selected-module-name" class="module-heading"></h2>
           <label class="field"><span>Data source</span><select id="panel-source"></select></label>
           <div id="extension-option-fields" class="field-grid" hidden></div>
           <section>
 
-            <label class="field"><span>Panel name (ID)</span><input id="panel-id" data-panel="id" autocomplete="off"></label>
-            <label class="field"><span>Module</span><select id="panel-plugin" data-panel="plugin"></select></label>
             <label class="field"><span>Display title</span><input id="panel-title" data-option="title" placeholder="Module default" autocomplete="off"></label>
-            <label class="field"><span>View</span><input id="panel-view" data-option="view" placeholder="Module default" autocomplete="off"></label>
             <label class="field check-field"><span>Content sizing</span><span><input id="panel-fit-content" type="checkbox"><span>Fit text to panel<small>Reduce text size to fit this panel.</small></span></span></label>
           </section>
 
-          <details id="panel-geometry" open><summary>Placement</summary>
+          <details id="panel-geometry"><summary>Placement</summary>
 
             <div id="grid-panel-fields" class="field-grid">
               <label class="field"><span>Column</span><input type="number" min="1" data-position="column"></label>
@@ -215,20 +213,21 @@
             </div>
           </details>
 
-          <details><summary>Panel appearance</summary>
+          <details open><summary>Appearance</summary>
 
             <p class="section-note">Leave a field empty to inherit the screen theme.</p>
             <label class="field"><span>Font</span><select data-panel-appearance="fontFamily">
               <option value="">Inherit</option><option value="sans">Sans serif</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="mono">Monospace</option>
             </select></label>
+            <label class="field"><span>Heading font</span><select data-panel-appearance="headingFontFamily"><option value="">Inherit</option><option value="sans">Sans serif</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label>
             <label class="field"><span>Text scale · %</span><input type="number" min="60" max="180" step="5" placeholder="100" data-panel-appearance="fontScale"></label>
-            <label class="field color-field optional-color"><span>Background</span><span><input type="color" data-panel-appearance="background"><output></output><button type="button" data-clear-panel-appearance="background" aria-label="Inherit panel background">×</button></span></label>
-            <label class="field color-field optional-color"><span>Accent</span><span><input type="color" data-panel-appearance="accent"><output></output><button type="button" data-clear-panel-appearance="accent" aria-label="Inherit panel accent">×</button></span></label>
-            <label class="field color-field optional-color"><span>Text</span><span><input type="color" data-panel-appearance="textColor"><output></output><button type="button" data-clear-panel-appearance="textColor" aria-label="Inherit panel text color">×</button></span></label>
-            <label class="field color-field optional-color"><span>Secondary text</span><span><input type="color" data-panel-appearance="mutedColor"><output></output><button type="button" data-clear-panel-appearance="mutedColor" aria-label="Inherit panel secondary text color">×</button></span></label>
-            <label class="field color-field optional-color"><span>Border</span><span><input type="color" data-panel-appearance="borderColor"><output></output><button type="button" data-clear-panel-appearance="borderColor" aria-label="Inherit panel border color">×</button></span></label>
-            <label class="field color-field optional-color"><span>Positive value</span><span><input type="color" data-panel-appearance="positiveColor"><output></output><button type="button" data-clear-panel-appearance="positiveColor" aria-label="Inherit panel positive color">×</button></span></label>
-            <label class="field color-field optional-color"><span>Negative value</span><span><input type="color" data-panel-appearance="negativeColor"><output></output><button type="button" data-clear-panel-appearance="negativeColor" aria-label="Inherit panel negative color">×</button></span></label>
+            <label class="field color-field optional-color"><span>Background</span><span><input type="color" data-panel-appearance="background"><output></output><button type="button" data-clear-panel-appearance="background" aria-label="Inherit panel background">Reset</button></span></label>
+            <label class="field color-field optional-color"><span>Accent</span><span><input type="color" data-panel-appearance="accent"><output></output><button type="button" data-clear-panel-appearance="accent" aria-label="Inherit panel accent">Reset</button></span></label>
+            <label class="field color-field optional-color"><span>Text</span><span><input type="color" data-panel-appearance="textColor"><output></output><button type="button" data-clear-panel-appearance="textColor" aria-label="Inherit panel text color">Reset</button></span></label>
+            <label class="field color-field optional-color"><span>Secondary text</span><span><input type="color" data-panel-appearance="mutedColor"><output></output><button type="button" data-clear-panel-appearance="mutedColor" aria-label="Inherit panel secondary text color">Reset</button></span></label>
+            <label class="field color-field optional-color"><span>Border</span><span><input type="color" data-panel-appearance="borderColor"><output></output><button type="button" data-clear-panel-appearance="borderColor" aria-label="Inherit panel border color">Reset</button></span></label>
+            <label class="field color-field optional-color"><span>Positive value</span><span><input type="color" data-panel-appearance="positiveColor"><output></output><button type="button" data-clear-panel-appearance="positiveColor" aria-label="Inherit panel positive color">Reset</button></span></label>
+            <label class="field color-field optional-color"><span>Negative value</span><span><input type="color" data-panel-appearance="negativeColor"><output></output><button type="button" data-clear-panel-appearance="negativeColor" aria-label="Inherit panel negative color">Reset</button></span></label>
             <div class="field-grid">
               <label class="field"><span>Corner radius</span><input type="number" min="0" max="48" data-panel-appearance="radius"></label>
               <label class="field"><span>Padding</span><input type="number" min="0" max="48" data-panel-appearance="padding"></label>
@@ -238,7 +237,12 @@
             <button id="reset-panel-style" class="button secondary full" type="button">Clear all overrides</button>
           </details>
 
+          <details><summary>Module and identity</summary>
+            <label class="field"><span>Panel name (ID)</span><input id="panel-id" data-panel="id" autocomplete="off"></label>
+            <label class="field"><span>Module</span><select id="panel-plugin" data-panel="plugin"></select></label>
+          </details>
           <details><summary>Advanced options</summary>
+            <label class="field"><span>View</span><input id="panel-view" data-option="view" placeholder="Module default" autocomplete="off"></label>
 
             <label class="field"><span>Options (JSON)</span><textarea id="panel-options" rows="7" spellcheck="false"></textarea></label>
             <p id="options-error" class="field-error" role="alert"></p>
@@ -258,7 +262,7 @@
 
   <dialog id="screen-dialog">
     <form method="dialog" id="screen-form">
-      <header><div><h2>Add a screen</h2></div><button value="cancel" class="dialog-close" aria-label="Close">×</button></header>
+      <header><div><h2>Add a screen</h2></div><button value="cancel" class="dialog-close" aria-label="Close">Close</button></header>
       <label class="field"><span>Screen name</span><input id="new-screen-title" required autocomplete="off" placeholder="Kitchen display"></label>
       <label class="field"><span>Screen ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off" placeholder="kitchen"></label>
       <label class="field"><span>URL path</span><input id="new-screen-path" required pattern="/.*" autocomplete="off" placeholder="/kitchen"></label>
@@ -279,6 +283,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/admin.js?v=0.8.0"></script>
+  <script type="module" src="/admin.js?v=0.9.0-2"></script>
 </body>
 </html>

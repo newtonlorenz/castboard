@@ -112,7 +112,7 @@ export function validateConfig(config) {
     if (screen.type !== undefined && !/^[a-z][a-z0-9-]*$/.test(screen.type)) throw new Error(`Invalid screen type: ${screen.type}`);
     if (screen.castProtocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(screen.castProtocol)) throw new Error(`Invalid screen cast protocol: ${screen.castProtocol}`);
     if (!screen.path || !String(screen.path).startsWith('/')) throw new Error(`screens.${screenId}.path must start with /`);
-    if (/^\/(api|plugins|screen-types|assets)(\/|$)/.test(screen.path) || ['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js'].includes(screen.path)) throw new Error(`screens.${screenId}.path is reserved by Castboard`);
+    if (/^\/(api|plugins|screen-types|assets)(\/|$)/.test(screen.path) || ['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js','/appearance-model.js'].includes(screen.path)) throw new Error(`screens.${screenId}.path is reserved by Castboard`);
     if (paths.has(screen.path)) throw new Error(`Screen path must be unique: ${screen.path}`);
     paths.add(screen.path);
     if (screen.layout !== undefined) assertObject(screen.layout, `screens.${screenId}.layout`);
