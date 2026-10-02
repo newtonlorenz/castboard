@@ -1,4 +1,4 @@
-import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js';
+import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.8.0';
 
 const dashboard = document.getElementById('dashboard');
 const cleanups = [];
@@ -122,23 +122,25 @@ function watchDesign(config, screen) {
   cleanups.push(() => clearInterval(timer));
 }
 
-async function boot() {
-  const { response, payload: config } = await requestJson('/api/runtime-config', { cache: 'no-store' });
+const studioPreview = window.location.pathname === '/admin-preview';
+async function boot(draft, screenId) {
+  const result = draft ? { response: { ok: true }, payload: draft } : await requestJson('/api/runtime-config', { cache: 'no-store' });
+  const { response, payload: config } = result;
   if (!response.ok) throw new Error('Unable to load Castboard configuration');
-  const requested = Object.values(config.screens).find(screen => screen.path === window.location.pathname);
+  const requested = screenId ? config.screens[screenId] : Object.values(config.screens).find(screen => screen.path === window.location.pathname);
   const screen = requested || config.screens[config.defaultScreen] || Object.values(config.screens)[0];
   if (!screen) throw new Error('No screen is configured');
   const screenType = config.screenTypes.find(type => type.id === screen.type);
   if (!screenType) throw new Error(`Screen type is unavailable: ${screen.type}`);
   const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(screenType.version)}`);
   if (typeof renderer.prepare !== 'function' || typeof renderer.place !== 'function') throw new Error(`Screen type ${screen.type} has an invalid renderer`);
-  document.title = `${screen.title} · ${config.branding.name || 'Castboard'}`;
+  document.title = `${screen.title || screen.id} · ${config.branding.name || 'Castboard'}`;
   const appearance = screen.appearance || {};
   applyScreenAppearance(appearance, config.branding);
   dashboard.style.backgroundColor = appearance.background || '';
   dashboard.dataset.screen = screen.id;
   dashboard.dataset.screenType = screen.type;
-  dashboard.setAttribute('aria-label', `${screen.title} screen`);
+  dashboard.setAttribute('aria-label', `${screen.title || screen.id} screen`);
   dashboard.innerHTML = '';
   const releaseRenderer = await renderer.prepare({ container: dashboard, screen });
   if (typeof releaseRenderer === 'function') cleanups.push(releaseRenderer);
@@ -176,6 +178,7 @@ async function boot() {
       element.classList.add('widget-unavailable');
     }
   }));
+  if (studioPreview) return;
   const statusTimer = schedule(async () => {
     try { await requestJson('/api/client-status', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screenId:screen.id,panels:[...dashboard.querySelectorAll('[data-panel]')].map(element=>({id:element.dataset.panel,state:element.dataset.freshness || (element.dataset.mounted ? 'live' : 'loading')}))})}); } catch {}
   }, 15000);
@@ -183,6 +186,41 @@ async function boot() {
   watchDesign(config, screen);
 }
 
-boot().catch(error => {
+function showError(error) {
+  dashboard.innerHTML = `<div class="boot-state error"><strong>Screen preview unavailable</strong><span>${escapeHtml(error.message)}</span></div>`;
+}
+if (studioPreview) {
+  // The parent sends only public runtime configuration and design fields.
+  // Serial renders dispose all previous widgets before the next draft mounts.
+  let pending;
+  let rendering = false;
+  let signature = '';
+  const renderDraft = async () => {
+    if (rendering) return;
+    rendering = true;
+    while (pending) {
+      const next = pending; pending = null;
+      for (const cleanup of cleanups.splice(0).reverse()) { try { cleanup(); } catch {} }
+      dashboard.className = 'dashboard-grid';
+      dashboard.removeAttribute('style');
+      document.documentElement.removeAttribute('style');
+      try { await boot(next.config, next.screenId); } catch (error) { showError(error); }
+    }
+    rendering = false;
+  };
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || event.origin !== window.location.origin || event.data?.type !== 'castboard-draft') return;
+    const nextSignature = JSON.stringify(event.data);
+    if (nextSignature === signature) return;
+    signature = nextSignature;
+    pending = event.data;
+    renderDraft();
+  });
+  // A preview never operates controls belonging to a live provider.
+  for (const name of ['click', 'submit', 'keydown']) document.addEventListener(name, event => {
+    event.preventDefault(); event.stopImmediatePropagation();
+  }, true);
+  window.parent.postMessage({ type: 'castboard-preview-ready' }, window.location.origin);
+} else boot().catch(error => {
   dashboard.innerHTML = `<div class="boot-state error"><strong>Castboard could not start</strong><span>${escapeHtml(error.message)}</span></div>`;
 });

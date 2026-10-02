@@ -90,3 +90,9 @@ test('trusted proxy identities must be explicit IP addresses',()=>{
  assert.doesNotThrow(()=>validateConfig(config));
  for(const value of ['127.0.0.1',['proxy.example'],[null]]) assert.throws(()=>validateConfig({...config,server:{...config.server,trustedProxyAddresses:value}}),/array of IP addresses/);
 });
+
+
+test('screen design paths cannot shadow administration, assets or API routes', () => {
+ for (const route of ['/admin','/admin-preview','/setup','/studio-model.js','/api','/api/health','/plugins/clock/widget.js','/assets/logo.svg']) assert.throws(()=>validateConfig({server:{port:8787},plugins:{},screens:{home:{path:route,panels:[]}}}),/reserved/);
+ assert.doesNotThrow(()=>validateConfig({server:{port:8787},plugins:{},screens:{home:{path:'/screens/custom',panels:[]}}}));
+});

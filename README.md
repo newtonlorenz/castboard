@@ -27,7 +27,7 @@ Castboard turns Google Nest displays, wall tablets, TVs, kiosk browsers, and oth
 </p>
 
 <p align="center">
-  <img src="public/assets/castboard-studio.jpg" width="960" alt="Castboard Studio editing a live multi-panel smart-display dashboard">
+  <img src="public/assets/castboard-studio.png" width="960" alt="Castboard Studio with a draft preview and contextual panel settings">
   <br><sub>Design every screen visually, with the real output always in view.</sub>
 </p>
 
@@ -66,7 +66,7 @@ Now open:
 - [`localhost:8787/screens/office`](http://localhost:8787/screens/office) — full-screen news wire
 - [`localhost:8787/screens/tablet`](http://localhost:8787/screens/tablet) — responsive tablet flow
 
-Start in Setup. It detects the LAN URL and optional CLIs, labels every provider as demo, built-in, or adapter-backed, tests data connections, shows missing screen targets, and can discover Cast devices. The same report is available in a terminal with `npm run doctor`.
+Use Connections at `/setup` to inspect configured modules, test data connections, view delivery target counts, check optional tools and discover Cast devices. Configuration checks and connection tests are shown separately. The same report is available in a terminal with `npm run doctor`.
 
 In Studio, drag and resize panels, switch screen types, edit plugin options, and tune fonts, colors, spacing, borders, corners, shadows, and per-panel overrides. **Save & apply** validates and atomically writes the configuration; open displays pick up the design within five seconds.
 
@@ -214,7 +214,7 @@ Sonos remains available separately:
 
 Google Cast delivery uses [`catt`](https://github.com/skorokithakis/catt). Install it first with `pipx install catt`, then use `/setup` to discover receiver names. URL and webhook targets require no additional software.
 
-The starter screens deliberately contain no fake receivers. In Setup, discover a device, copy its target JSON into the chosen screen's `targets` array, restart Castboard, and then cast:
+The starter screens deliberately contain no fake receivers. In Connections, discover a device, copy its target JSON into the chosen screen's `targets` array, restart Castboard, and then cast:
 
 ```sh
 npm run cast -- home

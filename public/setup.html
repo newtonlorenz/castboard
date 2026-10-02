@@ -1,47 +1,34 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>Castboard Setup</title>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><title>Castboard · Connections</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/setup.css?v=0.6.1">
+  <link rel="stylesheet" href="/admin.css?v=0.8.0"><link rel="stylesheet" href="/setup.css?v=0.8.0">
 </head>
 <body>
-  <header class="setup-topbar">
-    <a class="setup-brand" href="/admin"><img src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Setup &amp; diagnostics</small></span></a>
-    <nav><a href="/">Open screen</a><a class="primary" href="/admin">Screen Studio</a></nav>
+  <header class="topbar">
+    <a class="brand" href="/admin"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Administration</small></span></a>
+    <nav class="app-nav" aria-label="Administration"><a href="/admin">Screens</a><a href="/setup" aria-current="page">Connections</a></nav>
+    <div class="topbar-actions"><a class="button secondary" href="/">Open screen</a><button id="refresh" class="button primary" type="button">Refresh checks</button></div>
   </header>
-
-  <main>
-    <section class="hero">
-      <div><span class="eyebrow">First-run assistant</span><h1>Know what works before you cast it.</h1><p>Check the server, playback tools, screen targets, and every configured data provider without exposing credentials to the dashboard.</p></div>
-      <div id="overall" class="overall loading"><strong>Checking Castboard…</strong><span>Inspecting local tools and configuration.</span></div>
+  <main class="connections">
+    <div class="page-heading"><h1>Connections</h1><p>Check data sources, server tools and screen delivery.</p></div>
+    <div id="overall" class="overall" role="status"><strong>Loading configuration…</strong></div>
+    <section class="connection-section" aria-labelledby="plugins-heading">
+      <div class="section-head"><div><h2 id="plugins-heading">Data &amp; modules</h2><p>Configuration is shown below. Use Test to check a connection.</p></div><label class="field search"><span>Find a module</span><input id="connection-search" type="search" placeholder="Search modules"></label></div>
+      <div class="connection-columns" aria-hidden="true"><span>Module</span><span>Configuration</span><span>Check</span></div>
+      <div id="plugin-list" class="connection-list"></div>
     </section>
-
-    <section class="section" aria-labelledby="server-heading">
-      <div class="section-head"><div><span class="eyebrow">01 · Runtime</span><h2 id="server-heading">Server and tools</h2></div><button id="refresh" type="button">Run checks again</button></div>
-      <div id="runtime-cards" class="runtime-grid"></div>
+    <section class="connection-section" aria-labelledby="screens-heading">
+      <div class="section-head"><div><h2 id="screens-heading">Screen delivery</h2><p>Delivery targets are configured in your server configuration.</p></div><button id="scan-cast" class="button secondary" type="button">Find Cast devices</button></div>
+      <div id="screen-list" class="delivery-list"></div><div id="cast-results" class="results" role="status" hidden></div>
     </section>
-
-    <section class="section" aria-labelledby="screens-heading">
-      <div class="section-head"><div><span class="eyebrow">02 · Delivery</span><h2 id="screens-heading">Screens and Cast targets</h2></div><button id="scan-cast" type="button">Discover Cast devices</button></div>
-      <div id="screen-list" class="screen-grid"></div>
-      <div id="cast-results" class="results" hidden></div>
-    </section>
-
-    <section class="section" aria-labelledby="plugins-heading">
-      <div class="section-head"><div><span class="eyebrow">03 · Connections</span><h2 id="plugins-heading">Plugin readiness</h2></div><span class="legend"><i class="ready"></i>Built in <i class="demo"></i>Demo <i class="adapter"></i>Adapter</span></div>
-      <div id="plugin-list" class="plugin-grid"></div>
-    </section>
-
-    <section class="next-step">
-      <div><span class="eyebrow">Ready to customize?</span><h2>Edit private connections in <code id="config-name">castboard.config.json</code></h2><p>Provider credentials and receiver addresses intentionally remain server-side. Restart Castboard after changing provider or delivery settings; visual Studio changes still apply live.</p></div>
-      <a href="/admin">Design screens →</a>
-    </section>
+    <section class="connection-section" aria-labelledby="server-heading"><div class="section-head"><div><h2 id="server-heading">Server tools</h2><p>Optional tools are only needed by the features that use them.</p></div></div><div id="runtime-cards" class="runtime-list"></div></section>
+    <details class="configuration-help"><summary>Edit connection settings</summary><p>Update <code id="config-name">castboard.config.json</code> on the server, then restart Castboard. Screen layout changes saved in Studio apply without a restart.</p></details>
   </main>
-  <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/setup.js?v=0.6.1"></script>
+  <dialog id="token-dialog"><form id="token-form"><header><h2>Admin access</h2></header><p class="dialog-note">Enter your admin token to view connections. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/setup.js?v=0.8.0"></script>
 </body>
 </html>

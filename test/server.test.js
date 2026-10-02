@@ -84,6 +84,9 @@ test('admin studio exposes only the editable design catalog', async t => {
   t.after(() => app.server.close());
   assert.equal((await fetch(`${app.baseUrl}/admin`)).status, 200);
   assert.equal((await fetch(`${app.baseUrl}/admin.js`)).status, 200);
+  assert.equal((await fetch(`${app.baseUrl}/admin-preview`)).status, 200);
+  assert.equal((await fetch(`${app.baseUrl}/studio-model.js`)).status, 200);
+
   assert.equal((await fetch(`${app.baseUrl}/setup`)).status, 200);
   assert.equal((await fetch(`${app.baseUrl}/setup.js`)).status, 200);
   const setup = await (await fetch(`${app.baseUrl}/api/admin/setup`)).json();
@@ -94,7 +97,7 @@ test('admin studio exposes only the editable design catalog', async t => {
   const payload = await response.json();
   const serialized = JSON.stringify(payload);
   assert.equal(payload.design.screens['clock-screen'].title, undefined);
-  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', name: 'Clock' }, { id: 'spotify', name: 'Spotify' }]);
+  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', type: 'clock', name: 'Clock' }, { id: 'spotify', type: 'spotify', name: 'Spotify' }]);
   assert.equal(serialized.includes('never-public'), false);
   assert.equal(serialized.includes('Private clock display'), false);
   assert.equal(serialized.includes('clock-device'), false);

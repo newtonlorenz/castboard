@@ -1,5 +1,7 @@
 const $ = selector => document.querySelector(selector);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+let report;
+const checks = new Map();
 let token = sessionStorage.getItem('castboard-admin-token') || '';
 
 const snippets = {
@@ -17,12 +19,9 @@ const snippets = {
 async function request(path, init = {}, retry = true) {
   const headers = { ...(init.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   const response = await fetch(path, { ...init, headers, cache: 'no-store' });
-  if (response.status === 403 && retry) {
-    const next = window.prompt('Enter the Castboard LAN admin token');
-    if (!next) throw new Error('Admin authorization is required');
-    token = next;
-    sessionStorage.setItem('castboard-admin-token', token);
-    return request(path, init, false);
+  if (response.status === 403) {
+    if (!$('#token-dialog').open) $('#token-dialog').showModal();
+    throw new Error('Enter your admin token to continue.');
   }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error?.message || `Request failed (${response.status})`);
@@ -53,56 +52,69 @@ function command(value) {
   return `<div class="command"><span>${escapeHtml(value)}</span><button type="button" data-copy="${escapeHtml(value)}">Copy</button></div>`;
 }
 
-function runtimeCard(title, status, detail, extra = '') {
-  return `<article class="card"><div class="card-head"><h3>${escapeHtml(title)}</h3><span class="pill ${status === 'Installed' || status === 'Reachable' ? '' : 'blocked'}">${escapeHtml(status)}</span></div><p>${escapeHtml(detail)}</p>${extra}</article>`;
+function runtimeRow(title, status, detail, extra = '') {
+  return `<article class="runtime-row"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(detail)}</p><span class="pill ${status === 'Installed' || status === 'Running' ? '' : 'demo'}">${escapeHtml(status)}</span><div class="runtime-extra">${extra}</div></article>`;
 }
-
-function render(report) {
-  const attention = report.config.usingExample || report.plugins.some(plugin => ['blocked', 'adapter'].includes(plugin.status)) || report.screens.some(screen => !screen.targetCount);
-  $('#overall').className = `overall ${attention ? 'attention' : 'ready'}`;
-  $('#overall').innerHTML = attention
-    ? '<strong>Demo ready · connections need attention</strong><span>The dashboard works now. Complete the highlighted items before relying on live data or Cast delivery.</span>'
-    : '<strong>Ready for live screens</strong><span>Core tools, providers, and screen targets are configured.</span>';
+function renderModules() {
+  const search = $('#connection-search').value.toLowerCase();
+  const modules = report.plugins.filter(plugin => `${plugin.name} ${plugin.id} ${plugin.provider}`.toLowerCase().includes(search));
+  $('#plugin-list').innerHTML = modules.map(plugin => {
+    const check = checks.get(plugin.id);
+    const labels = {ready:'Configured', custom:'Custom module', adapter:'Adapter', demo:'Demo data', blocked:'Tool missing'};
+    return `<article class="connection-row"><div><h3>${escapeHtml(plugin.name)}</h3><span class="provider">${escapeHtml(plugin.id)} · ${escapeHtml(plugin.provider)} · ${plugin.usedBy ? `${plugin.usedBy} screen${plugin.usedBy === 1 ? '' : 's'}` : 'Not on a screen'}</span></div><div class="connection-description"><div class="connection-state"><span class="pill ${escapeHtml(plugin.status)}">${escapeHtml(labels[plugin.status] || plugin.label)}</span></div><p>${escapeHtml(plugin.detail)}</p></div><div class="card-actions">${snippets[plugin.type || plugin.id] ? `<button type="button" data-copy="${escapeHtml(snippets[plugin.type || plugin.id])}">Copy example</button>` : ''}<button type="button" data-test-plugin="${escapeHtml(plugin.id)}" aria-label="Test ${escapeHtml(plugin.name)} (${escapeHtml(plugin.id)})" ${check?.pending ? 'disabled' : ''}>${check?.pending ? 'Testing…' : 'Test'}</button></div><div class="test-result ${check ? check.ok ? 'ok' : check.pending ? '' : 'bad' : ''}" data-result="${escapeHtml(plugin.id)}">${escapeHtml(check?.message || '')}</div></article>`;
+  }).join('') || '<p class="no-results">No modules match this search.</p>';
+  bindDynamicActions();
+}
+function render(nextReport) {
+  report = nextReport;
+  const blocked = report.plugins.filter(plugin => plugin.status === 'blocked').length;
+  const demos = report.plugins.filter(plugin => plugin.status === 'demo').length;
+  $('#overall').className = `overall ${blocked ? 'attention' : ''}`;
+  $('#overall').innerHTML = `<strong>${report.plugins.length} modules · ${report.screens.length} screen${report.screens.length === 1 ? '' : 's'}</strong><span>${blocked ? `${blocked} modules need a server tool. ` : ''}${demos ? `${demos} use demo data. ` : ''}Connections have not been tested by this configuration check.</span>`;
   $('#config-name').textContent = report.config.fileName;
   $('#runtime-cards').innerHTML = [
-    runtimeCard('Castboard server', 'Reachable', `Local: ${report.urls.local}${report.urls.lan ? ` · LAN: ${report.urls.lan}` : ' · No LAN address detected'}`, report.config.usingExample ? command('cp castboard.config.example.json castboard.config.json') : ''),
-    runtimeCard('Google Cast · catt', report.tools.catt.installed ? 'Installed' : 'Missing', report.tools.catt.version || report.tools.catt.message, report.tools.catt.installed ? '' : command(report.tools.catt.install)),
-    runtimeCard('Spotify · spotify_player', report.tools.spotifyPlayer.installed ? 'Installed' : 'Missing', report.tools.spotifyPlayer.installed ? report.tools.spotifyPlayer.version : 'Required for independent Spotify playback through local speakers or Spotify Connect.', report.tools.spotifyPlayer.installed ? command(report.tools.spotifyPlayer.authenticate) : `${command('brew install spotify_player')}${command('cargo install spotify_player --locked')}${command(report.tools.spotifyPlayer.authenticate)}`),
+    runtimeRow('Castboard', 'Running', report.urls.local, report.config.usingExample ? command('cp castboard.config.example.json castboard.config.json') : ''),
+    runtimeRow('Google Cast', report.tools.catt.installed ? 'Installed' : 'Optional · missing', report.tools.catt.version || 'Install catt to discover and cast to Google Cast devices.', report.tools.catt.installed ? '' : command(report.tools.catt.install)),
+    runtimeRow('Spotify playback', report.tools.spotifyPlayer.installed ? 'Installed' : 'Optional · missing', report.tools.spotifyPlayer.installed ? report.tools.spotifyPlayer.version : 'Install spotify_player only if you use its playback module.', report.tools.spotifyPlayer.installed ? command(report.tools.spotifyPlayer.authenticate) : `${command('brew install spotify_player')}${command('cargo install spotify_player --locked')}`),
   ].join('');
-  $('#screen-list').innerHTML = report.screens.map(screen => `<article class="card"><div class="card-head"><h3>${escapeHtml(screen.title)}</h3><span class="pill ${screen.targetCount ? '' : 'demo'}">${screen.targetCount ? `${screen.targetCount} target${screen.targetCount === 1 ? '' : 's'}` : 'No targets'}</span></div><p>${escapeHtml(screen.path)}</p><div class="screen-meta"><span>${escapeHtml(screen.protocol)}</span><span>${escapeHtml(screen.id)}</span></div></article>`).join('');
-  $('#plugin-list').innerHTML = report.plugins.map(plugin => `<article class="card plugin-card"><div><div class="card-head"><h3>${escapeHtml(plugin.name)}</h3><span class="pill ${escapeHtml(plugin.status)}">${escapeHtml(plugin.label)}</span></div><p>${escapeHtml(plugin.detail)}</p><footer><span class="provider">${escapeHtml(plugin.provider)}</span><span>${plugin.usedBy ? `${plugin.usedBy} screen${plugin.usedBy === 1 ? '' : 's'}` : 'Available'}</span></footer><div class="test-result" data-result="${escapeHtml(plugin.id)}"></div></div><div class="card-actions">${snippets[plugin.id] ? `<button type="button" data-copy="${escapeHtml(snippets[plugin.id])}">Copy config</button>` : ''}<button type="button" data-test-plugin="${escapeHtml(plugin.id)}">Test</button></div></article>`).join('');
-  bindDynamicActions();
+  $('#screen-list').innerHTML = report.screens.map(screen => `<article class="delivery-row"><div><h3>${escapeHtml(screen.title)}</h3><div class="screen-meta"><span>${escapeHtml(screen.id)}</span><span>${escapeHtml(screen.protocol)}</span></div></div><p>${escapeHtml(screen.path)}</p><span class="pill ${screen.targetCount ? '' : 'demo'}">${screen.targetCount ? `${screen.targetCount} target${screen.targetCount === 1 ? '' : 's'}` : 'Browser only'}</span></article>`).join('');
+  renderModules();
 }
 
 function bindDynamicActions() {
   document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
     await copyText(button.dataset.copy);
-    toast('Command copied');
+    toast('Copied');
   }));
   document.querySelectorAll('[data-test-plugin]').forEach(button => button.addEventListener('click', async () => {
     const result = $(`[data-result="${CSS.escape(button.dataset.testPlugin)}"]`);
-    button.disabled = true;
+    button.disabled = true; button.textContent = 'Testing…'; checks.set(button.dataset.testPlugin,{pending:true,message:'Testing…'});
     result.className = 'test-result';
     result.textContent = 'Testing…';
     try {
       const payload = await request('/api/admin/setup/test-plugin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pluginId: button.dataset.testPlugin }) });
       result.className = `test-result ${payload.ok ? 'ok' : 'bad'}`;
-      result.textContent = `${payload.message}${payload.latencyMs !== undefined ? ` · ${payload.latencyMs} ms` : ''}`;
+      const message = `${payload.message}${payload.latencyMs !== undefined ? ` · ${payload.latencyMs} ms` : ''}`;
+      checks.set(button.dataset.testPlugin, {ok:payload.ok, message}); result.textContent = message;
     } catch (error) {
       result.className = 'test-result bad';
-      result.textContent = error.message;
-    } finally { button.disabled = false; }
+      result.textContent = error.message; checks.set(button.dataset.testPlugin,{ok:false,message:error.message});
+    } finally { button.disabled = false; button.textContent = 'Test'; }
   }));
 }
 
 async function load() {
   $('#overall').className = 'overall loading';
-  $('#overall').innerHTML = '<strong>Checking Castboard…</strong><span>Inspecting local tools and configuration.</span>';
+  $('#overall').innerHTML = '<strong>Checking configuration…</strong><span>Reading modules, screens and server tools.</span>';
+  $('#refresh').disabled = true;
   try { render(await request('/api/admin/setup')); }
-  catch (error) { $('#overall').className = 'overall attention'; $('#overall').innerHTML = `<strong>Setup check failed</strong><span>${escapeHtml(error.message)}</span>`; }
+  catch (error) { $('#overall').className = 'overall attention'; $('#overall').innerHTML = `<strong>Could not load connections</strong><span>${escapeHtml(error.message)} Use Refresh checks to retry.</span>`; }
+  finally { $('#refresh').disabled = false; }
 }
 
 $('#refresh').addEventListener('click', load);
+$('#connection-search').addEventListener('input', () => {if (report) renderModules();});
+$('#token-form').addEventListener('submit', async event => {event.preventDefault(); token = $('#admin-token').value; sessionStorage.setItem('castboard-admin-token',token); $('#token-dialog').close(); await load();});
 $('#scan-cast').addEventListener('click', async () => {
   const output = $('#cast-results');
   output.hidden = false;

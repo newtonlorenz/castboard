@@ -118,8 +118,8 @@ export async function createApp(options = {}) {
       revision: configRevision(rawConfig),
       design: extractDesign(rawConfig),
       catalog: {
-        plugins: plugins.filter(plugin => plugin.hasWidget).map(plugin => ({ id: plugin.id, name: plugin.name, ...extensionMetadata(plugin) })),
-        sources: plugins.filter(plugin => plugin.getData).map(plugin => ({ id: plugin.id, name: plugin.name, ...extensionMetadata(plugin) })),
+        plugins: plugins.filter(plugin => plugin.hasWidget).map(plugin => ({ id: plugin.id, type: plugin.type, name: plugin.name, ...extensionMetadata(plugin) })),
+        sources: plugins.filter(plugin => plugin.getData).map(plugin => ({ id: plugin.id, type: plugin.type, name: plugin.name, ...extensionMetadata(plugin) })),
         screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, ...extensionMetadata(type) })),
       },
     };
@@ -252,6 +252,8 @@ export async function createApp(options = {}) {
         return sendFile(res, path.join(screenType.directory, 'renderer.js'), true);
       }
 
+      if (req.method === 'GET' && url.pathname === '/admin-preview' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+      if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));

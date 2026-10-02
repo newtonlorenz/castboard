@@ -86,16 +86,18 @@ export async function buildSetupReport({ config, configPath, plugins }) {
   const installed = new Map(plugins.map(plugin => [plugin.id, plugin]));
   const pluginReports = Object.entries(config.plugins || {}).filter(([, value]) => value?.enabled !== false).map(([id, value]) => {
     const provider = value.provider || 'local';
-    const [status, label, detail] = PROVIDERS[id]?.[provider] || ['custom', 'Custom plugin', 'Review this plugin’s documentation for setup details.'];
-    const blockedByTool = id === 'spotify' && provider === 'spotify-player' && !spotifyPlayer.installed;
+    const type = installed.get(id)?.type || id;
+    const [status, label, detail] = PROVIDERS[type]?.[provider] || ['custom', 'Custom plugin', 'Review this plugin’s documentation for setup details.'];
+    const blockedByTool = type === 'spotify' && provider === 'spotify-player' && !spotifyPlayer.installed;
     return {
       id,
+      type,
       name: installed.get(id)?.name || id,
       provider,
       status: blockedByTool ? 'blocked' : status,
       label: blockedByTool ? 'CLI missing' : label,
       detail: blockedByTool ? 'Install and authenticate spotify_player before testing this connection.' : detail,
-      usedBy: Object.values(config.screens).filter(screen => screen.panels?.some(panel => panel.plugin === id)).length,
+      usedBy: Object.values(config.screens).filter(screen => screen.panels?.some(panel => panel.plugin === id || panel.source === id || Object.values(panel.bindings || {}).includes(id))).length,
     };
   });
   const screens = Object.entries(config.screens).map(([id, screen]) => ({

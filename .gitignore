@@ -18,3 +18,10 @@ credentials.json
 service-account.json
 secrets.json
 secrets.yaml
+
+# Local design reviews and direction sessions.
+.impeccable/review/
+.impeccable/questions/
+.impeccable/options.json
+.impeccable/mocks/
+.impeccable/config.local.json

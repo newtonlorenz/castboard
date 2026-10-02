@@ -30,6 +30,7 @@ export async function getPluginData(id, parameters = {}, signal) {
 }
 
 export async function postPluginAction(id, action, extra = {}, signal) {
+  if (window.location.pathname === '/admin-preview') throw new Error('Controls are disabled in the Studio preview');
   const { response, payload } = await requestJson(`/api/plugins/${encodeURIComponent(id)}/action`, {
     method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...extra }),
   }, 60000);

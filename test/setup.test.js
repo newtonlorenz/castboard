@@ -40,3 +40,11 @@ test('Cast discovery returns copy-safe device details from catt JSON', async t =
   const result = await discoverCastDevices({ casting: { protocols: { 'google-cast': { executable } } } });
   assert.deepEqual(result.devices, [{ name: 'Kitchen Hub', manufacturer: 'Google', model: 'Nest Hub' }]);
 });
+
+
+test('connection reports resolve independent module types and count their source use', async () => {
+ const report = await buildSetupReport({config:{server:{port:8787},plugins:{outside:{type:'weather',provider:'open-meteo'}},screens:{home:{path:'/',panels:[{id:'reading',plugin:'view',source:'outside'}]}}},configPath:'/tmp/config.json',plugins:[{id:'outside',type:'weather',name:'Outside'}]});
+ assert.equal(report.plugins[0].status,'ready');
+ assert.equal(report.plugins[0].usedBy,1);
+ assert.equal(report.plugins[0].type,'weather');
+});

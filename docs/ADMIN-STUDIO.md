@@ -2,7 +2,7 @@
 
 Castboard Studio is the visual design surface at `/admin`. It edits the declarative screen model; it is not a second configuration system. The same `screens`, `layout`, `panels`, and `appearance` values remain readable, reviewable JSON on disk.
 
-Use `/setup` before Studio for first-run diagnostics. It checks optional executables, shows which providers are demos or require adapters, tests provider connections, reports target counts, and performs user-triggered Cast discovery. It never returns configured receiver names, URLs, headers, tokens, or file paths.
+Use Connections at `/setup` for configuration checks and explicit connection tests. It checks optional executables, shows which providers are demos or require adapters, tests provider connections, reports target counts, and performs user-triggered Cast discovery. It never returns configured receiver names, URLs, headers, tokens, or file paths.
 
 ## What it edits
 
@@ -11,15 +11,25 @@ Use `/setup` before Studio for first-run diagnostics. It checks optional executa
 - Fixed grids through cell-based drag and resize plus numeric placement controls.
 - Responsive flows through minimum panel dimensions, spans, and panel ordering.
 - Single-plugin screens for immersive news, cameras, charts, or other modules.
-- Any discovered custom screen type through generic layout, position, and size JSON.
+- Any discovered custom screen type through generated schema controls and optional layout, position, and size JSON.
 - Plugin selection and per-panel options. News is in the same plugin library and follows the same placement and sizing rules as every other module.
 - Screen-wide typography, palette, density, borders, corners, and shadows. Castboard, Midnight Blue, Warm Paper, Amber Terminal, and Ocean presets are editable starting points.
 - Per-panel font, scale, background, accent, text, padding, border, radius, and shadow overrides. Clearing an override returns that panel to the screen theme.
 - Optional per-panel auto-fit, which reduces typography only when live content would overflow its panel.
 
-The viewport menu changes only the design simulator. Live preview renders at that viewport's real pixel dimensions and then scales the finished screen to fit Studio, so typography and responsive breakpoints match the selected device instead of the editor's canvas size. The real screen route remains responsive to its browser viewport.
+The viewport menu changes only the design simulator. The unsaved draft preview renders at that viewport's real pixel dimensions and then scales the finished screen to fit Studio, so typography and responsive breakpoints match the selected device instead of the editor's canvas size. The real screen route remains responsive to its browser viewport.
 
 Font choices are offline-safe stacks: modern sans, rounded, editorial serif, and monospace. Castboard does not fetch a third-party webfont from a display. Text scale is a percentage from 60 to 180 and changes widget typography without altering the screen grid itself.
+
+## Editing a draft
+
+Studio uses the installed screen renderer for both the editable canvas and the preview. Changes appear before saving, including on new screens. Preview controls are disabled; previewing does not issue receiver heartbeats or run provider actions through the widget SDK.
+
+Select a panel on the canvas or in the panel list. Grid panels snap to cells at any fit scale. Other renderers expose placement through their schemas or JSON. Use Add panel to search installed view modules; a compatible data source is selected when one is available.
+
+Undo and Redo apply to design edits. Native text-field undo remains available inside inputs. Discard returns to the saved design. Unsaved valid draft state is stored for this tab and offered for restoration after a reload. Unfinished invalid text is not persisted; correct it before switching selection or saving. A revision conflict leaves the draft intact, with options to download it or load the latest configuration.
+
+On smaller screens, Screens & panels, Canvas and Settings switch the visible tools. Shared settings and advanced appearance controls are collapsible. Keyboard shortcuts: Cmd/Ctrl+S to save; Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z outside text fields to undo and redo.
 
 ## What it does not edit
 
@@ -34,7 +44,7 @@ The admin API constructs a small design projection and never returns those field
 
 ## Saving and concurrency
 
-**Save & apply** performs these steps as one operation:
+**Save changes** performs these steps as one operation:
 
 1. Require the revision that the editor originally loaded, preventing an older browser tab from overwriting a newer change.
 2. Merge the design into the private raw configuration.

@@ -1,4 +1,5 @@
-import { schemaFields } from '/schema-fields.js';
+import { schemaFields } from '/schema-fields.js?v=0.8.0-2';
+import { History, gridSlot, gridDelta, compatibleSource, schemaDefaults } from '/studio-model.js?v=0.8.0';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -13,26 +14,13 @@ const state = {
   selectedPanelId: '',
   dirty: false,
   mode: 'design',
-  viewport: { width: 1024, height: 600 },
+  viewport: { width: 1280, height: 800 },
+  saving: false,
+  runtime: null,
+  history: null,
+  previewReady: false,
+  scale: 1,
   token: sessionStorage.getItem('castboard-admin-token') || '',
-};
-
-const glyphs = {
-  calendar: '31', camera: '◎', clock: '12', focus: '→', news: 'N', recovery: '♥',
-  solar: '☀', sonos: '◉', spotify: '♪', stocks: '↗', weather: '☁',
-};
-
-const FONT_STACKS = {
-  sans: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  rounded: '"Avenir Next Rounded", "Arial Rounded MT Bold", ui-rounded, sans-serif',
-  serif: 'Georgia, "Times New Roman", serif',
-  mono: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
-};
-
-const DESIGN_SHADOWS = {
-  none: 'none',
-  soft: '0 6px 18px rgba(0,0,0,.18)',
-  deep: '0 16px 36px rgba(0,0,0,.44)',
 };
 
 const THEMES = {
@@ -103,11 +91,57 @@ function toast(message, error = false) {
   toastTimer = setTimeout(() => { element.className = 'toast'; }, 3200);
 }
 
-function markDirty(message = 'Unsaved design changes') {
-  state.dirty = JSON.stringify(state.design) !== JSON.stringify(state.savedDesign);
-  $('#save-design').disabled = !state.dirty;
-  if (state.dirty) setStatus(message, 'dirty');
-  else setStatus('Design is up to date', 'saved');
+const draftKey = 'castboard-studio-draft';
+function showNotice(message, actions = []) {
+  const notice = $('#notice'); notice.replaceChildren(); notice.hidden = !message;
+  if (!message) return;
+  const text = document.createElement('span'); text.textContent = message; notice.append(text);
+  for (const [label, action] of actions) { const button = document.createElement('button'); button.type = 'button'; button.textContent = label; button.addEventListener('click', action); notice.append(button); }
+}
+function invalidField() {
+  return $$('input,textarea,select').find(input => !input.closest('dialog') && !input.validity.valid);
+}
+function canLeaveField() {
+  const input = invalidField();
+  if (!input) return true;
+  if (input.closest('#panel-inspector')) setInspectorTab('panel');
+  else if (input.closest('#screen-inspector')) setInspectorTab('screen');
+  if (input.closest('.inspector-sidebar')) { $('.studio').dataset.tool = 'settings'; for (const button of $$('[data-tool]')) button.setAttribute('aria-pressed',String(button.dataset.tool === 'settings')); }
+  if (input.closest('.screens-sidebar')) { $('.studio').dataset.tool = 'screens'; for (const button of $$('[data-tool]')) button.setAttribute('aria-pressed',String(button.dataset.tool === 'screens')); }
+  for (let node = input.parentElement; node; node = node.parentElement) if (node.tagName === 'DETAILS') node.open = true; input.focus(); input.reportValidity();
+  toast('Correct the highlighted setting, or use Undo to revert it.', true); return false;
+}
+function persistDraft() {
+  try {
+    if (state.dirty) sessionStorage.setItem(draftKey, JSON.stringify({ revision: state.revision, design: state.design, selected: state.selectedScreenId }));
+    else sessionStorage.removeItem(draftKey);
+  } catch { /* Storage can be disabled; editing still works. */ }
+}
+function updateHistory() {
+  $('#undo').disabled = (!state.history?.canUndo && !invalidField()) || state.saving;
+  $('#redo').disabled = !state.history?.canRedo || state.saving;
+  $('#discard').disabled = (!state.dirty && !invalidField()) || state.saving;
+}
+function markDirty() {
+  const group = ['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
+  state.history?.record(state.design, group);
+  state.dirty = JSON.stringify(state.design) !== JSON.stringify(state.savedDesign) || Boolean(invalidField());
+  $('#save-design').disabled = !state.dirty || state.saving || Boolean(invalidField());
+  setStatus(state.dirty ? 'Unsaved changes' : 'All changes saved', state.dirty ? 'dirty' : 'saved');
+  updateHistory(); persistDraft(); updatePreview(); renderPanelList();
+}
+function restoreHistory(direction) {
+  state.design = state.history[direction]();
+  if (!state.design.screens[state.selectedScreenId]) state.selectedScreenId = state.design.defaultScreen;
+  if (!currentPanel()) state.selectedPanelId = '';
+  for (const input of $$('input,textarea,select')) input.setCustomValidity('');
+  renderAll(); markDirty();
+}
+function discardDraft() {
+  state.design = clone(state.savedDesign); state.history.record(state.design);
+  state.selectedScreenId = state.design.screens[state.selectedScreenId] ? state.selectedScreenId : state.design.defaultScreen;
+  state.selectedPanelId = ''; for (const input of $$('input,textarea,select')) input.setCustomValidity('');
+  showNotice('Draft discarded. You can undo this change.', [['Undo discard', () => restoreHistory('undo')]]); renderAll(); markDirty();
 }
 
 async function requestDesign(method = 'GET', payload) {
@@ -147,12 +181,22 @@ async function loadDesign() {
     state.design = result.design;
     state.savedDesign = clone(result.design);
     state.catalog = result.catalog;
+    const runtime = await fetch('/api/runtime-config', {cache:'no-store'});
+    if (!runtime.ok) throw new Error('Could not load the preview. Try loading again.');
+    state.runtime = await runtime.json();
+    state.history = new History(state.design);
+    let draft; try { draft = JSON.parse(sessionStorage.getItem(draftKey)); } catch {}
+    if (draft?.design) showNotice(draft.revision === state.revision ? 'You have an unsaved draft from this tab.' : 'An unsaved draft is available. The configuration has changed since it was started.', [
+      ['Restore draft', () => { state.design = draft.design; state.selectedScreenId = state.design.screens[draft.selected] ? draft.selected : state.design.defaultScreen; state.history.record(state.design); showNotice(''); renderAll(); markDirty(); }],
+      ['Discard draft', () => { sessionStorage.removeItem(draftKey); showNotice(''); }]
+    ]);
     state.selectedScreenId = state.design.screens[state.selectedScreenId] ? state.selectedScreenId : state.design.defaultScreen;
     state.selectedPanelId = '';
     state.dirty = false;
     populateCatalogControls();
     renderAll();
-    setStatus('Design is up to date', 'saved');
+    setStatus('All changes saved', 'saved');
+    updateHistory();
     $('#save-design').disabled = true;
   } catch (error) {
     if (error.status === 403) {
@@ -162,7 +206,7 @@ async function loadDesign() {
       return;
     }
     setStatus('Could not load design', 'error');
-    toast(error.message, true);
+    showNotice(error.message, [['Try again', loadDesign]]);
   }
 }
 
@@ -185,6 +229,7 @@ function populateCatalogControls() {
 
 function renderAll() {
   renderScreens();
+  renderPanelList();
   renderBranding();
   renderInspector();
   renderPluginLibrary();
@@ -199,12 +244,9 @@ function renderScreens() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `screen-item${id === state.selectedScreenId ? ' active' : ''}`;
-    button.setAttribute('role', 'listitem');
+    button.setAttribute('aria-label', `Edit ${screen.title || id}`);
     button.setAttribute('aria-pressed', String(id === state.selectedScreenId));
 
-    const icon = document.createElement('span');
-    icon.className = 'screen-icon';
-    icon.textContent = screen.type === 'single' ? '▣' : screen.type === 'flow' ? '▦' : '▥';
     const copy = document.createElement('span');
     copy.className = 'screen-copy';
     const title = document.createElement('strong');
@@ -212,7 +254,7 @@ function renderScreens() {
     const meta = document.createElement('small');
     meta.textContent = `${typeName(screen.type)} · ${screen.panels.length} panel${screen.panels.length === 1 ? '' : 's'}`;
     copy.append(title, meta);
-    button.append(icon, copy);
+    button.append(copy);
     if (id === state.design.defaultScreen) {
       const badge = document.createElement('span');
       badge.className = 'default-pill';
@@ -230,7 +272,7 @@ function renderBranding() {
   const accent = branding.accent || '#8ee6c2';
   $('#brand-accent').value = normalizeColor(accent, '#8ee6c2');
   $('#brand-accent-value').textContent = accent;
-  document.documentElement.style.setProperty('--accent', accent);
+
 }
 
 function normalizeColor(value, fallback) {
@@ -298,7 +340,7 @@ function renderPanelInspector() {
   const viewContract = state.catalog.plugins.find(plugin => plugin.id === panel.plugin)?.inputContract;
   const sources = (state.catalog.sources || []).filter(source => !viewContract || source.contract === viewContract);
   $('#panel-source').replaceChildren(...[{ id: '', name: 'Module default' }, ...sources].map(source => {
-    const option = document.createElement('option'); option.value = source.id; option.textContent = source.name; return option;
+    const option = document.createElement('option'); option.value = source.id; option.textContent = source.id ? `${source.name} (${source.id})` : source.name; return option;
   }));
   setInput('#panel-source', panel.source || '');
   setInput('#panel-title', panel.options?.title || '');
@@ -374,21 +416,19 @@ function renderPluginLibrary() {
   const list = $('#plugin-list');
   const screen = currentScreen();
   list.replaceChildren();
-  for (const plugin of state.catalog.plugins) {
+  for (const plugin of state.catalog.plugins.filter(item => `${item.name} ${item.id}`.toLowerCase().includes($('#plugin-search').value.toLowerCase()))) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'plugin-card';
     button.disabled = screen?.type === 'single' && screen.panels.length >= 1;
     button.title = button.disabled ? 'Single-panel screens can contain only one panel' : `Add ${plugin.name}`;
-    const glyph = document.createElement('span');
-    glyph.textContent = glyphs[plugin.id] || plugin.id.slice(0, 2);
     const copy = document.createElement('span');
     const name = document.createElement('strong');
     name.textContent = plugin.name;
     const action = document.createElement('small');
     action.textContent = '+ Add panel';
     copy.append(name, action);
-    button.append(glyph, copy);
+    button.append(copy);
     button.addEventListener('click', () => addPanel(plugin.id));
     list.append(button);
   }
@@ -400,125 +440,63 @@ function canvasLayout(screen) {
   return { columns: 12, rows: 8, gap: 8, padding: 8, ...screen.layout };
 }
 
-function renderCanvas() {
-  const screen = currentScreen();
-  const surface = $('#design-surface');
-  if (!screen) {
-    surface.replaceChildren();
-    return;
+function renderPanelList() {
+  const list = $('#panel-list'); list.replaceChildren();
+  const screen = currentScreen(); if (!screen) return;
+  for (const [index, panel] of screen.panels.entries()) {
+    const button = document.createElement('button'); button.type = 'button';
+    button.className = `panel-row${panel.id === state.selectedPanelId ? ' active' : ''}`;
+    button.setAttribute('aria-pressed', String(panel.id === state.selectedPanelId));
+    const text = document.createElement('span'); text.textContent = panel.options?.title || panel.options?.label || pluginName(panel.plugin);
+    const order = document.createElement('small'); order.textContent = String(index + 1);
+    button.append(text, order); button.addEventListener('click', () => selectPanel(panel.id)); list.append(button);
   }
-  const layout = canvasLayout(screen);
-  const screenAppearance = effectiveScreenAppearance(screen);
-  surface.className = `design-surface ${screen.type}`;
-  surface.replaceChildren();
-  surface.style.setProperty('--design-padding', `${layout.padding ?? 8}px`);
-  surface.style.setProperty('--design-gap', `${layout.gap ?? 8}px`);
-  surface.style.setProperty('--design-background', screenAppearance.background);
-  surface.style.setProperty('--design-accent', screenAppearance.accent);
-  surface.style.setProperty('--design-text', screenAppearance.textColor);
-  surface.style.setProperty('--design-muted', screenAppearance.mutedColor);
-  surface.style.setProperty('--design-border', screenAppearance.borderColor);
-  surface.style.setProperty('--design-panel', screenAppearance.panelBackground);
-  surface.style.setProperty('--design-radius', `${screenAppearance.radius}px`);
-  surface.style.setProperty('--design-panel-padding', `${screenAppearance.panelPadding}px`);
-  surface.style.setProperty('--design-border-width', `${screenAppearance.borderWidth}px`);
-  surface.style.setProperty('--design-shadow', DESIGN_SHADOWS[screenAppearance.shadow]);
-  surface.style.setProperty('--design-font-family', FONT_STACKS[screenAppearance.fontFamily] || FONT_STACKS.sans);
-
-  if (screen.type === 'grid') {
-    surface.style.gridTemplateColumns = `repeat(${layout.columns}, minmax(0, 1fr))`;
-    surface.style.gridTemplateRows = `repeat(${layout.rows}, minmax(0, 1fr))`;
-    surface.style.gridAutoRows = '';
-  } else if (screen.type === 'flow') {
-    const scaledMinWidth = Math.max(80, (layout.minPanelWidth / state.viewport.width) * $('#canvas-frame').clientWidth);
-    const scaledMinHeight = Math.max(55, (layout.minPanelHeight / state.viewport.height) * $('#canvas-frame').clientHeight);
-    surface.style.gridTemplateColumns = `repeat(auto-fit, minmax(min(100%, ${scaledMinWidth}px), 1fr))`;
-    surface.style.gridTemplateRows = 'none';
-    surface.style.gridAutoRows = `minmax(${scaledMinHeight}px, 1fr)`;
-  } else if (screen.type === 'single') {
-    surface.style.gridTemplateColumns = '';
-    surface.style.gridTemplateRows = '';
-    surface.style.gridAutoRows = '';
-  } else {
-    surface.style.gridTemplateColumns = '1fr';
-    surface.style.gridTemplateRows = 'none';
-    surface.style.gridAutoRows = 'minmax(64px, 1fr)';
-  }
-
+  if (!screen.panels.length) { const text = document.createElement('p'); text.className = 'section-note'; text.textContent = 'No panels yet. Add a module to start this screen.'; list.append(text); }
+  $('#show-library').disabled = screen.type === 'single' && screen.panels.length >= 1;
+}
+let canvasGeneration = 0;
+let releaseCanvas;
+async function renderCanvas() {
+  const generation = ++canvasGeneration;
+  const screen = clone(currentScreen()); const surface = $('#design-surface');
+  if (!screen) return;
+  if (releaseCanvas) { releaseCanvas(); releaseCanvas = null; }
+  surface.replaceChildren(); surface.className = 'design-surface'; surface.removeAttribute('style');
+  surface.style.width = `${state.viewport.width}px`; surface.style.height = `${state.viewport.height}px`;
+  surface.style.transform = `scale(${state.scale})`;
   const collisionIds = screen.type === 'grid' ? findCollisions(screen.panels) : new Set();
-  for (const panel of screen.panels) {
-    const element = document.createElement('div');
-    element.className = `canvas-panel${panel.id === state.selectedPanelId ? ' selected' : ''}${collisionIds.has(panel.id) ? ' collision' : ''}`;
-    element.tabIndex = 0;
-    element.setAttribute('role', 'button');
-    element.setAttribute('aria-label', `${pluginName(panel.plugin)} panel ${panel.id}`);
-    element.dataset.panel = panel.id;
-    applyCanvasPanelAppearance(element, panel, screenAppearance);
-    placeCanvasPanel(element, panel, screen);
-
-    const copy = document.createElement('span');
-    copy.className = 'canvas-panel-copy';
-    const title = document.createElement('strong');
-    title.textContent = panel.options?.title || pluginName(panel.plugin);
-    const meta = document.createElement('span');
-    meta.textContent = panel.id;
-    copy.append(title, meta);
-    const glyph = document.createElement('span');
-    glyph.className = 'panel-glyph';
-    glyph.textContent = glyphs[panel.plugin] || panel.plugin.slice(0, 2).toUpperCase();
-    element.append(copy, glyph);
-    if (screen.type === 'grid') {
-      const handle = document.createElement('span');
-      handle.className = 'resize-handle';
-      handle.setAttribute('aria-hidden', 'true');
-      element.append(handle);
-      element.addEventListener('pointerdown', event => beginPanelDrag(event, panel, element));
+  try {
+    const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js`);
+    if (generation !== canvasGeneration) return;
+    const release = await renderer.prepare({ container: surface, screen });
+    if (generation !== canvasGeneration) { if (typeof release === 'function') release(); return; }
+    releaseCanvas = typeof release === 'function' ? release : null;
+    for (const panel of screen.panels) {
+      const element = document.createElement('div');
+      element.className = `canvas-panel${panel.id === state.selectedPanelId ? ' selected' : ''}${collisionIds.has(panel.id) ? ' collision' : ''}`;
+      element.tabIndex = 0; element.setAttribute('role', 'button');
+      element.setAttribute('aria-label', `Edit ${panel.options?.title || pluginName(panel.plugin)} panel`); element.dataset.panel = panel.id;
+      await renderer.place({container:surface, element, panel, screen});
+      if (generation !== canvasGeneration) return;
+      const label = document.createElement('span'); label.className = 'canvas-panel-copy'; label.textContent = panel.options?.title || pluginName(panel.plugin); element.append(label);
+      if (screen.type === 'grid') {
+        const handle = document.createElement('span'); handle.className = 'resize-handle'; handle.setAttribute('aria-hidden','true'); element.append(handle);
+        element.addEventListener('pointerdown', event => beginPanelDrag(event, currentScreen().panels.find(item => item.id === panel.id), element));
+      }
+      element.addEventListener('click', () => selectPanel(panel.id));
+      element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') {event.preventDefault();selectPanel(panel.id);} });
+      surface.append(element);
     }
-    element.addEventListener('click', () => selectPanel(panel.id));
-    element.addEventListener('keydown', event => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectPanel(panel.id); }
-    });
-    surface.append(element);
+    $('#canvas-message').textContent = collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : screen.type === 'grid' ? 'Select a panel. Drag to move it; drag its corner to resize.' : 'Select a panel here or in the panel list. Edit its placement in Settings.';
+  } catch (error) {
+    if (generation !== canvasGeneration) return;
+    $('#canvas-message').textContent = `Cannot preview this layout: ${error.message}`;
   }
-  $('#canvas-message').textContent = collisionIds.size
-    ? `${collisionIds.size} overlapping panels are outlined in red. Adjust them before deployment.`
-    : screen.type === 'grid'
-      ? 'Select a panel to edit it. Drag panels or their lower-right handle to resize.'
-      : screen.type === 'flow'
-        ? 'Flow panels reflow automatically. Select a panel to change its span or order.'
-        : screen.type === 'single'
-          ? 'Single screens give the selected plugin the entire viewport.'
-          : 'Custom screen type · edit its layout and panel JSON, then use Live preview for the renderer output.';
   updatePreview();
 }
-
-function applyCanvasPanelAppearance(element, panel, screenAppearance) {
-  const appearance = panel.appearance || {};
-  element.style.setProperty('--design-font-size', `${16 * (screenAppearance.fontScale / 100) * ((appearance.fontScale || 100) / 100)}px`);
-  element.style.setProperty('--design-font-family', FONT_STACKS[appearance.fontFamily] || FONT_STACKS[screenAppearance.fontFamily] || FONT_STACKS.sans);
-  if (appearance.background) element.style.setProperty('--design-panel', appearance.background);
-  if (appearance.accent) element.style.setProperty('--design-accent', appearance.accent);
-  if (appearance.textColor) element.style.setProperty('--design-text', appearance.textColor);
-  if (appearance.mutedColor) element.style.setProperty('--design-muted', appearance.mutedColor);
-  if (appearance.borderColor) element.style.setProperty('--design-border', appearance.borderColor);
-  if (appearance.radius !== undefined) element.style.setProperty('--design-radius', `${appearance.radius}px`);
-  if (appearance.padding !== undefined) element.style.setProperty('--design-panel-padding', `${appearance.padding}px`);
-  if (appearance.borderWidth !== undefined) element.style.setProperty('--design-border-width', `${appearance.borderWidth}px`);
-  if (appearance.shadow) element.style.setProperty('--design-shadow', DESIGN_SHADOWS[appearance.shadow]);
-}
-
-function placeCanvasPanel(element, panel, screen) {
-  if (screen.type === 'grid') {
-    const position = panel.position || { column: 1, row: 1, width: 1, height: 1 };
-    element.style.gridColumn = `${position.column} / span ${position.width}`;
-    element.style.gridRow = `${position.row} / span ${position.height}`;
-  } else if (screen.type === 'flow') {
-    element.style.gridColumn = `span ${panel.size?.columns || 1}`;
-    element.style.gridRow = `span ${panel.size?.rows || 1}`;
-  } else if (screen.type === 'single') {
-    element.style.width = '100%';
-    element.style.height = '100%';
-  }
+function placeCanvasPanel(element, panel) {
+  element.style.gridColumn = `${panel.position.column} / span ${panel.position.width}`;
+  element.style.gridRow = `${panel.position.row} / span ${panel.position.height}`;
 }
 
 function findCollisions(panels) {
@@ -540,25 +518,23 @@ function findCollisions(panels) {
 function beginPanelDrag(event, panel, element) {
   if (event.button !== 0) return;
   event.preventDefault();
-  selectPanel(panel.id, false);
+  if (!canLeaveField()) return;
+  state.selectedPanelId = panel.id; setInspectorTab('panel'); renderPanelInspector(); renderPanelList();
+  for (const node of $$('.canvas-panel')) node.classList.toggle('selected', node.dataset.panel === panel.id);
   const screen = currentScreen();
   const layout = canvasLayout(screen);
   const surface = $('#design-surface');
-  const rect = surface.getBoundingClientRect();
+
   const position = panel.position || { column: 1, row: 1, width: 1, height: 1 };
   panel.position = { ...position };
   const start = { x: event.clientX, y: event.clientY, position: { ...panel.position } };
   const resize = event.target.classList.contains('resize-handle');
-  const usableWidth = rect.width - (layout.padding * 2) - (layout.gap * (layout.columns - 1));
-  const usableHeight = rect.height - (layout.padding * 2) - (layout.gap * (layout.rows - 1));
-  const cellWidth = usableWidth / layout.columns + layout.gap;
-  const cellHeight = usableHeight / layout.rows + layout.gap;
   let changed = false;
   element.setPointerCapture(event.pointerId);
 
   const move = moveEvent => {
-    const dx = Math.round((moveEvent.clientX - start.x) / cellWidth);
-    const dy = Math.round((moveEvent.clientY - start.y) / cellHeight);
+    const delta = gridDelta(layout, state.viewport, state.scale, moveEvent.clientX - start.x, moveEvent.clientY - start.y);
+    const dx = delta.x, dy = delta.y;
     if (resize) {
       panel.position.width = clamp(start.position.width + dx, 1, layout.columns - start.position.column + 1);
       panel.position.height = clamp(start.position.height + dy, 1, layout.rows - start.position.row + 1);
@@ -589,6 +565,7 @@ function clamp(value, min, max) {
 }
 
 function selectScreen(id) {
+  if (!canLeaveField()) return;
   state.selectedScreenId = id;
   state.selectedPanelId = '';
   setInspectorTab('screen');
@@ -596,8 +573,10 @@ function selectScreen(id) {
 }
 
 function selectPanel(id, rerender = true) {
+  if (!canLeaveField()) return;
   state.selectedPanelId = id;
   setInspectorTab('panel');
+  renderPanelList();
   if (rerender) {
     renderCanvas();
     renderPanelInspector();
@@ -605,7 +584,7 @@ function selectPanel(id, rerender = true) {
 }
 
 function setInspectorTab(tab) {
-  for (const button of $$('.inspector-tabs [data-inspector]')) button.classList.toggle('active', button.dataset.inspector === tab);
+  for (const button of $$('.inspector-tabs [data-inspector]')) {button.classList.toggle('active', button.dataset.inspector === tab); button.setAttribute('aria-selected', String(button.dataset.inspector === tab));}
   $('#screen-inspector').hidden = tab !== 'screen';
   $('#panel-inspector').hidden = tab !== 'panel';
 }
@@ -617,27 +596,18 @@ function setMode(mode) {
   if (mode === 'preview') refreshPreview();
 }
 
+let previewTimer;
 function updatePreview() {
-  const screen = state.savedDesign?.screens?.[state.selectedScreenId];
   const iframe = $('#live-preview');
-  if (!screen) {
-    iframe.dataset.path = '';
-    iframe.removeAttribute('src');
-    return;
-  }
-  if (iframe.dataset.path !== screen.path) {
-    iframe.dataset.path = screen.path;
-    iframe.src = screen.path;
-  }
+  if (!iframe.getAttribute('src')) iframe.src = '/admin-preview';
+  clearTimeout(previewTimer); previewTimer = setTimeout(sendDraft, 160);
 }
-
-function refreshPreview() {
-  const screen = state.savedDesign?.screens?.[state.selectedScreenId];
-  if (!screen) return;
-  const path = screen.path || '/';
-  $('#live-preview').dataset.path = path;
-  $('#live-preview').src = `${path}${path.includes('?') ? '&' : '?'}studio=${Date.now()}`;
+function sendDraft() {
+  if (!state.previewReady || !state.runtime || !currentScreen()) return;
+  const config = { ...state.runtime, branding: state.design.branding, defaultScreen:state.design.defaultScreen, screens:state.design.screens };
+  $('#live-preview').contentWindow.postMessage({type:'castboard-draft', config, screenId:state.selectedScreenId}, window.location.origin);
 }
+function refreshPreview() { sendDraft(); }
 
 function updateOpenScreen() {
   $('#open-screen').disabled = !state.savedDesign?.screens?.[state.selectedScreenId]?.path;
@@ -647,8 +617,8 @@ function resizeCanvasFrame() {
   const stage = $('#canvas-stage');
   const frame = $('#canvas-frame');
   if (!stage || !frame) return;
-  const availableWidth = Math.max(100, stage.clientWidth - 60);
-  const availableHeight = Math.max(80, stage.clientHeight - 52);
+  const availableWidth = Math.max(100, stage.clientWidth - 40);
+  const availableHeight = Math.max(80, stage.clientHeight - 40);
   const ratio = state.viewport.width / state.viewport.height;
   let width = Math.min(availableWidth, availableHeight * ratio);
   let height = width / ratio;
@@ -657,6 +627,7 @@ function resizeCanvasFrame() {
   frame.style.height = `${Math.round(height)}px`;
   frame.style.aspectRatio = `${state.viewport.width} / ${state.viewport.height}`;
   const scale = Math.min(frame.clientWidth / state.viewport.width, frame.clientHeight / state.viewport.height);
+  state.scale = scale;
   const iframe = $('#live-preview');
   iframe.style.width = `${state.viewport.width}px`;
   iframe.style.height = `${state.viewport.height}px`;
@@ -673,31 +644,22 @@ function uniquePanelId(plugin, panels) {
   return `${plugin}-${index}`;
 }
 
-function findGridSlot(screen, width = 3, height = 2) {
-  const layout = canvasLayout(screen);
-  width = Math.min(width, layout.columns);
-  height = Math.min(height, layout.rows);
-  for (let row = 1; row <= layout.rows - height + 1; row += 1) {
-    for (let column = 1; column <= layout.columns - width + 1; column += 1) {
-      const candidate = { column, row, width, height };
-      const collision = screen.panels.some(panel => {
-        const other = panel.position;
-        return other && candidate.column < other.column + other.width && candidate.column + candidate.width > other.column
-          && candidate.row < other.row + other.height && candidate.row + candidate.height > other.row;
-      });
-      if (!collision) return candidate;
-    }
-  }
-  return { column: 1, row: 1, width, height };
-}
-
 function addPanel(plugin) {
   const screen = currentScreen();
+  if (!canLeaveField()) return;
   if (!screen || (screen.type === 'single' && screen.panels.length)) return;
   const panel = { id: uniquePanelId(plugin, screen.panels), plugin };
-  if (screen.type === 'grid') panel.position = findGridSlot(screen);
+  if (screen.type === 'grid') { panel.position = gridSlot(screen); if (!panel.position) return toast('The grid is full. Increase its rows or columns before adding a panel.', true); }
+  const source = compatibleSource(plugin, state.catalog); if (source) panel.source = source;
+  const metadata = state.catalog.plugins.find(item => item.id === plugin);
+  const options = schemaDefaults(metadata?.optionSchema); if (Object.keys(options).length) panel.options = options;
+  const type = state.catalog.screenTypes.find(item => item.id === screen.type);
+  if (!['grid','flow','single'].includes(screen.type)) {
+    panel.position = schemaDefaults(type?.positionSchema); panel.size = schemaDefaults(type?.sizeSchema);
+  }
   if (screen.type === 'flow') panel.size = { columns: 1, rows: 1 };
   screen.panels.push(panel);
+  $('#library').hidden = true;
   state.selectedPanelId = panel.id;
   markDirty(`${pluginName(plugin)} panel added · unsaved`);
   setInspectorTab('panel');
@@ -705,6 +667,7 @@ function addPanel(plugin) {
 }
 
 function removePanel() {
+  if (!canLeaveField()) return;
   const screen = currentScreen();
   const index = screen?.panels.findIndex(panel => panel.id === state.selectedPanelId) ?? -1;
   if (index < 0) return;
@@ -716,6 +679,7 @@ function removePanel() {
 }
 
 function movePanel(offset) {
+  if (!canLeaveField()) return;
   const screen = currentScreen();
   const index = screen.panels.findIndex(panel => panel.id === state.selectedPanelId);
   const destination = clamp(index + offset, 0, screen.panels.length - 1);
@@ -731,10 +695,11 @@ function defaultLayout(type) {
   if (type === 'flow') return { minPanelWidth: 240, minPanelHeight: 140, gap: 8, padding: 8 };
   if (type === 'single') return { padding: 8 };
   if (type === 'grid') return { columns: 12, rows: 8, gap: 8, padding: 8 };
-  return {};
+  return schemaDefaults(state.catalog.screenTypes.find(item => item.id === type)?.layoutSchema);
 }
 
 function applyTheme(themeId) {
+  if (!canLeaveField()) return;
   if (!THEMES[themeId]) return;
   currentScreen().appearance = clone(THEMES[themeId]);
   markDirty(`${$('#theme-preset').selectedOptions[0].textContent} theme applied · unsaved`);
@@ -743,6 +708,7 @@ function applyTheme(themeId) {
 }
 
 function resetTheme() {
+  if (!canLeaveField()) return;
   currentScreen().appearance = {};
   markDirty('Screen now inherits project defaults · unsaved');
   renderInspector();
@@ -750,6 +716,7 @@ function resetTheme() {
 }
 
 function changeScreenType(type) {
+  if (!canLeaveField()) return;
   const screen = currentScreen();
   if (type === screen.type) return;
   if (type === 'single' && screen.panels.length > 1) {
@@ -757,14 +724,18 @@ function changeScreenType(type) {
     $('#screen-type').value = screen.type;
     return;
   }
-  screen.type = type;
-  screen.layout = defaultLayout(type);
+  const layout = defaultLayout(type);
+  const panels = clone(screen.panels);
   if (type === 'grid') {
-    for (const panel of screen.panels) panel.position ||= findGridSlot(screen);
+    const placed = [];
+    for (const panel of panels) {
+      panel.position = gridSlot({layout, panels:placed});
+      if (!panel.position) return toast('There are too many panels for this grid. Remove a panel first.', true);
+      placed.push(panel);
+    }
   }
-  if (type === 'flow') {
-    for (const panel of screen.panels) panel.size ||= { columns: 1, rows: 1 };
-  }
+  if (type === 'flow') for (const panel of panels) panel.size = {columns:1,rows:1};
+  screen.type = type; screen.layout = layout; screen.panels = panels;
   markDirty('Screen type changed · unsaved');
   renderAll();
 }
@@ -781,6 +752,7 @@ function uniqueScreenId(seed) {
 }
 
 function showNewScreenDialog() {
+  if (!canLeaveField()) return;
   state.generatedScreenFields = true;
   $('#screen-form').reset();
   $('#new-screen-title').value = 'New screen';
@@ -809,6 +781,7 @@ function createScreenFromDialog() {
 }
 
 function duplicateScreen() {
+  if (!canLeaveField()) return;
   const source = currentScreen();
   if (!source) return;
   const id = uniqueScreenId(`${state.selectedScreenId}-copy`);
@@ -824,11 +797,13 @@ function duplicateScreen() {
   renderAll();
 }
 
-function deleteScreen() {
+function deleteScreen(confirmed = false) {
+  if (!canLeaveField()) return;
   const ids = Object.keys(state.design.screens);
   if (ids.length <= 1) return toast('A Castboard project must keep at least one screen.', true);
   const screen = currentScreen();
-  if (!confirm(`Delete “${screen.title || state.selectedScreenId}”? Its private delivery settings will also be removed when you save.`)) return;
+  if (confirmed !== true) return showNotice(`Remove “${screen.title || state.selectedScreenId}”? Its delivery settings will be removed when you save.`, [['Remove screen', () => deleteScreen(true)], ['Cancel', () => showNotice('')]]);
+  showNotice('');
   const deletedId = state.selectedScreenId;
   delete state.design.screens[deletedId];
   if (state.design.defaultScreen === deletedId) state.design.defaultScreen = Object.keys(state.design.screens)[0];
@@ -840,6 +815,7 @@ function deleteScreen() {
 
 function validateDesign() {
   const errors = [];
+  const invalid = invalidField(); if (invalid) errors.push('Correct the highlighted setting before saving.');
   const screens = Object.entries(state.design.screens);
   if (!screens.length) errors.push('At least one screen is required.');
   if (!state.design.screens[state.design.defaultScreen]) errors.push('The default screen does not exist.');
@@ -847,7 +823,7 @@ function validateDesign() {
   for (const [id, screen] of screens) {
     if (!/^[a-z][a-z0-9-]*$/.test(id)) errors.push(`Screen ID “${id}” is invalid.`);
     if (!screen.path?.startsWith('/')) errors.push(`${screen.title || id} needs a path beginning with /.`);
-    if (screen.path === '/admin' || screen.path?.startsWith('/api/') || screen.path?.startsWith('/plugins/') || screen.path?.startsWith('/screen-types/')) errors.push(`${screen.path} is reserved by Castboard.`);
+    if (['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js'].includes(screen.path) || /^\/(api|plugins|screen-types|assets)(\/|$)/.test(screen.path)) errors.push(`${screen.path} is reserved by Castboard.`);
     if (paths.has(screen.path)) errors.push(`Screen path “${screen.path}” is duplicated.`);
     paths.add(screen.path);
     if (screen.type === 'single' && screen.panels.length !== 1) errors.push(`${screen.title || id} is a single screen and needs exactly one panel.`);
@@ -856,6 +832,9 @@ function validateDesign() {
       if (!panel.id || panelIds.has(panel.id)) errors.push(`${screen.title || id} has missing or duplicate panel IDs.`);
       panelIds.add(panel.id);
       if (!state.catalog.plugins.some(plugin => plugin.id === panel.plugin)) errors.push(`${panel.id} references unavailable plugin “${panel.plugin}”.`);
+      const module = state.catalog.plugins.find(item => item.id === panel.plugin);
+      const source = (state.catalog.sources || []).find(item => item.id === (panel.source || panel.plugin));
+      if (module?.inputContract && (!source || source.contract !== module.inputContract)) errors.push(`${panel.id} needs a compatible data source.`);
       if (screen.type === 'grid') {
         const layout = canvasLayout(screen);
         const p = panel.position;
@@ -868,26 +847,31 @@ function validateDesign() {
 }
 
 async function saveDesign() {
+  if (state.saving) return;
+  if (!canLeaveField()) return;
   const errors = validateDesign();
   if (errors.length) return toast(errors[0], true);
   $('#save-design').disabled = true;
-  setStatus('Saving and applying…');
+  state.saving = true; updateHistory();
+  const snapshot = clone(state.design);
+  setStatus('Saving…');
   try {
-    const result = await requestDesign('PUT', { revision: state.revision, design: state.design });
+    const result = await requestDesign('PUT', { revision: state.revision, design: snapshot });
     state.revision = result.revision;
-    state.design = result.design;
     state.savedDesign = clone(result.design);
+    if (JSON.stringify(state.design) === JSON.stringify(snapshot)) state.design = result.design;
     state.catalog = result.catalog;
-    state.dirty = false;
-    renderAll();
-    refreshPreview();
-    setStatus('Saved · running screens updated', 'saved');
-    toast('Design saved and applied without a restart.');
+    state.saving = false;
+    showNotice('');
+    if (!invalidField()) renderAll();
+    else { renderScreens(); renderPanelList(); updateOpenScreen(); }
+    markDirty(); refreshPreview();
+    toast(state.dirty ? 'Saved. Newer edits are still unsaved.' : 'Changes saved. Running screens will update.');
   } catch (error) {
-    $('#save-design').disabled = false;
+    state.saving = false; $('#save-design').disabled = false; updateHistory();
     if (error.code === 'REVISION_CONFLICT') {
       setStatus('Configuration changed elsewhere', 'error');
-      toast('The config changed elsewhere. Reload the studio before saving.', true);
+      showNotice('The configuration changed elsewhere. Your draft is still here.', [['Download draft', downloadDraft], ['Load latest', loadDesign]]);
     } else {
       setStatus('Save failed · changes are still local', 'error');
       toast(error.message, true);
@@ -895,12 +879,29 @@ async function saveDesign() {
   }
 }
 
+function downloadDraft() {
+  const blob = new Blob([JSON.stringify(state.design, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'castboard-design-draft.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 function bindEvents() {
+  document.addEventListener('input', event => {if (event.target.closest('#screen-inspector,#panel-inspector,.branding-section')) queueMicrotask(() => markDirty());});
+  window.addEventListener('message', event => { if (event.origin === window.location.origin && event.source === $('#live-preview').contentWindow && event.data?.type === 'castboard-preview-ready') {state.previewReady = true; sendDraft();} });
+  $('#undo').addEventListener('click', () => restoreHistory('undo'));
+  $('#redo').addEventListener('click', () => restoreHistory('redo'));
+  $('#discard').addEventListener('click', discardDraft);
+  $('#show-library').addEventListener('click', () => {$('#library').hidden = false; $('#plugin-search').focus();});
+  $('#close-library').addEventListener('click', () => {$('#library').hidden = true; $('#show-library').focus();});
+  $('#plugin-search').addEventListener('input', renderPluginLibrary);
+  for (const button of $$('[data-tool]')) button.addEventListener('click', () => {if (!canLeaveField()) return; $('.studio').dataset.tool = button.dataset.tool; for (const item of $$('[data-tool]')) item.setAttribute('aria-pressed',String(item === button)); resizeCanvasFrame();});
+  document.addEventListener('keydown', event => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (state.dirty) saveDesign(); }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) {event.preventDefault(); restoreHistory(event.shiftKey ? 'redo' : 'undo');}
+  });
   $('#save-design').addEventListener('click', saveDesign);
   $('#open-screen').addEventListener('click', () => window.open(state.savedDesign.screens[state.selectedScreenId].path, '_blank', 'noopener'));
   $('#add-screen').addEventListener('click', showNewScreenDialog);
   $('#duplicate-screen').addEventListener('click', duplicateScreen);
-  $('#delete-screen').addEventListener('click', deleteScreen);
+  $('#delete-screen').addEventListener('click', () => deleteScreen());
   $('#set-default').addEventListener('click', () => {
     state.design.defaultScreen = state.selectedScreenId;
     markDirty('Default screen changed · unsaved');
@@ -919,14 +920,14 @@ function bindEvents() {
   $('#panel-earlier').addEventListener('click', () => movePanel(-1));
   $('#panel-later').addEventListener('click', () => movePanel(1));
   for (const button of $$('[data-mode]')) button.addEventListener('click', () => setMode(button.dataset.mode));
-  for (const button of $$('.inspector-tabs [data-inspector]')) button.addEventListener('click', () => setInspectorTab(button.dataset.inspector));
+  for (const button of $$('.inspector-tabs [data-inspector]')) button.addEventListener('click', () => {if (canLeaveField()) setInspectorTab(button.dataset.inspector);});
 
   for (const input of $$('[data-branding]')) input.addEventListener('input', () => {
     state.design.branding ||= {};
     state.design.branding[input.dataset.branding] = input.value;
     if (input.dataset.branding === 'accent') {
       $('#brand-accent-value').textContent = input.value;
-      document.documentElement.style.setProperty('--accent', input.value);
+
       renderCanvas();
     }
     markDirty('Branding changed · unsaved');
@@ -942,7 +943,7 @@ function bindEvents() {
 
   for (const input of $$('[data-layout]')) input.addEventListener('input', () => {
     const value = Number(input.value);
-    if (!Number.isFinite(value)) return;
+    if (!input.validity.valid || !Number.isFinite(value)) return;
     currentScreen().layout ||= {};
     currentScreen().layout[input.dataset.layout] = value;
     markDirty('Layout changed · unsaved');
@@ -950,6 +951,7 @@ function bindEvents() {
   });
 
   for (const input of $$('[data-appearance]')) input.addEventListener('input', () => {
+    if (!input.validity.valid) return;
     const screen = currentScreen();
     screen.appearance ||= {};
     const field = input.dataset.appearance;
@@ -963,6 +965,7 @@ function bindEvents() {
   });
 
   for (const input of $$('[data-panel-appearance]')) input.addEventListener('input', () => {
+    if (!input.validity.valid) return;
     const panel = currentPanel();
     panel.appearance ||= {};
     const field = input.dataset.panelAppearance;
@@ -992,8 +995,9 @@ function bindEvents() {
     const oldId = panel.id;
     panel[input.dataset.panel] = input.value;
     if (input.dataset.panel === 'id') state.selectedPanelId = input.value;
-    markDirty('Panel settings changed · unsaved');
-    if (input.dataset.panel === 'plugin' || oldId !== panel.id) renderCanvas();
+    if (input.dataset.panel === 'plugin') {delete panel.source; delete panel.options; const source = compatibleSource(panel.plugin, state.catalog); if (source) panel.source = source; renderPanelInspector();}
+    markDirty();
+    if (input.dataset.panel === 'plugin' || oldId !== panel.id) {renderPanelList();renderCanvas();}
   });
 
   for (const input of $$('[data-option]')) input.addEventListener('input', () => {
@@ -1019,7 +1023,7 @@ function bindEvents() {
 
   for (const input of $$('[data-position]')) input.addEventListener('input', () => {
     const value = Number(input.value);
-    if (!Number.isInteger(value)) return;
+    if (!input.validity.valid || !Number.isInteger(value)) return;
     currentPanel().position ||= {};
     currentPanel().position[input.dataset.position] = value;
     markDirty('Panel placement changed · unsaved');
@@ -1028,7 +1032,7 @@ function bindEvents() {
 
   for (const input of $$('[data-size]')) input.addEventListener('input', () => {
     const value = Number(input.value);
-    if (!Number.isInteger(value)) return;
+    if (!input.validity.valid || !Number.isInteger(value)) return;
     currentPanel().size ||= {};
     currentPanel().size[input.dataset.size] = value;
     markDirty('Panel size changed · unsaved');
@@ -1043,11 +1047,11 @@ function bindEvents() {
       $('#panel-title').value = options.title || '';
       $('#panel-view').value = options.view || '';
       $('#panel-fit-content').checked = options.fitContent === true;
-      $('#options-error').textContent = '';
+      $('#options-error').textContent = ''; $('#panel-options').setCustomValidity('');
       markDirty('Advanced panel options changed · unsaved');
       renderCanvas();
     } catch (error) {
-      $('#options-error').textContent = error.message;
+      $('#options-error').textContent = error.message; $('#panel-options').setCustomValidity('Enter a valid JSON object'); markDirty();
     }
   });
   $('#panel-source').addEventListener('change', () => {
@@ -1061,10 +1065,10 @@ function bindEvents() {
       const layout = JSON.parse($('#custom-layout').value || '{}');
       if (!layout || typeof layout !== 'object' || Array.isArray(layout)) throw new Error('Layout must be a JSON object');
       currentScreen().layout = layout;
-      $('#custom-layout-error').textContent = '';
-      markDirty('Custom layout changed · unsaved');
+      $('#custom-layout-error').textContent = ''; $('#custom-layout').setCustomValidity('');
+      markDirty('Custom layout changed · unsaved'); renderCanvas();
     } catch (error) {
-      $('#custom-layout-error').textContent = error.message;
+      $('#custom-layout-error').textContent = error.message; $('#custom-layout').setCustomValidity('Enter a valid JSON object'); markDirty();
     }
   });
 
@@ -1074,15 +1078,10 @@ function bindEvents() {
         const value = JSON.parse($(selector).value || '{}');
         if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${field} must be a JSON object`);
         currentPanel()[field] = value;
-        $('#custom-panel-error').textContent = '';
-  const screenType = state.catalog.screenTypes.find(type => type.id === screen.type);
-  for (const key of ['position', 'size']) schemaFields($(`#extension-${key}-fields`), screenType?.[`${key}Schema`], panel[key] || {}, (field, value) => {
-    panel[key] ||= {}; panel[key][field] = value; $(`#custom-${key}`).value = JSON.stringify(panel[key], null, 2);
-    markDirty('Panel placement changed'); renderCanvas();
-  });
-        markDirty(`Custom panel ${field} changed · unsaved`);
+        $('#custom-panel-error').textContent = ''; $(selector).setCustomValidity('');
+        markDirty(`Custom panel ${field} changed · unsaved`); renderCanvas();
       } catch (error) {
-        $('#custom-panel-error').textContent = error.message;
+        $('#custom-panel-error').textContent = error.message; $(selector).setCustomValidity('Enter a valid JSON object'); markDirty();
       }
     });
   }
@@ -1121,6 +1120,7 @@ function bindEvents() {
     event.returnValue = '';
   });
   new ResizeObserver(() => resizeCanvasFrame()).observe($('#canvas-stage'));
+  new ResizeObserver(() => document.documentElement.style.setProperty('--notice-height',`${$('#notice').getBoundingClientRect().height}px`)).observe($('#notice'));
 }
 
 bindEvents();

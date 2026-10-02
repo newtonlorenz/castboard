@@ -26,15 +26,20 @@ export function schemaFields(container, schema, values, changed) {
       if (field.maximum !== undefined) input.max = field.maximum;
       if (field.type === 'integer') input.step = 1;
     }
+    input.id = `${container.id}-${key}`;
+    input.required = Boolean(schema.required?.includes(key));
     const current = values[key] ?? field.default;
     if (field.type === 'boolean') input.checked = Boolean(current);
     else input.value = ['object', 'array'].includes(field.type) ? JSON.stringify(current ?? (field.type === 'array' ? [] : {}), null, 2) : current ?? '';
-    input.addEventListener('change', () => {
+    input.addEventListener(field.enum || field.type === 'boolean' ? 'change' : 'input', () => {
       try {
-        const value = field.enum ? field.enum[input.selectedIndex] : field.type === 'boolean' ? input.checked : ['object', 'array'].includes(field.type) ? JSON.parse(input.value) : ['number', 'integer'].includes(field.type) ? Number(input.value) : input.value;
+        const value = field.enum ? field.enum[input.selectedIndex] : field.type === 'boolean' ? input.checked : ['object', 'array'].includes(field.type) ? JSON.parse(input.value) : ['number', 'integer'].includes(field.type) ? (input.value === '' ? undefined : Number(input.value)) : input.value;
         input.setCustomValidity('');
+        if (field.type === 'array' && !Array.isArray(value)) throw new Error('Expected an array');
+        if (field.type === 'object' && (!value || typeof value !== 'object' || Array.isArray(value))) throw new Error('Expected an object');
+        if (!input.validity.valid) return;
         changed(key, value);
-      } catch { input.setCustomValidity('Enter valid JSON'); input.reportValidity(); }
+      } catch { input.setCustomValidity('Enter valid JSON'); }
     });
     label.append(text, input);
     if (field.description) {
