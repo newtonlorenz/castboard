@@ -1,6 +1,6 @@
 # Ambient Theme
 
-A display plugin with configurable data, layout-independent presentation and touch controls.
+Shared colours, typography and frame styles for Ambient displays.
 
 Install from **Plugins → Library**, then configure the installed copy in admin. This is a source or support package; connect it through a display plugin’s source settings.
 

@@ -20,7 +20,7 @@ export function createPlugin({ config,context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Camera',
-    publicConfig: () => ({ title: config.title || 'Camera', name: config.name || 'Camera' }),
+    publicConfig: () => ({ title: config.title || '', name: config.name || 'Camera' }),
     async getData() {
       if (config.provider === 'demo') return { name: config.name || 'Front garden', status: 'Demo', streamUrl: null, updatedAt: demoTimestamp() };
       if (config.provider === 'stream') return { name: config.name || 'Camera', status: 'Live', streamUrl: `/api/plugins/${encodeURIComponent(context.instanceId||'camera')}/stream`, updatedAt: demoTimestamp() };

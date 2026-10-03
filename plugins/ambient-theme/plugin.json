@@ -1,6 +1,6 @@
 {
   "name": "Ambient Theme",
-  "description": "A display plugin with configurable data, layout-independent presentation and touch controls.",
+  "description": "Shared colours, typography and frame styles for Ambient displays.",
   "version": "1.0.0",
   "category": "Support",
   "settingsSchema": {

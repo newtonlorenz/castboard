@@ -1,6 +1,6 @@
 # Ambient Runtime
 
-A display plugin with configurable data, layout-independent presentation and touch controls.
+Loads shared display code and cleans up panel timers and media.
 
 Install from **Plugins → Library**, then configure the installed copy in admin. This is a source or support package; connect it through a display plugin’s source settings.
 
