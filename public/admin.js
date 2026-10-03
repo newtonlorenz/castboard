@@ -171,6 +171,12 @@ async function requestDesign(method = 'GET', payload) {
   }
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if(response.status===403){
+      $('#token-error').textContent=state.token?'Access was denied. Check your token and the server’s admin access settings.':'';
+      $('#admin-token').setAttribute('aria-invalid',String(Boolean(state.token)));
+      if(!$('#token-dialog').open)$('#token-dialog').showModal();
+      $('#admin-token').focus();$('#admin-token').select();
+    }
     const error = new Error(result.error?.message || `Request failed (${response.status})`);
     error.status = response.status;
     error.code = result.error?.code;
@@ -217,7 +223,6 @@ async function loadDesign() {
     if (!draft?.design) applyRequestedPanel();
   } catch (error) {
     if (error.status === 403) {
-      $('#token-error').textContent = '';
       if (!$('#token-dialog').open) $('#token-dialog').showModal();
       setStatus('Admin authorization required', 'error');
       return;
@@ -1400,7 +1405,8 @@ function bindEvents() {
 
   $('#token-form').addEventListener('submit', async event => {
     event.preventDefault();
-    state.token = $('#admin-token').value;
+    state.token = $('#admin-token').value.trim();
+    $('#token-error').textContent = ''; $('#admin-token').removeAttribute('aria-invalid');
     sessionStorage.setItem('castboard-admin-token', state.token);
     $('#token-dialog').close();
     await loadDesign();

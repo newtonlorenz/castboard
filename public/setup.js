@@ -8,13 +8,16 @@ const displayDrafts = new Map();
 const checks = new Map();
 let token = sessionStorage.getItem('castboard-admin-token') || '';
 
-async function request(path, init = {}, retry = true) {
+async function request(path, init = {}) {
   const headers = { ...(init.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   let response;
   try { response = await fetch(path, { ...init, headers, cache: 'no-store' }); }
   catch { throw new Error('Could not reach Castboard. Check your connection, then try again.'); }
   if (response.status === 403) {
+    $('#token-error').textContent = token ? 'Access was denied. Check your token and the server’s admin access settings.' : '';
+    $('#admin-token').setAttribute('aria-invalid', String(Boolean(token)));
     if (!$('#token-dialog').open) $('#token-dialog').showModal();
+    $('#admin-token').focus(); $('#admin-token').select();
     throw new Error('Enter your admin token to continue.');
   }
   const payload = await response.json().catch(() => ({}));
@@ -79,20 +82,23 @@ function bindDynamicActions() {
     toast('Copied');
   }));
   document.querySelectorAll('[data-test-plugin]').forEach(button => button.addEventListener('click', async () => {
-    const result = $(`[data-result="${CSS.escape(button.dataset.testPlugin)}"]`);
-    button.disabled = true; button.textContent = 'Testing…'; checks.set(button.dataset.testPlugin,{pending:true,message:'Testing…'});
-    result.className = 'test-result';
-    result.textContent = 'Testing…';
+    const id = button.dataset.testPlugin;
+    if (checks.get(id)?.pending) return;
+    checks.set(id, {pending:true,message:'Testing…'}); renderCheck(id);
     try {
-      const payload = await request('/api/admin/setup/test-plugin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pluginId: button.dataset.testPlugin }) });
-      result.className = `test-result ${payload.ok ? 'ok' : 'bad'}`;
+      const payload = await request('/api/admin/setup/test-plugin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pluginId:id}) });
       const message = `${payload.message}${payload.latencyMs !== undefined ? ` · ${payload.latencyMs} ms` : ''}`;
-      checks.set(button.dataset.testPlugin, {ok:payload.ok, message}); result.textContent = message;
-    } catch (error) {
-      result.className = 'test-result bad';
-      result.textContent = error.message; checks.set(button.dataset.testPlugin,{ok:false,message:error.message});
-    } finally { button.disabled = false; button.textContent = 'Test'; }
+      checks.set(id, {ok:payload.ok,message});
+    } catch (error) { checks.set(id, {ok:false,message:error.message}); }
+    finally { renderCheck(id); }
   }));
+}
+
+// Filtering replaces rows while a test is running; finish against the current row.
+function renderCheck(id) {
+  const check=checks.get(id),button=$(`[data-test-plugin="${CSS.escape(id)}"]`),result=$(`[data-result="${CSS.escape(id)}"]`);
+  if(button){button.disabled=Boolean(check?.pending);button.textContent=check?.pending?'Testing…':'Test';}
+  if(result){result.className=`test-result ${check?.pending?'':check?.ok?'ok':'bad'}`;result.textContent=check?.message||'';}
 }
 
 async function load() {
@@ -106,7 +112,7 @@ async function load() {
 
 $('#refresh').addEventListener('click', () => { load(); if (!deliveryBusy) loadDelivery(); });
 $('#connection-search').addEventListener('input', () => {if (report) renderModules();});
-$('#token-form').addEventListener('submit', async event => {event.preventDefault(); token = $('#admin-token').value; sessionStorage.setItem('castboard-admin-token',token); $('#token-dialog').close(); await Promise.all([load(), loadDelivery()]);});
+$('#token-form').addEventListener('submit', async event => {event.preventDefault(); token = $('#admin-token').value.trim(); $('#token-error').textContent=''; $('#admin-token').removeAttribute('aria-invalid'); sessionStorage.setItem('castboard-admin-token',token); $('#token-dialog').close(); await Promise.all([load(), loadDelivery()]);});
 function rememberDisplayDrafts() {
   document.querySelectorAll('.delivery-screen').forEach(article => {
     const form = article.querySelector('.display-form');

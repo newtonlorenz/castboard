@@ -29,7 +29,7 @@
     <section class="connection-section" aria-labelledby="server-heading"><div class="section-head"><div><h2 id="server-heading">Server tools</h2><p>Optional tools are only needed by the features that use them.</p></div></div><div id="runtime-cards" class="runtime-list"></div></section>
     <p class="configuration-help">Install and configure data sources in <a href="/admin/plugins">Plugins</a>. Changes apply when you save.</p>
   </main>
-  <dialog id="token-dialog"><form id="token-form"><header><h2>Admin access</h2></header><p class="dialog-note">Enter your admin token to view connections. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
+  <dialog id="token-dialog" aria-labelledby="token-title"><form id="token-form"><header><h2 id="token-title">Admin access</h2></header><p class="dialog-note">Enter your admin token to view connections. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" aria-describedby="token-error" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/setup.js?v=0.10.2"></script>
 </body>

@@ -265,7 +265,7 @@ Authored SVG line icons identify navigation and plugin types. Navigation icons a
 
 ### Buttons
 
-Compact, labeled actions use the frontmatter's common padding and control radius, with a base minimum height (36px). Primary actions are evergreen with white text and a deeper hover/pressed state. Secondary controls are white and gain a pale wash and stronger seam on hover. Danger controls retain white with clay text and a pale clay seam/hover surface. Disabled opacity is (.42). Global keyboard focus is a visible accent outline (2px), offset (3px). Button color and border transitions last (160ms), ease-out. At (800px) and below, Studio task actions and color-reset buttons have a minimum height (44px).
+Compact, labeled actions use the frontmatter's common padding and control radius, with a base minimum height (36px). Primary actions are evergreen with white text and a deeper hover/pressed state. Secondary controls are white and gain a pale wash and stronger seam on hover. Danger controls retain white with clay text and a pale clay seam/hover surface. Disabled opacity is (.42). Global keyboard focus is a visible accent outline (2px), offset (3px). Button color and border transitions last (160ms), ease-out. At (800px) and below, task-header buttons across Screens, Plugins and Connections, plus Studio color-reset buttons, have a minimum height (44px).
 
 ### Inputs / Fields
 
@@ -277,7 +277,7 @@ Plugin boolean settings use a compact switch (32px × 18px) with a white thumb (
 
 Schema-defined lists such as feeds and categories use ordinary labeled controls within numbered fieldsets. A list title (13px) and optional hint introduce the group; each record has a muted legend (12px), a fine top seam, vertical padding (16px) and vertical margin (12px). Desktop fields use tracks (1fr / 2fr) with a compact gutter (12px); a final unpaired field spans both tracks. At (800px) and below, fields stack into one column and list actions have a minimum height (44px).
 
-Each row ends with a labeled danger-styled Remove action; the list ends with a secondary Add action named for the item. Empty text explains the state and Add disables at the schema limit. Adding focuses the new row; removing focuses the next available row or Add. Text, URL, numeric, select and checkbox controls retain native field semantics. Repeated records reuse the existing field and button treatments.
+Each row ends with a labeled danger-styled Remove action; the list ends with a secondary Add action named for the item. Empty text explains the state and Add disables at the schema limit. Adding focuses the new row; removing focuses the next available row or Add. Text, URL, numeric, select and checkbox controls retain native field semantics. An unset select displays Choose… until a value is chosen; numeric and boolean choices retain their schema types. Schema defaults populate both the controls and the draft for existing and newly added records. Repeated records reuse the existing field and button treatments.
 
 ### Navigation and Segments
 
@@ -285,7 +285,7 @@ The persistent rail uses labeled line icons, muted light text, and a lighter gre
 
 ### Status Chips
 
-Small factual labels pair semantic text and color. Configuration, demo, adapter and blocked states use the documented palette. Installed-plugin enable state is inline text with a small dot, distinct from the filled connection chip. Testing and Saving messages describe pending work and suppress repeated actions. Failure messages remain visible near the relevant form or check.
+Small factual labels pair semantic text and color. Configuration, demo, adapter and blocked states use the documented palette. Installed-plugin enable state is inline text with a small dot, distinct from the filled connection chip. Testing and Saving messages describe pending work and suppress repeated actions. Failure messages remain visible near the relevant form or check. Failed plugin connection tests use the failure-clay surface with error-colored text. A test applies to saved settings: editing the draft shows Save settings before testing your changes, and a pending result cannot replace that notice.
 
 ### Cards / Containers
 
@@ -316,6 +316,8 @@ Destinations retain their names beside Send screen and Remove. Removal confirms 
 ### Dialogs and Feedback
 
 Dialogs use the dialog radius, padding (28px), a viewport-safe width and an ordinary maximum width (440px). A translucent dark-green backdrop separates them from the editor. Toasts use navigation-dark surfaces and white text near the bottom edge, with status announcements. Reduced-motion preference removes animation, transitions and smooth scrolling across the admin interface.
+
+Admin access dialogs have an explicit accessible title. A rejected token shows an inline field error announced as an alert and connected to the password field with `aria-describedby`; the field is marked invalid, focused and selected for correction. Submitting a new token clears the prior error state.
 
 Conflict review is shared by Screens and Plugins. It expands the ordinary dialog to a maximum width (560px), caps its height at (85dvh) and scrolls within the viewport. Each field has a legend and two native radio options, Your draft and Latest saved. Options have a minimum height (48px), compact padding (12px), and the field radius; the selected option uses the selection fill. Labels and value summaries wrap, with supporting values in muted ink. Protected values are described without being displayed.
 

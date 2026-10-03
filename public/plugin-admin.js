@@ -9,7 +9,7 @@ let token=sessionStorage.getItem('castboard-admin-token')||'';
 const edits={},clears=new Set();let sourceEdits;
 const pluginDraftKey='castboard-plugin-drafts';
 const drafts=new Map();
-let draftRevision='',draftBase,pendingPluginMerge;
+let draftRevision='',draftBase,pendingPluginMerge,editVersion=0;
 try { for(const [id,draft] of Object.entries(JSON.parse(sessionStorage.getItem(pluginDraftKey)||'{}'))) drafts.set(id,draft); } catch {}
 function saveDrafts(){try{sessionStorage.setItem(pluginDraftKey,JSON.stringify(Object.fromEntries([...drafts].map(([id,draft])=>[id,safePluginDraft(draft)]))));}catch{}}
 function rememberSelection(){const url=new URL(location.href);selected?url.searchParams.set('plugin',selected):url.searchParams.delete('plugin');collection==='library'?url.searchParams.set('collection','library'):url.searchParams.delete('collection');history.replaceState(null,'',url);}
@@ -31,7 +31,7 @@ async function request(url,init={}){
  try{response=await fetch(url,{...init,headers:{...(init.body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},cache:'no-store'});}
  catch{throw new Error('Could not reach Castboard. Check your connection, then try again.');}
  const payload=await response.json();
- if(response.status===403){if(!$('#token-dialog').open)$('#token-dialog').showModal();throw new Error('Enter your admin token to continue.');}
+ if(response.status===403){$('#token-error').textContent=token?'Access was denied. Check your token and the server’s admin access settings.':'';$('#admin-token').setAttribute('aria-invalid',String(Boolean(token)));if(!$('#token-dialog').open)$('#token-dialog').showModal();$('#admin-token').focus();$('#admin-token').select();throw new Error('Enter your admin token to continue.');}
  if(!response.ok){const error=new Error(payload.error?.message||'The request failed.');error.code=payload.error?.code;error.status=response.status;throw error;}
  return payload;
 }
@@ -39,7 +39,7 @@ function toast(message){$('#toast').textContent=message;$('#toast').classList.ad
 function resetEdits(){for(const key of Object.keys(edits))delete edits[key];clears.clear();sourceEdits=undefined;dirty=false;}
 function canLeave(){if(busy)return false;captureDraft();return true;}
 function stateMessage(message){const el=$('#plugin-save-state');if(el)el.textContent=message;}
-function changed(){dirty=true;captureDraft();stateMessage('Unsaved changes');const save=$('#save-plugin');if(save)save.disabled=busy;const reset=$('#reset-settings');if(reset)reset.disabled=busy;const test=$('#test-plugin');if(test){test.disabled=true;$('#test-result').textContent='Save settings before testing your changes.';}}
+function changed(){editVersion++;dirty=true;captureDraft();stateMessage('Unsaved changes');const save=$('#save-plugin');if(save)save.disabled=busy;const reset=$('#reset-settings');if(reset)reset.disabled=busy;const test=$('#test-plugin');if(test){test.disabled=true;$('#test-result').classList.remove('bad');$('#test-result').textContent='Save settings before testing your changes.';}}
 function pkgFor(type){return data.packages.find(pkg=>pkg.id===type);}
 function renderList(){
  if(!data)return;
@@ -143,7 +143,14 @@ function renderDetail(){
  $('#reset-settings').onclick=()=>{clearDraft();resetEdits();renderList();renderDetail();};
  $('#toggle-plugin').onclick=()=>{if(canLeave())void mutate({action:'enable',id:instance.id,enabled:!instance.enabled});};
  $('#remove-plugin').onclick=()=>{if(!canLeave())return;revealRecovery('Remove this plugin and its saved settings? Its private connection values will also be removed.', [['Keep plugin',()=>revealRecovery('')],['Remove plugin',()=>mutate({action:'remove',id:instance.id})]]);$('#plugin-recovery button').focus();};
- $('#test-plugin').onclick=async()=>{const button=$('#test-plugin'),output=$('#test-result');button.disabled=true;output.textContent='Testing connection…';try{const result=await request('/api/admin/setup/test-plugin',{method:'POST',body:JSON.stringify({pluginId:instance.id})});output.textContent=result.message;}catch(error){output.textContent=error.message;}finally{button.disabled=false;}};
+ $('#test-plugin').onclick=async()=>{
+  const button=$('#test-plugin'),output=$('#test-result'),version=editVersion;
+  const current=()=>button.isConnected&&version===editVersion;
+  button.disabled=true;output.classList.remove('bad');output.textContent='Testing connection…';
+  try{const result=await request('/api/admin/setup/test-plugin',{method:'POST',body:JSON.stringify({pluginId:instance.id})});if(current()){output.textContent=result.message;output.classList.toggle('bad',!result.ok);}}
+  catch(error){if(current()){output.textContent=error.message;output.classList.add('bad');}}
+  finally{if(button.isConnected)button.disabled=busy||dirty||!instance.enabled;}
+ };
 }
 async function mutate(change,recovery){
  if(busy)return;captureDraft();const focused=document.activeElement;busy=true;stateMessage('Saving…');if(change.action==='install')$('#page-status').textContent=`Installing ${pkgFor(change.type)?.name||'plugin'}…`;const form=$('#plugin-form');const locked=[...document.querySelectorAll('.plugin-workspace button,.plugin-workspace input,.plugin-workspace select,.plugin-workspace textarea,#refresh-plugins,#install-form button,#install-form input')].map(el=>[el,el.disabled]);for(const [el]of locked)el.disabled=true;
@@ -225,6 +232,6 @@ $('#show-installed').onclick=()=>{collection='installed';rememberSelection();ren
 $('#refresh-plugins').onclick=()=>{if(canLeave())void load();};$('#cancel-install').onclick=()=>$('#install-dialog').close();
 $('#install-form').addEventListener('invalid',()=>{$('#install-advanced').open=true;},true);
 $('#install-form').onsubmit=async event=>{event.preventDefault();if(event.target.reportValidity())await mutate({action:'install',id:$('#install-id').value,type:installType});};
-$('#token-form').onsubmit=async event=>{event.preventDefault();token=$('#admin-token').value.trim();sessionStorage.setItem('castboard-admin-token',token);$('#token-dialog').close();await load();};
+$('#token-form').onsubmit=async event=>{event.preventDefault();token=$('#admin-token').value.trim();$('#token-error').textContent='';$('#admin-token').removeAttribute('aria-invalid');sessionStorage.setItem('castboard-admin-token',token);$('#token-dialog').close();await load();};
 window.addEventListener('beforeunload',event=>{captureDraft();if(dirty&&draftBase&&Object.keys(edits).some(key=>protectedSetting(key,draftBase.settingsSchema.properties[key],edits[key],draftBase.protectedFields))){event.preventDefault();event.returnValue='';}});
 void load();

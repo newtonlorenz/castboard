@@ -25,8 +25,24 @@ A first session goes from a named screen to useful content without requiring IDs
 
 ## Evidence and limits
 
-The current platform suite passes 96 tests. The private dashboard parity and receiver-health suite is checked separately before service refresh. Desktop and mobile visual review returned `ship` for the latest extension; earlier admin, delivery and recovery passes have their own recorded reviews. Screenshots used disposable starter/demo configuration; private data and receiver details are excluded from public assets.
+The current platform suite passes 98 tests. The private dashboard parity and receiver-health suite is checked separately before service refresh. Desktop and mobile visual review returned `ship` for the latest extension; earlier admin, delivery and recovery passes have their own recorded reviews. Screenshots used disposable starter/demo configuration; private data and receiver details are excluded from public assets.
 
 The test browser automatically cancels native beforeunload dialogs. Protected-value recovery and stale Studio restoration were therefore exercised with their actual persisted records in fresh test documents; acceptance of the browser’s own Leave button was not claimed. Ordinary plugin reload, change conflicts and offline retry were exercised directly.
 
 This review does not infer physical touch or legibility from receiver telemetry. The private migration retains its seven-day observation, acceptance and retirement gates, approved recipient scope and saved rollback paths. No real display was cast during these UX tests.
+
+## Follow-up review — 3 October 2026
+
+A second pass covered screen creation, adding a panel, saving, preview, selection, plugin library installation, independent-copy settings, search, display setup, delayed connection tests, rejected access, draft restoration and desktop/tablet/phone layouts. It found and fixed these issues:
+
+| Issue | Fix and verification |
+| --- | --- |
+| A completed plugin test could replace the unsaved-settings notice and re-enable testing after an edit. | Results apply only to the same unchanged editor. A delayed response now preserves the notice and disabled test action. Failure results also use the error treatment. |
+| Filtering Connections during a test could leave its replacement row stuck on Testing. | Completion updates the current row by plugin ID. Delayed test plus filtering now shows the result and re-enables Test. |
+| Rejected admin access reopened an unexplained dialog; Studio save failures did not open it. | All three admin routes show an inline rejection message, label the dialog and focus the token field. Mocked rejection/acceptance checks confirm recovery; Studio retains and restores the failed-save draft. |
+| Refresh controls remained 36px tall on narrow screens. | The shared header rule now gives them 44px targets below 800px. Verified at 390px and 768px with no horizontal overflow. |
+| Record forms changed numeric/boolean enum values into strings, and displayed new-row defaults without saving them. | Typed choices and explicit defaults now match the submitted record. Two regression tests and a browser extension-form fixture cover zero, false, unset values and numeric choices. |
+
+Validation: 98 platform tests and eight private parity/transport tests passed; syntax checks covered 125 JavaScript and 36 JSON files plus the Docker entrypoint. Independent desktop/mobile finish review returned `ship` for this follow-up. Browser failure and delay fixtures were confined to a disposable local starter; no real credentials or receiver targets were changed. The configured PinchTab service returned 503 for tabs, so the existing in-app browser was used.
+
+The design detector reported incumbent 11px metadata/help and legacy palette advisories. The reviewer found no new material readability or layout issue in the supplied captures. No QUALITY BAR card was supplied; the review used the existing Operate contract. Receiver migration status is tracked in the private deployment, independently of this admin review.
