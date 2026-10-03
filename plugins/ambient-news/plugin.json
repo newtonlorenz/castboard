@@ -48,7 +48,10 @@
               "title": "Short label"
             }
           }
-        }
+        },
+        "addLabel": "Add category",
+        "itemLabel": "category",
+        "emptyLabel": "No categories added yet."
       }
     }
   },

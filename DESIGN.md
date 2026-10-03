@@ -265,13 +265,19 @@ Authored SVG line icons identify navigation and plugin types. Navigation icons a
 
 ### Buttons
 
-Compact, labeled actions use the frontmatter's common padding and control radius, with a base minimum height (36px). Primary actions are evergreen with white text and a deeper hover/pressed state. Secondary controls are white and gain a pale wash and stronger seam on hover. Danger controls retain white with clay text and a pale clay seam/hover surface. Disabled opacity is (.42). Global keyboard focus is a visible accent outline (2px), offset (3px). Button color and border transitions last (160ms), ease-out.
+Compact, labeled actions use the frontmatter's common padding and control radius, with a base minimum height (36px). Primary actions are evergreen with white text and a deeper hover/pressed state. Secondary controls are white and gain a pale wash and stronger seam on hover. Danger controls retain white with clay text and a pale clay seam/hover surface. Disabled opacity is (.42). Global keyboard focus is a visible accent outline (2px), offset (3px). Button color and border transitions last (160ms), ease-out. At (800px) and below, Studio task actions and color-reset buttons have a minimum height (44px).
 
 ### Inputs / Fields
 
-Full-width fields use a mineral tint, a distinct stroke, labels above, and minimum height (38px); plugin settings inputs use (40px). Hover strengthens the stroke; focus uses the accent outline (2px), offset (1px). Errors stay near the field and wrap. Textareas resize vertically. Color controls pair a swatch and editable six-digit hex value with a labeled Reset action. Inherit remains available for screen and panel appearance.
+Full-width fields use a mineral tint, a distinct stroke, labels above, and minimum height (38px); plugin settings inputs use (40px). Hover strengthens the stroke; focus uses the accent outline (2px), offset (1px). Errors stay near the field and wrap. Textareas resize vertically. Standard labeled inputs and selects have a mobile base minimum height (44px) at (800px) and below. Studio disclosure summaries and checkbox field rows also have a minimum height (44px); summaries use vertical padding (12px). Color controls pair a swatch and editable six-digit hex value with a labeled Reset action. Inherit remains available for screen and panel appearance.
 
 Plugin boolean settings use a compact switch (32px × 18px) with a white thumb (14px). The off track stays visibly outlined by its color; checked changes the track to evergreen and moves the thumb (14px). Native checkbox semantics and focus remain intact. Password fields disclose whether a value is configured and offer Clear saved value; unchanged blanks preserve existing secrets.
+
+### Repeated Records
+
+Schema-defined lists such as feeds and categories use ordinary labeled controls within numbered fieldsets. A list title (13px) and optional hint introduce the group; each record has a muted legend (12px), a fine top seam, vertical padding (16px) and vertical margin (12px). Desktop fields use tracks (1fr / 2fr) with a compact gutter (12px); a final unpaired field spans both tracks. At (800px) and below, fields stack into one column and list actions have a minimum height (44px).
+
+Each row ends with a labeled danger-styled Remove action; the list ends with a secondary Add action named for the item. Empty text explains the state and Add disables at the schema limit. Adding focuses the new row; removing focuses the next available row or Add. Text, URL, numeric, select and checkbox controls retain native field semantics. Repeated records reuse the existing field and button treatments.
 
 ### Navigation and Segments
 
@@ -297,7 +303,7 @@ Settings has a short vertical reveal (3px over 160ms, ease-out). This motion and
 
 Selecting a panel links its roster row, actual renderer placement and Panel inspector. The canvas overlay provides an inward green outline and compact evergreen label. The output retains its own appearance. Schema options precede placement; appearance is available immediately, while identity and advanced JSON use disclosures.
 
-Grid dragging rearranges without overlap, named-area layouts swap slots, and flow layouts reorder with a lower-right resize handle. Shared edges use labeled, focusable separators and an interaction strip (14px); their indicator appears on hover, focus or drag. Arrow keys adjust the active separator or panel; Shift + arrows resizes a panel. Rerendering restores keyboard focus. A drag records one undo step; Escape, pointer cancellation and lost capture restore its initial geometry. Invalid placement preserves the prior layout and reports what happened.
+Grid dragging rearranges without overlap, named-area layouts swap slots, and flow layouts reorder with a lower-right resize handle. Shared edges use labeled, focusable separators and an interaction strip (14px); their indicator appears on hover, focus or drag. Arrow keys adjust the active separator or panel; in flow layouts, arrows reorder the focused panel. Shift + arrows resizes a panel, including its column or row span in flow layouts. Rerendering restores keyboard focus. A drag records one undo step; Escape, pointer cancellation and lost capture restore its initial geometry. Invalid placement preserves the prior layout and reports what happened.
 
 Preview shows the unsaved draft at the chosen viewport with screen actions disabled. Optional content fitting works against actual rendered content and preserves the chosen appearance scale and renderer geometry. Save, empty, error and loading states use factual messages.
 
@@ -333,4 +339,4 @@ The conflict action footer stays visible while the dialog scrolls, using the pap
 - **Don't** apply library-card layout to the continuous installed-plugin roster or connection rows.
 - **Don't** propagate preview content fonts, colors or panel shapes into admin tokens.
 
-<!-- Evidence: public/admin.css, public/admin.html, public/admin.js, public/plugin-admin.css, public/plugins.html, public/plugin-admin.js, public/setup.css, public/setup.html. The later Shared admin workspace cascade and page overrides are normative for this authorized redesign. Superseded blue proof-desk declarations remain source maintenance debt, not current design tokens. No dashboard/output theme is standardized here. -->
+<!-- Evidence: public/record-list-field.js, public/admin.css, public/admin.html, public/admin.js, public/plugin-admin.css, public/plugins.html, public/plugin-admin.js, public/setup.css, public/setup.html. The later Shared admin workspace cascade and page overrides are normative for this authorized redesign. Superseded blue proof-desk declarations remain source maintenance debt, not current design tokens. No dashboard/output theme is standardized here. -->

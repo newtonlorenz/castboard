@@ -6,6 +6,7 @@ import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDe
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const clone = value => JSON.parse(JSON.stringify(value));
+const requestedPanelTarget = new URLSearchParams(location.search).get('screen');
 
 const state = {
   revision: '',
@@ -163,6 +164,8 @@ async function requestDesign(method = 'GET', payload) {
       body: payload ? JSON.stringify(payload) : undefined,
       signal: controller.signal,
     });
+  } catch (error) {
+    throw new Error(error.name === 'AbortError' ? 'Castboard took too long to reply. Try again.' : 'Could not reach Castboard. Check your connection, then try again.');
   } finally {
     clearTimeout(timer);
   }
@@ -227,11 +230,11 @@ async function loadDesign() {
 function applyRequestedPanel() {
   const url = new URL(location.href), plugin = url.searchParams.get('addPlugin');
   if (!plugin) return;
-  const screen = url.searchParams.get('screen');
+  const screen = requestedPanelTarget;
   url.searchParams.delete('addPlugin'); history.replaceState(null, '', url);
   if (!state.catalog.plugins.some(item=>item.id===plugin)) return showNotice('This plugin is no longer available. Choose another from Plugins.');
   if (!state.design.screens[screen]) return showNotice('This screen is no longer available. Choose a screen before adding the plugin.');
-  state.selectedScreenId = screen; state.selectedPanelId = ''; renderAll();
+  state.selectedScreenId = screen; state.selectedPanelId = ''; rememberScreen(); renderAll();
   addPanel(plugin);
 }
 function populateCatalogControls() {
@@ -558,13 +561,13 @@ async function renderCanvas() {
         element.addEventListener('pointerdown', event => screen.type === 'flow' ? beginFlowDrag(event,panel.id,element) : beginPanelDrag(event,panel.id,element));
       }
       element.addEventListener('click', () => selectPanel(panel.id));
-      element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') {event.preventDefault();selectPanel(panel.id);} else if (state.editorModel && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {event.preventDefault(); keyboardPanel(event,panel.id);} });
+      element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') {event.preventDefault();selectPanel(panel.id);} else if ((state.editorModel || screen.type === 'flow') && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {event.preventDefault(); screen.type === 'flow' ? keyboardFlowPanel(event,panel.id) : keyboardPanel(event,panel.id);} });
       surface.append(element);
     }
     renderSharedHandles(surface);
     if(focused?.panel) surface.querySelector(`[data-panel="${CSS.escape(focused.panel)}"]`)?.focus({preventScroll:true});
     else if(focused?.edge) surface.querySelector(`[data-edge="${CSS.escape(focused.edge)}"]`)?.focus({preventScroll:true});
-    $('#canvas-message').textContent = !screen.panels.length ? 'Start with a panel, then arrange and style it here.' : collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag the edges between panels to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize.' : 'Select a panel to edit its plugin options and appearance.';
+    $('#canvas-message').textContent = !screen.panels.length ? 'Start with a panel, then arrange and style it here.' : collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag the edges between panels to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize. Arrow keys reorder; Shift + arrows resize.' : 'Select a panel to edit its plugin options and appearance.';
   } catch (error) {
     if (generation !== canvasGeneration) return;
     $('#canvas-message').textContent = `Cannot preview this layout: ${error.message}`;
@@ -683,6 +686,21 @@ function keyboardPanel(event,id) {
   const next=shuffleGrid(model,id,target);
   if(!next)return toast('No room for that change.',true);
   applyEditorModel(next);markDirty();renderCanvas();renderPanelInspector();
+}
+function keyboardFlowPanel(event,id) {
+  if(!canLeaveField())return;
+  const screen=currentScreen(),index=screen.panels.findIndex(panel=>panel.id===id),panel=screen.panels[index];
+  const forward=event.key==='ArrowRight'||event.key==='ArrowDown',delta=forward?1:-1;
+  if(event.shiftKey){
+    const key=event.key==='ArrowLeft'||event.key==='ArrowRight'?'columns':'rows';
+    const limit=key==='columns'?getComputedStyle($('#design-surface')).gridTemplateColumns.split(' ').length:12;
+    const before=panel.size?.[key]||1,next=clamp(before+delta,1,limit);
+    if(next===before)return;panel.size={...panel.size,[key]:next};
+  }else{
+    const next=index+delta;if(next<0||next>=screen.panels.length)return;
+    screen.panels.splice(index,1);screen.panels.splice(next,0,panel);
+  }
+  markDirty();renderPanelList();renderCanvas();renderPanelInspector();
 }
 function beginFlowDrag(event,id,element) {
   if(event.button!==0||!canLeaveField())return;event.preventDefault();selectPanel(id,false);renderPanelInspector();

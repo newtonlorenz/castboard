@@ -18,6 +18,15 @@ test('install connects an existing dependency by type without replacing it',()=>
  const next=changePluginConfig(base,packages,{action:'install',type:'view',id:'display'});assert.deepEqual(next.plugins.display.bindings,{reading:'north'});assert.equal(Object.keys(next.plugins).length,2);assert.equal(next.plugins.north.token,'secret');
  const cycle=[{id:'a',managed:true,defaultBindings:{b:'b'}},{id:'b',managed:true,defaultBindings:{a:'a'}}];assert.throws(()=>changePluginConfig({plugins:{},screens:{}},cycle,{action:'install',type:'a',id:'a'}),/cycle/);
 });
+test('installation reports duplicate copies and disabled dependencies without partial changes',()=>{
+ const disabled={plugins:{meter:{type:'meter',enabled:false,value:7}},screens:{}};
+ assert.throws(()=>changePluginConfig(disabled,packages,{action:'install',type:'view',id:'display'}),/Enable meter/);
+ assert.deepEqual(disabled.plugins,{meter:{type:'meter',enabled:false,value:7}});
+ assert.throws(()=>changePluginConfig(base,packages,{action:'install',type:'meter',id:'north'}),/already installed/);
+ const first=changePluginConfig(base,packages,{action:'install',type:'meter',id:'second'});
+ const next=changePluginConfig(first,packages,{action:'configure',id:'second',settings:{value:99}});
+ assert.equal(next.plugins.north.value,12);assert.equal(next.plugins.second.value,99);
+});
 async function fixture(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-plugin-admin-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));await fs.writeFile(path.join(root,'package.json'),'{"type":"module"}');
  const directory=path.join(root,'extensions/plugins/meter');await fs.mkdir(directory,{recursive:true});

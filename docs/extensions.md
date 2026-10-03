@@ -80,3 +80,7 @@ See [the flexible example](../examples/flexible/README.md): two independently co
 ### Adding panels in custom layouts
 
 A browser renderer may export `editor.add(screen, panel)`. Studio calls it with a cloned draft; the hook assigns layout-specific placement, appends the panel and updates layout geometry. A thrown error leaves the original draft intact. Studio also rejects a result if the user changed screens or edited the draft while the hook was running. Renderers without this hook retain the schema-based placement flow. Supply layout-schema defaults so a new screen can render immediately. The named-area example demonstrates vacant-area reuse, rectangular splitting and row growth.
+
+### Editable record lists
+
+Plugin settings arrays with an object `items` schema containing scalar properties render as labeled rows in admin. `required`, scalar bounds and enums apply to each row. Optional `itemLabel`, `addLabel` and `emptyLabel` provide task-specific wording. `maxItems` limits additions. For a legacy string-or-record format, use `items.anyOf` with string and object alternatives and `stringItemProperty` to identify the corresponding record property (for example `url`). The editor retains unknown record fields. Arbitrary nested structures retain the JSON fallback. Server schema validation supports `anyOf`, `minItems` and `maxItems`.

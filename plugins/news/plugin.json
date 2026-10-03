@@ -34,14 +34,14 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache · milliseconds",
+        "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout · milliseconds",
+        "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true
@@ -79,12 +79,45 @@
       "feeds": {
         "type": "array",
         "title": "RSS / Atom feeds",
-        "description": "A list of objects with name and url.",
+        "description": "Add up to eight feeds. An empty list uses the default BBC News feeds.",
         "showWhen": {
           "provider": [
             "rss"
           ]
-        }
+        },
+        "addLabel": "Add feed",
+        "itemLabel": "feed",
+        "emptyLabel": "No feeds yet. Add your first feed below.",
+        "items": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "required": [
+                "url"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Name"
+                },
+                "url": {
+                  "type": "string",
+                  "title": "Feed URL",
+                  "format": "uri"
+                },
+                "category": {
+                  "type": "string",
+                  "title": "Category"
+                }
+              }
+            }
+          ]
+        },
+        "stringItemProperty": "url",
+        "maxItems": 8
       },
       "maxFiles": {
         "type": "integer",
@@ -105,7 +138,7 @@
       },
       "refreshMinutes": {
         "type": "integer",
-        "title": "Feed refresh · minutes",
+        "title": "Feed refresh \u00b7 minutes",
         "minimum": 1,
         "maximum": 1440,
         "showWhen": {

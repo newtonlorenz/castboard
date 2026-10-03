@@ -10,7 +10,9 @@ let token = sessionStorage.getItem('castboard-admin-token') || '';
 
 async function request(path, init = {}, retry = true) {
   const headers = { ...(init.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-  const response = await fetch(path, { ...init, headers, cache: 'no-store' });
+  let response;
+  try { response = await fetch(path, { ...init, headers, cache: 'no-store' }); }
+  catch { throw new Error('Could not reach Castboard. Check your connection, then try again.'); }
   if (response.status === 403) {
     if (!$('#token-dialog').open) $('#token-dialog').showModal();
     throw new Error('Enter your admin token to continue.');

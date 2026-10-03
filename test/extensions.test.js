@@ -110,3 +110,11 @@ test('schema allowlists and required fields use declared own properties',()=>{
  assert.throws(()=>validateSchema(JSON.parse('{"constructor":"unexpected"}'),schema),/not supported/);
  assert.throws(()=>validateSchema({}, {type:'object',required:['toString']}),/is required/);
 });
+
+test('record lists retain legacy strings and validate structured entries and limits',()=>{
+ const schema={type:'array',maxItems:2,items:{anyOf:[{type:'string'},{type:'object',required:['url'],properties:{url:{type:'string'}}}]}};
+ assert.doesNotThrow(()=>validateSchema(['https://example.test/rss',{url:'https://example.test/feed',category:'News'}],schema));
+ assert.throws(()=>validateSchema([{}],schema),/allowed format/);
+ assert.throws(()=>validateSchema([42],schema),/allowed format/);
+ assert.throws(()=>validateSchema(['a','b','c'],schema),/too many/);
+});

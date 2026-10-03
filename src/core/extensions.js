@@ -23,6 +23,7 @@ export async function extensionDirectories(builtin, config, kind, configDir = pr
 
 export function validateSchema(value, schema, label = 'options') {
   if (!schema) return;
+  if (schema.anyOf && !schema.anyOf.some(choice => { try { validateSchema(value, choice, label); return true; } catch { return false; } })) throw new Error(`${label} does not match an allowed format`);
   if (schema.type === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label} must be an object`);
     for (const key of schema.required || []) if (!Object.hasOwn(value, key) || value[key] === undefined) throw new Error(`${label}.${key} is required`);
@@ -30,6 +31,8 @@ export function validateSchema(value, schema, label = 'options') {
     if (schema.additionalProperties === false) for (const key of Object.keys(value)) if (!Object.hasOwn(schema.properties || {}, key)) throw new Error(`${label}.${key} is not supported`);
   } else if (schema.type === 'array') {
     if (!Array.isArray(value)) throw new Error(`${label} must be an array`);
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) throw new Error(`${label} has too many items`);
+    if (schema.minItems !== undefined && value.length < schema.minItems) throw new Error(`${label} has too few items`);
     value.forEach((item, index) => validateSchema(item, schema.items, `${label}[${index}]`));
   } else if (schema.type === 'integer' || schema.type === 'number') {
     if (typeof value !== 'number' || !Number.isFinite(value) || (schema.type === 'integer' && !Number.isInteger(value))) throw new Error(`${label} must be a ${schema.type}`);

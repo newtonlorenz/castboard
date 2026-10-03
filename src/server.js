@@ -330,6 +330,7 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/appearance-model.js') return sendFile(res, path.join(PUBLIC_DIR, 'appearance-model.js'));
       if (req.method === 'GET' && url.pathname === '/admin-preview' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       if (req.method === 'GET' && url.pathname === '/draft-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'draft-model.js'));
+      if (req.method === 'GET' && url.pathname === '/record-list-field.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'record-list-field.js'));
       if (req.method === 'GET' && url.pathname === '/screen-path.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(ROOT, 'src/core/screen-path.js'));
       if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));

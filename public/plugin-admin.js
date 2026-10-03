@@ -1,3 +1,4 @@
+import { recordListField } from '/record-list-field.js';
 import { mergeDraft, resolveDraft, sameValue, safePluginDraft, protectedSetting } from '/draft-model.js';
 const $=selector=>document.querySelector(selector);
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -26,7 +27,9 @@ function restoreEdits(instance){
 function revealRecovery(message,actions=[]){const box=$('#plugin-recovery');box.replaceChildren();box.hidden=!message;if(!message)return;const text=document.createElement('p');text.textContent=message;box.append(text);for(const [label,action]of actions){const button=document.createElement('button');button.className='button secondary';button.type='button';button.textContent=label;button.onclick=action;box.append(button);}}
 
 async function request(url,init={}){
- const response=await fetch(url,{...init,headers:{...(init.body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},cache:'no-store'});
+ let response;
+ try{response=await fetch(url,{...init,headers:{...(init.body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},cache:'no-store'});}
+ catch{throw new Error('Could not reach Castboard. Check your connection, then try again.');}
  const payload=await response.json();
  if(response.status===403){if(!$('#token-dialog').open)$('#token-dialog').showModal();throw new Error('Enter your admin token to continue.');}
  if(!response.ok){const error=new Error(payload.error?.message||'The request failed.');error.code=payload.error?.code;error.status=response.status;throw error;}
@@ -42,12 +45,13 @@ function renderList(){
  if(!data)return;
  const search=$('#plugin-search').value.toLowerCase(),category=$('#plugin-category').value;
  $('.plugin-workspace').classList.toggle('library-mode',collection==='library');
- const entries=(collection==='installed'?data.instances:data.packages).filter(item=>`${item.name} ${item.id} ${item.type||''} ${item.category||pkgFor(item.type)?.category||''}`.toLowerCase().includes(search)&&(!category||categoryName(item)===category)).sort((a,b)=>Number(Boolean(b.hasWidget))-Number(Boolean(a.hasWidget))||a.name.localeCompare(b.name));
+ const missing=[...drafts].filter(([id])=>!data.instances.some(item=>item.id===id)).map(([id,draft])=>({...draft.base,id,missing:true,usedBy:[],enabled:false}));
+ const entries=(collection==='installed'?[...data.instances,...missing]:data.packages).filter(item=>`${item.name} ${item.id} ${item.type||''} ${item.category||pkgFor(item.type)?.category||''}`.toLowerCase().includes(search)&&(!category||categoryName(item)===category)).sort((a,b)=>Number(Boolean(b.hasWidget))-Number(Boolean(a.hasWidget))||a.name.localeCompare(b.name));
  $('#show-installed').setAttribute('aria-pressed',String(collection==='installed'));$('#show-library').setAttribute('aria-pressed',String(collection==='library'));$('#show-installed').classList.toggle('active',collection==='installed');$('#show-library').classList.toggle('active',collection==='library');
  $('#plugin-roster').innerHTML=entries.map(item=>{
   const pkg=collection==='installed'?pkgFor(item.type):item;
   const count=collection==='installed'?item.usedBy.filter(use=>use.kind==='panel').length:data.instances.filter(instance=>instance.type===item.id).length;
-  return `<article class="plugin-row ${collection==='installed'&&item.id===selected?'selected':''}"><div class="plugin-row-icon">${packageIcon(item)}</div><div class="plugin-row-copy"><h2>${escapeHtml(item.name)}</h2><p class="plugin-description">${escapeHtml(pkg?.description||'Locally installed plugin.')}</p><p class="plugin-meta">${collection==='installed'?`${count} panel${count===1?'':'s'} · ${escapeHtml(item.id)}`:escapeHtml(categoryName(item))+' · '+escapeHtml(item.origin)}</p>${collection==='installed'?`<span class="plugin-status ${item.enabled?'enabled':''}">${item.enabled?'Enabled':'Disabled'}${drafts.has(item.id)?' · Draft':''}</span>`:`<span class="plugin-version">v${escapeHtml(item.version||'1.0.0')}${count?` · ${count} installed`:''}</span>`}</div><button class="button row-action" ${collection==='library'&&!item.managed?'disabled':''} data-${collection==='installed'?'select':'install'}="${escapeHtml(item.id)}" aria-label="${collection==='installed'?'Configure':'Install'} ${escapeHtml(item.name)} (${escapeHtml(item.id)})">${collection==='installed'?'Configure':'Install'}</button></article>`;
+  return `<article class="plugin-row ${collection==='installed'&&item.id===selected?'selected':''}"><div class="plugin-row-icon">${packageIcon(item)}</div><div class="plugin-row-copy"><h2>${escapeHtml(item.name)}</h2><p class="plugin-description">${escapeHtml(pkg?.description||'Locally installed plugin.')}</p><p class="plugin-meta">${collection==='installed'?`${count} panel${count===1?'':'s'} · ${escapeHtml(item.id)}`:escapeHtml(categoryName(item))+' · '+escapeHtml(item.origin)}</p>${collection==='installed'?`<span class="plugin-status ${item.enabled?'enabled':''}">${item.missing?'Removed copy':item.enabled?'Enabled':'Disabled'}${drafts.has(item.id)?' · Draft':''}</span>`:`<span class="plugin-version">v${escapeHtml(item.version||'1.0.0')}${count?` · ${count} installed`:''}</span>`}</div><button class="button row-action" ${collection==='library'&&!item.managed?'disabled':''} data-${collection==='installed'?'select':'install'}="${escapeHtml(item.id)}" aria-label="${collection==='installed'?'Configure':'Install'} ${escapeHtml(item.name)} (${escapeHtml(item.id)})">${collection==='installed'?'Configure':'Install'}</button></article>`;
  }).join('')||'<p class="plugin-empty">No plugins match this search.</p>';
  for(const button of document.querySelectorAll('[data-select]'))button.onclick=()=>{if(selected===button.dataset.select)return;if(!canLeave())return;selected=button.dataset.select;resetEdits();rememberSelection();renderList();renderDetail();if(innerWidth<=1000)$('#plugin-detail').scrollIntoView({behavior:'auto',block:'start'});};
  for(const button of document.querySelectorAll('[data-install]'))button.onclick=()=>{if(canLeave())void mutate({action:'install',id:nextCopyId(button.dataset.install),type:button.dataset.install});};
@@ -57,7 +61,7 @@ function showRelevantFields(instance){
  for(const label of document.querySelectorAll('[data-setting]')){
   const field=instance.settingsSchema.properties[label.dataset.setting];
   label.hidden=Boolean(field.showWhen&&!Object.entries(field.showWhen).every(([key,allowed])=>allowed.includes(values[key])));
-  for(const input of label.querySelectorAll('input,select,textarea'))input.disabled=label.hidden||Boolean(input.id===`setting-${label.dataset.setting}`&&label.querySelector('[data-clear-secret]')?.checked);
+  for(const input of label.querySelectorAll('input,select,textarea,button'))input.disabled=label.hidden||Boolean(input.dataset.recordLimit==='true')||Boolean(input.id===`setting-${label.dataset.setting}`&&label.querySelector('[data-clear-secret]')?.checked);
  }
  for(const group of document.querySelectorAll('.advanced-plugin-settings')){group.hidden=![...group.querySelectorAll('[data-setting]')].some(label=>!label.hidden);
  }
@@ -66,6 +70,8 @@ function settingField(key,field,instance){
  const protectedField=protectedSetting(key,field,instance.settings[key],instance.protectedFields);
  const lineList=field.type==='array'&&field.items?.type==='string'&&!protectedField;
  const value=Object.hasOwn(edits,key)?edits[key]:clears.has(key)?'':protectedField?'':instance.settings[key]??pkgFor(instance.type)?.defaultConfig?.[key]??field.default??'';
+ const recordSchema=field.items?.anyOf?.find(item=>item.type==='object')||field.items;
+ if(!protectedField&&field.type==='array'&&recordSchema?.type==='object'&&recordSchema.properties&&Object.values(recordSchema.properties).every(item=>['string','number','integer','boolean'].includes(item.type)))return recordListField(key,{...field,items:recordSchema},value,next=>{edits[key]=next;clears.delete(key);changed();});
  const label=document.createElement('label');label.className=`field${field.type==='boolean'?' boolean-field':''}${protectedField?' secret-field':''}`;label.dataset.setting=key;
  const heading=document.createElement('span');heading.textContent=field.title||key;label.append(heading);
  if(protectedField){const status=document.createElement('small');status.className='field-state';status.textContent=instance.protectedFields.includes(key)?'Configured · hidden':'Not configured';heading.append(status);}
@@ -92,8 +98,19 @@ function settingField(key,field,instance){
  }
  return label;
 }
+function renderUnavailableDraft(instance,draft){
+ const replaced=Boolean(instance),pkg=pkgFor(draft.base.type),detail=$('#plugin-detail');
+ detail.innerHTML=`<header class="detail-heading"><div><h2>${escapeHtml(draft.base.name)}</h2><p>${escapeHtml(selected)} · Unsaved draft</p></div></header><div id="plugin-recovery" class="plugin-recovery" role="status"></div><p id="save-error" class="field-error" role="alert"></p>`;
+ const recover=()=>mutate({action:'install',id:replaced?nextCopyId(draft.base.type):selected,type:draft.base.type},{draft,previousId:selected});
+ const discard=()=>{clearDraft();resetEdits();void load();};
+ const actions=[];
+ if(pkg?.managed)actions.push([replaced?'Restore as a new copy':'Reinstall this copy',recover]);
+ actions.push(['Discard this draft',discard]);
+ revealRecovery(replaced?'A different plugin now uses this copy’s name. Restore your draft as a new copy to keep both.':'This copy was removed in another window. Your draft is still here.'+(pkg?.managed?' Reinstall it to continue editing.':' Its package must be added to the library before it can be restored.'),actions);
+}
 function renderDetail(){
- const instance=data.instances.find(item=>item.id===selected),detail=$('#plugin-detail');
+ const instance=data.instances.find(item=>item.id===selected),detail=$('#plugin-detail'),draft=drafts.get(selected);
+ if(draft&&(!instance||draft.base.type!==instance.type)){resetEdits();renderUnavailableDraft(instance,draft);return;}
  if(!instance){detail.innerHTML='<div class="detail-empty"><h2>Choose a plugin</h2><p>Select an installed plugin to edit its settings, or browse the library to add something new.</p></div>';return;}
  restoreEdits(instance);
  const pkg=pkgFor(instance.type),usage=instance.usedBy;
@@ -128,9 +145,9 @@ function renderDetail(){
  $('#remove-plugin').onclick=()=>{if(!canLeave())return;revealRecovery('Remove this plugin and its saved settings? Its private connection values will also be removed.', [['Keep plugin',()=>revealRecovery('')],['Remove plugin',()=>mutate({action:'remove',id:instance.id})]]);$('#plugin-recovery button').focus();};
  $('#test-plugin').onclick=async()=>{const button=$('#test-plugin'),output=$('#test-result');button.disabled=true;output.textContent='Testing connection…';try{const result=await request('/api/admin/setup/test-plugin',{method:'POST',body:JSON.stringify({pluginId:instance.id})});output.textContent=result.message;}catch(error){output.textContent=error.message;}finally{button.disabled=false;}};
 }
-async function mutate(change){
+async function mutate(change,recovery){
  if(busy)return;captureDraft();const focused=document.activeElement;busy=true;stateMessage('Saving…');if(change.action==='install')$('#page-status').textContent=`Installing ${pkgFor(change.type)?.name||'plugin'}…`;const form=$('#plugin-form');const locked=[...document.querySelectorAll('.plugin-workspace button,.plugin-workspace input,.plugin-workspace select,.plugin-workspace textarea,#refresh-plugins,#install-form button,#install-form input')].map(el=>[el,el.disabled]);for(const [el]of locked)el.disabled=true;
- try{data=await request('/api/admin/plugins',{method:'POST',body:JSON.stringify({...change,revision:change.action==='configure'?draftRevision:data.revision})});if(change.action==='configure'||change.action==='remove')clearDraft(change.id);resetEdits();renderCategories();if(change.action==='install'){selected=change.id;collection='installed';$('#plugin-search').value='';$('#plugin-category').value='';if($('#install-dialog').open)$('#install-dialog').close();}if(change.action==='remove')selected=data.instances.find(item=>item.hasWidget)?.id||data.instances[0]?.id||'';rememberSelection();renderList();renderDetail();$('#page-status').textContent=`${data.instances.length} installed · ${data.packages.length} in the library`;if(change.action==='install'&&innerWidth<=1000)$('#plugin-detail').scrollIntoView({behavior:'auto',block:'start'});toast(change.action==='configure'?'Settings saved and applied.':change.action==='install'?`${pkgFor(change.type)?.name||'Plugin'} installed. Ready to configure.`:'Plugin list updated.');}
+ try{data=await request('/api/admin/plugins',{method:'POST',body:JSON.stringify({...change,revision:change.action==='configure'?draftRevision:data.revision})});if(change.action==='configure'||change.action==='remove')clearDraft(change.id);if(recovery){drafts.delete(recovery.previousId);drafts.set(change.id,recovery.draft);saveDrafts();}resetEdits();renderCategories();if(change.action==='install'){selected=change.id;collection='installed';$('#plugin-search').value='';$('#plugin-category').value='';if($('#install-dialog').open)$('#install-dialog').close();}if(change.action==='remove')selected=data.instances.find(item=>item.hasWidget)?.id||data.instances[0]?.id||'';rememberSelection();renderList();renderDetail();$('#page-status').textContent=`${data.instances.length} installed · ${data.packages.length} in the library`;if(change.action==='install'&&innerWidth<=1000)$('#plugin-detail').scrollIntoView({behavior:'auto',block:'start'});toast(change.action==='configure'?'Settings saved and applied.':change.action==='install'?`${pkgFor(change.type)?.name||'Plugin'} installed. Ready to configure.`:'Plugin list updated.');}
  catch(error){if(error.code==='REVISION_CONFLICT'&&change.action==='configure')revealRecovery('Settings changed in another window. Your draft is still here.',[['Review latest settings',reviewPluginChanges]]);const output=change.action==='install'?($('#install-dialog').open?$('#install-error'):$('#page-status')):$('#save-error');if(output)output.textContent=error.message;else toast(error.message);if(form){$('#save-plugin').disabled=!dirty;$('#reset-settings').disabled=false;const current=data.instances.find(item=>item.id===selected);$('#toggle-plugin').disabled=Boolean(current?.enabled&&current?.usedBy.length);$('#remove-plugin').disabled=Boolean(current?.usedBy.length);}}
  finally{for(const [el,disabled]of locked)if(el.isConnected)el.disabled=disabled;busy=false;if(dirty)stateMessage('Unsaved draft · kept in this tab');if(focused?.isConnected&&!focused.disabled)focused.focus();else if(change.action==='configure')$('#save-plugin')?.focus();}
 }
@@ -155,8 +172,7 @@ async function reviewPluginChanges(){
  try{
   const latest=await request('/api/admin/plugins');
   const current=latest.instances.find(item=>item.id===selected);
-  if(!current){data=latest;revealRecovery('This copy was removed in another window. Your draft is kept here.',[['Reinstall this copy',()=>mutate({action:'install',id:selected,type:draft.base.type})],['Discard this draft',()=>{clearDraft();resetEdits();void load();}]]);return;}
-  if(current.type!==draft.base.type){revealRecovery('This copy was replaced by a different plugin. Your draft cannot be applied to it.',[['Discard this draft',()=>{clearDraft();resetEdits();void load();}]]);return;}
+  if(!current||current.type!==draft.base.type){data=latest;resetEdits();renderList();renderDetail();return;}
   const base={settings:draft.base.settings,bindings:draft.base.bindings};
   const mine=structuredClone(base);Object.assign(mine.settings,draft.edits);for(const key of draft.clears)delete mine.settings[key];if(draft.bindings)mine.bindings=draft.bindings;
   const result=mergeDraft(base,mine,{settings:current.settings,bindings:current.bindings});
@@ -191,7 +207,7 @@ async function load(){
  const locked=[...document.querySelectorAll('.plugin-workspace button,.plugin-workspace input,.plugin-workspace select,.plugin-workspace textarea,#refresh-plugins')].map(el=>[el,el.disabled]);
  for(const [el]of locked)el.disabled=true;
  $('#page-status').textContent='Loading plugins…';
- try{data=await request('/api/admin/plugins');if(!data.instances.some(item=>item.id===selected))selected=data.instances.find(item=>item.hasWidget)?.id||data.instances[0]?.id||'';renderCategories();resetEdits();rememberSelection();renderList();renderDetail();$('#page-status').textContent=`${data.instances.length} installed · ${data.packages.length} in the library`;}
+ try{data=await request('/api/admin/plugins');if(!data.instances.some(item=>item.id===selected)&&!drafts.has(selected))selected=data.instances.find(item=>item.hasWidget)?.id||data.instances[0]?.id||'';renderCategories();resetEdits();rememberSelection();renderList();renderDetail();$('#page-status').textContent=`${data.instances.length} installed · ${data.packages.length} in the library`;}
  catch(error){$('#page-status').textContent=error.message;}
  finally{busy=false;for(const [el,disabled]of locked)if(el.isConnected)el.disabled=disabled;}
 }

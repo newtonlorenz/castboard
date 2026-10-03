@@ -15,7 +15,7 @@ const PROVIDERS = {
     'camera-service': ['adapter', 'Camera bridge', 'Requires an external camera discovery and streaming service.'],
   },
   clock: { local: ['ready', 'Built in', 'Uses the display clock and needs no provider.'] },
-  focus: { local: ['ready', 'Built in', 'Combines Calendar and Recovery; gracefully falls back when either is unavailable.'] },
+  focus: { local: ['ready', 'Built in', 'Uses Calendar and Recovery when available.'] },
   news: {
     demo: ['demo', 'Demo stories', 'Choose RSS for live public headlines.'],
     rss: ['ready', 'Built in', 'Aggregates RSS or Atom feeds; BBC public news feeds are included by default.'],
