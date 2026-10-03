@@ -143,30 +143,50 @@ export async function mount({element,context,config}) {
         var clearcamUnhealthyChecks = 0;
         var lastSourceFrameNumber = null;
         var lastSourceFrameAdvancedAt = 0;
+        var lastFrameAt = 0;
+        var lastFrameMode = '';
+        var fallbackDecoded = false;
+        var cameraDiscoveryTimer = null;
+        var disposed = false;
+
+        // Optional AI probes must not override evidence from a working fallback.
+        // Conversely, a successful metadata request does not prove a frame arrived.
+        function updateCameraHealth() {
+            if (disposed) return;
+            var maxAge = lastFrameMode === 'clearcam' ? Math.max(15000, clearcamRefreshMs * 2) : 105000;
+            var live = lastFrameAt > 0 && Date.now() - lastFrameAt < maxAge;
+            element.dataset.freshness = live ? 'live' : 'unavailable';
+            if (live) {
+                element.classList.remove('widget-unavailable', 'widget-stale');
+                element.removeAttribute('data-provider-error');
+            } else element.dataset.providerError = 'Camera frames are not arriving';
+        }
+        function receivedFrame(mode) {
+            if (disposed || activeMode !== mode) return;
+            lastFrameAt = Date.now(); lastFrameMode = mode;
+            updateCameraHealth();
+        }
 
         name.textContent = cameraName;
         status.textContent = 'Connecting';
         status.style.display = '';
 
-        try {
-            var cameras = await fetchJSON(serviceBase + '/api/cameras', 0);
-            cameras = Array.isArray(cameras) ? cameras : [];
-            var selected = cameras.find(function(camera) {
-                return camera.enabled && camera.id === preferredId;
-            }) || cameras.slice().reverse().find(function(camera) {
-                return camera.enabled && camera.name === cameraName;
-            });
-            if (selected) {
-                cameraId = selected.id;
-                name.textContent = selected.name || cameraName;
-            }
-        } catch (_) {
-            status.textContent = cameraId ? 'Reconnecting' : 'Unavailable';
+        var streamBase = '';
+        async function discoverCamera() {
+            try {
+                var cameras = await fetchJSON(serviceBase + '/api/cameras', 0);
+                cameras = Array.isArray(cameras) ? cameras : [];
+                var selected = cameras.find(camera => camera.enabled && camera.id === preferredId)
+                    || cameras.slice().reverse().find(camera => camera.enabled && camera.name === cameraName);
+                if (disposed) return;
+                if (selected) { cameraId = selected.id; name.textContent = selected.name || cameraName; }
+            } catch (_) { if (!disposed) status.textContent = cameraId ? 'Reconnecting' : 'Unavailable'; }
+            streamBase = cameraId ? serviceBase + '/api/cameras/' + encodeURIComponent(cameraId) + '/mjpeg?quality=low' : '';
+            updateCameraHealth();
         }
+        await discoverCamera();
+        if (context.signal.aborted) return;
 
-        var streamBase = cameraId
-            ? serviceBase + '/api/cameras/' + encodeURIComponent(cameraId) + '/mjpeg?quality=low'
-            : '';
         var CAMERA_STREAM_RECYCLE_MS = 90 * 1000;
 
         function clearCameraTimers() {
@@ -188,30 +208,48 @@ export async function mount({element,context,config}) {
         }
 
         function startFallback() {
+            if (disposed) return;
             clearCameraTimers();
+            clearTimeout(cameraDiscoveryTimer);
             activeMode = 'fallback';
             if (!streamBase) {
                 frame.removeAttribute('src');
                 status.textContent = 'Unavailable';
+                updateCameraHealth();
+                cameraDiscoveryTimer = setTimeout(async function() {
+                    await discoverCamera();
+                    if (!disposed && activeMode === 'fallback') startFallback();
+                }, 15000);
                 scheduleClearcamRetry();
                 return;
             }
             var reconnectDelay = 2000;
             function connectFallback() {
-                if (activeMode !== 'fallback') return;
-                status.textContent = clearcamConfig.enabled ? 'LIVE · AI STANDBY' : 'LIVE';
+                if (disposed || activeMode !== 'fallback') return;
+                clearTimeout(refreshTimer);
+                // A fresh image gives us first-frame evidence even when MJPEG never
+                // emits load until the connection ends. Do not reuse old dimensions.
+                var nextFrame = frame.cloneNode(false);
+                nextFrame.removeAttribute('src');
+                frame.onload = frame.onerror = null;
+                frame.removeAttribute('src'); frame.replaceWith(nextFrame); frame = nextFrame;
+                fallbackDecoded = false;
+                status.textContent = 'Reconnecting';
+                frame.onload = function() {
+                    if (disposed || activeMode !== 'fallback') return;
+                    fallbackDecoded = true; reconnectDelay = 2000;
+                    receivedFrame('fallback');
+                    status.textContent = clearcamConfig.enabled ? 'LIVE · AI STANDBY' : 'LIVE';
+                };
+                frame.onerror = function() {
+                    if (disposed || activeMode !== 'fallback') return;
+                    status.textContent = 'Reconnecting';
+                    refreshTimer = setTimeout(connectFallback, reconnectDelay);
+                    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+                    updateCameraHealth();
+                };
                 frame.src = resourceUrl(streamBase + '&v=' + Date.now());
             }
-            frame.onload = function() {
-                reconnectDelay = 2000;
-                status.textContent = clearcamConfig.enabled ? 'LIVE · AI STANDBY' : 'LIVE';
-            };
-            frame.onerror = function() {
-                if (activeMode !== 'fallback') return;
-                status.textContent = 'Reconnecting';
-                refreshTimer = setTimeout(connectFallback, reconnectDelay);
-                reconnectDelay = Math.min(reconnectDelay * 2, 30000);
-            };
             connectFallback();
             // DashCast can leave an MJPEG request open after its frames stall.
             fallbackRecycleTimer = setInterval(connectFallback, CAMERA_STREAM_RECYCLE_MS);
@@ -244,7 +282,7 @@ export async function mount({element,context,config}) {
                 return fresh;
             } catch (_) {
                 return false;
-            }
+            } finally { updateCameraHealth(); }
         }
 
         function connectClearcamFrame() {
@@ -253,6 +291,7 @@ export async function mount({element,context,config}) {
             frame.onload = function() {
                 if (activeMode !== 'clearcam') return;
                 clearcamFailures = 0;
+                receivedFrame('clearcam');
                 clearTimeout(refreshTimer);
                 refreshTimer = setTimeout(connectClearcamFrame, clearcamRefreshMs);
             };
@@ -279,6 +318,7 @@ export async function mount({element,context,config}) {
         }
 
         async function tryClearcam() {
+            if (disposed) return;
             if (!clearcamConfig.enabled) {
                 startFallback();
                 return;
@@ -288,7 +328,9 @@ export async function mount({element,context,config}) {
                 else scheduleClearcamRetry();
                 return;
             }
+            if (disposed) return;
             clearCameraTimers();
+            clearTimeout(cameraDiscoveryTimer);
             clearTimeout(clearcamRetryTimer);
             activeMode = 'clearcam';
             clearcamFailures = 0;
@@ -311,6 +353,18 @@ export async function mount({element,context,config}) {
             }, 5000);
         }
 
+        var frameHealthTimer = setInterval(function() {
+            if (activeMode === 'fallback' && !fallbackDecoded && frame.naturalWidth > 0) {
+                fallbackDecoded = true; receivedFrame('fallback');
+                status.textContent = clearcamConfig.enabled ? 'LIVE · AI STANDBY' : 'LIVE';
+            }
+            updateCameraHealth();
+        }, 2000);
+        context.onDispose(function() {
+            disposed = true; clearCameraTimers(); clearInterval(frameHealthTimer);
+            clearTimeout(clearcamRetryTimer); clearTimeout(cameraDiscoveryTimer);
+            frame.onload = frame.onerror = null;
+        });
         tryClearcam();
     }
 

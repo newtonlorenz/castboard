@@ -1,7 +1,7 @@
 {
   "name": "Ambient Camera",
   "description": "Live camera images with automatic stream fallback.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "category": "Ambient displays",
   "defaultConfig": {},
