@@ -14,16 +14,17 @@
     <div class="topbar-actions"><a class="button secondary" href="/">Open screen</a><button id="refresh" class="button primary" type="button">Refresh checks</button></div>
   </header>
   <main id="main-content" class="connections">
-    <div class="page-heading"><h1>Connections</h1><p>Check data sources, screen delivery and server tools.</p></div>
+    <div class="page-heading"><h1>Connections</h1><p>Put your screens on display and check their data connections.</p></div>
     <div id="overall" class="overall" role="status"><strong>Loading configuration…</strong></div>
+    <section class="connection-section" aria-labelledby="screens-heading">
+      <div class="section-head"><div><h2 id="screens-heading">Your displays</h2><p>Open a screen in a browser, or send it to a saved display.</p></div><button id="refresh-displays" class="button secondary" type="button">Refresh displays</button></div>
+      <div id="delivery-status" class="delivery-status" role="status" aria-live="polite"></div>
+      <div id="screen-list" class="delivery-list"></div>
+    </section>
     <section class="connection-section" aria-labelledby="plugins-heading">
       <div class="section-head"><div><h2 id="plugins-heading">Data connections</h2><p>Use Test to check a connection, or Configure to change its settings.</p></div><label class="field search"><span>Find a plugin</span><input id="connection-search" type="search" placeholder="Search plugins"></label></div>
       <div class="connection-columns" aria-hidden="true"><span>Plugin</span><span>Configuration</span><span>Check</span></div>
       <div id="plugin-list" class="connection-list"></div>
-    </section>
-    <section class="connection-section" aria-labelledby="screens-heading">
-      <div class="section-head"><div><h2 id="screens-heading">Screen delivery</h2><p>Delivery targets are configured in your server configuration.</p></div><button id="scan-cast" class="button secondary" type="button">Find Cast devices</button></div>
-      <div id="screen-list" class="delivery-list"></div><div id="cast-results" class="results" role="status" hidden></div>
     </section>
     <section class="connection-section" aria-labelledby="server-heading"><div class="section-head"><div><h2 id="server-heading">Server tools</h2><p>Optional tools are only needed by the features that use them.</p></div></div><div id="runtime-cards" class="runtime-list"></div></section>
     <p class="configuration-help">Install and configure data sources in <a href="/admin/plugins">Plugins</a>. Changes apply when you save.</p>

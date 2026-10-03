@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isIP } from 'node:net';
+import { screenPathError } from './screen-path.js';
 import { extensionMetadata } from './extensions.js';
 
 const ENV_PATTERN = /\$\{([A-Z_][A-Z0-9_]*)\}/g;
@@ -111,8 +112,8 @@ export function validateConfig(config) {
     if (!/^[a-z][a-z0-9-]*$/.test(screenId)) throw new Error(`Invalid screen ID: ${screenId}`);
     if (screen.type !== undefined && !/^[a-z][a-z0-9-]*$/.test(screen.type)) throw new Error(`Invalid screen type: ${screen.type}`);
     if (screen.castProtocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(screen.castProtocol)) throw new Error(`Invalid screen cast protocol: ${screen.castProtocol}`);
-    if (!screen.path || !String(screen.path).startsWith('/')) throw new Error(`screens.${screenId}.path must start with /`);
-    if (/^\/(api|plugins|screen-types|assets|admin)(\/|$)/.test(screen.path) || ['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js','/appearance-model.js','/plugin-admin.js','/plugin-admin.css'].includes(screen.path)) throw new Error(`screens.${screenId}.path is reserved by Castboard`);
+    const pathError = screenPathError(screen.path);
+    if (pathError) throw new Error(`screens.${screenId}.path: ${pathError}`);
     if (paths.has(screen.path)) throw new Error(`Screen path must be unique: ${screen.path}`);
     paths.add(screen.path);
     if (screen.layout !== undefined) assertObject(screen.layout, `screens.${screenId}.layout`);

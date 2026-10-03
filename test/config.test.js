@@ -96,3 +96,10 @@ test('screen design paths cannot shadow administration, assets or API routes', (
  for (const route of ['/admin','/admin-preview','/setup','/studio-model.js','/api','/api/health','/plugins/clock/widget.js','/assets/logo.svg']) assert.throws(()=>validateConfig({server:{port:8787},plugins:{},screens:{home:{path:route,panels:[]}}}),/reserved/);
  assert.doesNotThrow(()=>validateConfig({server:{port:8787},plugins:{},screens:{home:{path:'/screens/custom',panels:[]}}}));
 });
+
+
+test('screen paths reject reserved, external and normalized addresses before publishing', () => {
+  const config = path => ({server:{port:8787}, plugins:{}, screens:{home:{path,panels:[]}}});
+  for (const path of ['/admin','/admin/anything','/api/data','/screen-path.js','//example.test','/x?query=yes','/x#fragment','/x/../admin','/two words','/café']) assert.throws(()=>validateConfig(config(path)),/path/);
+  for (const path of ['/','/screens/kitchen','/screens/caf%C3%A9']) assert.doesNotThrow(()=>validateConfig(config(path)));
+});

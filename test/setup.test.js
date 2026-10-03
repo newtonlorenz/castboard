@@ -7,7 +7,7 @@ import { buildSetupReport, discoverCastDevices, executableStatus, testPluginConn
 
 test('setup report describes readiness without exposing private connection values', async () => {
   const config = {
-    server: { port: 8787 },
+    server: { port: 8787, publicUrl: 'https://user:secret-password@example.com?token=private' },
     casting: { defaultProtocol: 'google-cast', protocols: { 'google-cast': { executable: 'definitely-not-installed-catt' } } },
     screens: { home: { path: '/', title: 'Home', targets: [{ name: 'Secret device', device: 'private-speaker' }], panels: [{ id: 'weather', plugin: 'weather' }] } },
     plugins: { weather: { enabled: true, provider: 'open-meteo', latitude: 1, longitude: 2, token: 'private-token' }, spotify: { enabled: true, provider: 'spotify-player', executable: 'definitely-not-installed-spotify' } },
@@ -20,6 +20,8 @@ test('setup report describes readiness without exposing private connection value
   assert.equal(serialized.includes('private-token'), false);
   assert.equal(serialized.includes('private-speaker'), false);
   assert.equal(serialized.includes('Secret device'), false);
+  assert.equal(report.urls.lan, null);
+  assert.equal(serialized.includes('secret-password'), false);
 });
 
 test('setup executable and provider tests return actionable results', async () => {

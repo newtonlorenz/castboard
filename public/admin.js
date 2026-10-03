@@ -1,3 +1,4 @@
+import { screenPathError } from '/screen-path.js';
 import { schemaFields } from '/schema-fields.js?v=0.10.0';
 import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.10.2';
 
@@ -750,6 +751,7 @@ function rememberScreen() {
 }
 function updateOpenScreen() {
   $('#open-screen').disabled = !state.savedDesign?.screens?.[state.selectedScreenId]?.path;
+  $('#set-up-display').disabled = $('#open-screen').disabled;
 }
 
 function resizeCanvasFrame() {
@@ -937,7 +939,8 @@ function createScreenFromDialog() {
   const type = $('#new-screen-type').value;
   if (!/^[a-z][a-z0-9-]*$/.test(id)) return screenCreationError('Use an ID starting with a letter, followed by lowercase letters, numbers or hyphens.');
   if (state.design.screens[id]) return screenCreationError(`Screen ID “${id}” is already in use. Choose another.`);
-  if (!path.startsWith('/')) return screenCreationError('Start the web address path with /.');
+  const pathError = screenPathError(path);
+  if (pathError) return screenCreationError(pathError);
   if (Object.values(state.design.screens).some(screen => screen.path === path)) return screenCreationError(`Web address “${path}” is already in use. Choose another.`);
   state.design.screens[id] = { id, title: title || id, path, type, layout: defaultLayout(type), appearance: {}, panels: [] };
   state.selectedScreenId = id;
@@ -991,8 +994,8 @@ function validateDesign() {
   const paths = new Set();
   for (const [id, screen] of screens) {
     if (!/^[a-z][a-z0-9-]*$/.test(id)) errors.push(`Screen ID “${id}” is invalid.`);
-    if (!screen.path?.startsWith('/')) errors.push(`${screen.title || id} needs a path beginning with /.`);
-    if (['/admin','/setup','/admin-preview','/app.js','/styles.css','/admin.js','/admin.css','/setup.js','/setup.css','/studio-model.js','/widget-kit.js','/schema-fields.js','/appearance-model.js','/plugin-admin.js','/plugin-admin.css','/admin/plugins'].includes(screen.path) || /^\/(api|plugins|screen-types|assets)(\/|$)/.test(screen.path)) errors.push(`${screen.path} is reserved by Castboard.`);
+    const pathError = screenPathError(screen.path);
+    if (pathError) errors.push(`${screen.title || id}: ${pathError}`);
     if (paths.has(screen.path)) errors.push(`Screen path “${screen.path}” is duplicated.`);
     paths.add(screen.path);
     if (screen.type === 'single' && screen.panels.length !== 1) errors.push(`${screen.title || id} is a single screen and needs exactly one panel.`);
@@ -1078,6 +1081,7 @@ function bindEvents() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) {event.preventDefault(); restoreHistory(event.shiftKey ? 'redo' : 'undo');}
   });
   $('#save-design').addEventListener('click', saveDesign);
+  $('#set-up-display').addEventListener('click', () => window.open(`/setup?screen=${encodeURIComponent(state.selectedScreenId)}`, '_blank', 'noopener'));
   $('#open-screen').addEventListener('click', () => window.open(state.savedDesign.screens[state.selectedScreenId].path, '_blank', 'noopener'));
   $('#add-screen').addEventListener('click', showNewScreenDialog);
   $('#duplicate-screen').addEventListener('click', duplicateScreen);

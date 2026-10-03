@@ -287,11 +287,17 @@ Settings has a short vertical reveal (3px over 160ms, ease-out). This motion and
 
 ### Linked Selection and Screen Canvas
 
-Selecting a panel links its roster row, actual renderer placement and Module inspector. The canvas overlay provides an inward green outline and compact evergreen label. The output retains its own appearance. Schema options precede placement; appearance is available immediately, while identity and advanced JSON use disclosures.
+Selecting a panel links its roster row, actual renderer placement and Panel inspector. The canvas overlay provides an inward green outline and compact evergreen label. The output retains its own appearance. Schema options precede placement; appearance is available immediately, while identity and advanced JSON use disclosures.
 
 Grid dragging rearranges without overlap, named-area layouts swap slots, and flow layouts reorder with a lower-right resize handle. Shared edges use labeled, focusable separators and an interaction strip (14px); their indicator appears on hover, focus or drag. Arrow keys adjust the active separator or panel; Shift + arrows resizes a panel. Rerendering restores keyboard focus. A drag records one undo step; Escape, pointer cancellation and lost capture restore its initial geometry. Invalid placement preserves the prior layout and reports what happened.
 
 Preview shows the unsaved draft at the chosen viewport with screen actions disabled. Optional content fitting works against actual rendered content and preserves the chosen appearance scale and renderer geometry. Save, empty, error and loading states use factual messages.
+
+### Display Setup
+
+Connections begins with a continuous list of screens. Each row has Open screen and Set up display; expanding it reveals the browser link, saved destinations and an Add a Cast display disclosure inline. A form separates the human-readable name from the receiver address. Discovery fills the form only when the user chooses a result. Adding and sending are separate actions.
+
+Destinations retain their names beside Send screen and Remove. Removal confirms inline, with Keep display focused first. Pending operations disable repeat actions, restore focus and announce a factual result. Failed sends retain the destination; unsuccessful saves preserve the form. Narrow layouts stack links and fields, keep actions at least 44px high and avoid horizontal scrolling.
 
 ### Dialogs and Feedback
 

@@ -12,6 +12,8 @@ import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost
 import { buildSetupReport, discoverCastDevices, testPluginConnection } from './core/setup.js';
 import { publicAsset, extensionMetadata, validateSchema } from './core/extensions.js';
 import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
+import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
+import { discoverCastProtocols } from './core/cast-protocol-registry.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -128,6 +130,7 @@ export async function createApp(options = {}) {
   }
 
   let pluginSaveInProgress=false;
+  const deliveriesInProgress = new Set();
   const server = http.createServer(async (req, res) => {
     securityHeaders(res);
     let url;
@@ -187,6 +190,46 @@ export async function createApp(options = {}) {
           if(staged)await Promise.allSettled(staged.filter(plugin=>!plugins.includes(plugin)).map(plugin=>plugin.dispose?.()));
           return jsonResponse(res,422,{error:{code:'INVALID_PLUGIN_SETTINGS',message:error.message}});
         }finally{pluginSaveInProgress=false;}
+      }
+      if (url.pathname === '/api/admin/delivery') {
+        if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Display setup requires admin access.' } });
+        const payload = () => deliveryReport(runtimeConfig, rawConfig);
+        if (req.method === 'GET') return jsonResponse(res, 200, payload());
+        if (req.method !== 'POST') return jsonResponse(res, 405, { error: { message: 'Use GET or POST' } });
+        if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { message: 'Display changes require JSON.' } });
+        const body = await readBody(req);
+        if (pluginSaveInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Settings changed in another window. Refresh displays and try again.' } });
+        if (body.action === 'send') {
+          const item = deliveryTarget(runtimeConfig, body.screenId, body.index);
+          if (!item.url) return jsonResponse(res, 422, { error: { message: 'Set server.publicUrl to an address your display can reach before sending.' } });
+          if (item.protocol === 'url') return jsonResponse(res, 422, { error: { message: 'Open the screen link in the browser on this display.' } });
+          // A receiver may be shared by multiple screens; serialize sends to that receiver.
+          const key = JSON.stringify([item.protocol, item.target.address || item.target.device || item.target.endpoint || item.target.name]);
+          if (deliveriesInProgress.has(key)) return jsonResponse(res, 409, { error: { message: 'A screen is already being sent to this display. Wait a moment and try again.' } });
+          deliveriesInProgress.add(key);
+          try {
+            const protocols = await discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config: runtimeConfig, context });
+            const protocol = protocols.find(entry => entry.id === item.protocol);
+            if (!protocol) return jsonResponse(res, 422, { error: { message: 'This delivery method is disabled or missing. Check the server configuration.' } });
+            await protocol.cast(item);
+            return jsonResponse(res, 200, { ok: true, message: 'Screen sent. Check the display to confirm it opened.' });
+          } catch (error) {
+            // Adapter errors can include private URLs, headers or executable arguments.
+            return jsonResponse(res, 502, { error: { code: 'DELIVERY_FAILED', message: error.code === 'ENOENT' ? 'The delivery tool is not installed. Check Server tools below, then try again.' : 'Could not send the screen. Check that the display is online and can reach this server, then try again.' } });
+          } finally { deliveriesInProgress.delete(key); }
+        }
+        pluginSaveInProgress = true;
+        try {
+          const nextRaw = changeDelivery(rawConfig, body);
+          const nextConfig = validateConfig(expandEnvironment(nextRaw, runtimeEnv));
+          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
+          await writeConfigAtomic(nextPath, nextRaw);
+          rawConfig = nextRaw; runtimeConfig = nextConfig; configPath = nextPath;
+          context.configDir = path.dirname(nextPath);
+          return jsonResponse(res, 200, { ...payload(), applied: true });
+        } catch (error) {
+          return jsonResponse(res, error.statusCode || 500, { error: { code: error.code || 'DELIVERY_SAVE_FAILED', message: error.statusCode ? error.message : 'Could not save the display settings. Check that the server configuration file is writable, then try again.' } });
+        } finally { pluginSaveInProgress = false; }
       }
       if (url.pathname.startsWith('/api/admin/setup')) {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Setup access requires localhost or an authorized LAN token' } });
@@ -286,6 +329,7 @@ export async function createApp(options = {}) {
 
       if (req.method === 'GET' && url.pathname === '/appearance-model.js') return sendFile(res, path.join(PUBLIC_DIR, 'appearance-model.js'));
       if (req.method === 'GET' && url.pathname === '/admin-preview' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+      if (req.method === 'GET' && url.pathname === '/screen-path.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(ROOT, 'src/core/screen-path.js'));
       if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);

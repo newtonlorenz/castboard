@@ -42,7 +42,7 @@ Studio preserves private delivery settings. Plugin data access has its own admin
 - Plugin providers, integration URLs, tokens, filesystem paths, and camera addresses are managed separately in **Plugins** at `/admin/plugins`; protected fields are hidden.
 - The server bind address and port.
 
-The admin API constructs a small design projection and never returns those fields. When a design is saved, the server merges it into the raw configuration so `${ENVIRONMENT_REFERENCES}` remain placeholders rather than expanded secrets. A new or duplicated screen starts with no delivery targets; add them in `castboard.config.json` before casting.
+The admin API constructs a small design projection and never returns those fields. When a design is saved, the server merges it into the raw configuration so `${ENVIRONMENT_REFERENCES}` remain placeholders rather than expanded secrets. A new or duplicated screen starts with no delivery targets. Open **Screen → Set up a display** to manage them in Connections. This opens separately so the editor keeps its draft. Display setup always uses the saved screen.
 
 Plugin defaults and per-panel overrides are distinct: the inspector shows the effective installed defaults, and **Use plugin defaults** removes panel display overrides. **Plugin settings** opens the configured copy’s connection settings and usage.
 
@@ -77,3 +77,14 @@ For a trusted LAN only, set a bearer token through the environment:
 ```
 
 The browser asks for this token and stores it in session storage for the current tab. Do not publish the admin route through an internet-facing proxy.
+
+## Connect a display
+
+In **Connections → Your displays**, choose **Set up display** beside a screen.
+
+- **Browser link** gives tablets, TVs and kiosks a copyable address. A local-only server explains that `server.publicUrl` must point to an address the display can reach. URLs containing credentials or query parameters stay on the server.
+- **Add a Cast display** lets you discover a device or enter its name/IP address. Give it a friendly display name. Adding saves the connection; it does not start casting.
+- **Send screen** sends the saved screen to that configured destination. A successful response confirms the send operation; check the actual display to verify rendering.
+- **Remove** asks inline before removing a connection and leaves the receiver's currently displayed screen alone.
+
+Custom protocol targets remain usable. Their endpoints, headers and executable settings stay in server configuration. Disabled protocols must be enabled there before sending. Display changes share the same revision safeguards as screen and plugin saves; refresh after a conflict. Names entered in an unfinished display form survive a refresh within the page.

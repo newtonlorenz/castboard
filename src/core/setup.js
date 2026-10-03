@@ -1,4 +1,4 @@
-import os from 'node:os';
+import { displayBaseUrl } from './delivery.js';
 import path from 'node:path';
 import { runCommand } from './command.js';
 
@@ -60,11 +60,6 @@ const PROVIDERS = {
   },
 };
 
-function lanAddress() {
-  const addresses = Object.values(os.networkInterfaces()).flat().filter(item => item?.family === 'IPv4' && !item.internal);
-  return addresses.find(item => /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(item.address))?.address || addresses[0]?.address || null;
-}
-
 export async function executableStatus(executable, args = ['--version']) {
   try {
     const result = await runCommand(executable, args, { timeoutMs: 4000, maxBytes: 32 * 1024 });
@@ -75,8 +70,10 @@ export async function executableStatus(executable, args = ['--version']) {
 }
 
 export async function buildSetupReport({ config, configPath, plugins }) {
-  const address = lanAddress();
   const port = config.server.port;
+  const lan = displayBaseUrl(config);
+  const lanUrl = lan && new URL(lan);
+  const shareableLan = lanUrl && !lanUrl.username && !lanUrl.password && !lanUrl.search && !lanUrl.hash ? lan : null;
   const cattExecutable = process.env.CATT_BIN || config.casting?.protocols?.['google-cast']?.executable || 'catt';
   const spotifyExecutable = process.env.SPOTIFY_PLAYER_BIN || config.plugins?.spotify?.executable || 'spotify_player';
   const [catt, spotifyPlayer] = await Promise.all([
@@ -91,6 +88,7 @@ export async function buildSetupReport({ config, configPath, plugins }) {
     const blockedByTool = type === 'spotify' && provider === 'spotify-player' && !spotifyPlayer.installed;
     return {
       id,
+      canTest: typeof installed.get(id)?.getData === 'function',
       type,
       name: installed.get(id)?.name || id,
       provider,
@@ -113,7 +111,7 @@ export async function buildSetupReport({ config, configPath, plugins }) {
       sourceFileName: path.basename(configPath),
       fileName: path.basename(configPath) === 'castboard.config.example.json' ? 'castboard.config.json' : path.basename(configPath),
     },
-    urls: { local: `http://localhost:${port}`, lan: config.server.publicUrl || (address ? `http://${address}:${port}` : null) },
+    urls: { local: `http://localhost:${port}`, lan: shareableLan },
     tools: {
       catt: { executable: cattExecutable, ...catt, install: 'pipx install catt' },
       spotifyPlayer: { executable: spotifyExecutable, ...spotifyPlayer, install: 'brew install spotify_player  # macOS\ncargo install spotify_player --locked  # cross-platform', authenticate: 'spotify_player authenticate', requiresPremium: true },
