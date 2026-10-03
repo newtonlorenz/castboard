@@ -1,99 +1,121 @@
 ---
 name: "Castboard Administration"
-description: "A proof desk for arranging screens and checking connections."
+description: "A drawing studio for arranging real screens and configuring their plugins."
 colors:
-  accent: "#2459bb"
-  accent-hover: "#194b9f"
-  ink: "#202b3c"
-  muted: "#556174"
-  line: "#d9dfe8"
+  accent: "#246653"
+  accent-hover: "#194c3e"
+  ink: "#24302c"
+  muted: "#5c6862"
+  placeholder: "#66716a"
+  line: "#dce2dc"
   paper: "#fff"
-  wash: "#f3f5f8"
-  bed: "#e5e9ef"
-  error: "#a82727"
-  field-line: "#bcc7d5"
-  field-hover: "#71829a"
-  field-label: "#465266"
-  selection-fill: "#eaf0fc"
-  selection-line: "#c2d3f3"
-  canvas-selection: "#609df7"
-  status-blue-ink: "#254a8a"
-  status-amber-fill: "#f4eddd"
-  status-amber-ink: "#7c561b"
-  status-error-fill: "#fce8e8"
-  status-error-ink: "#982b2b"
-  saved: "#268153"
-  unsaved: "#976410"
-  success-text: "#21673f"
+  wash: "#f6f7f3"
+  bed: "#e8ece6"
+  selection: "#e5efe6"
+  nav: "#202e29"
+  nav-ink: "#eaf0ea"
+  nav-muted: "#c2cfc6"
+  nav-selected: "#3b5243"
+  field: "#fcfdfb"
+  field-line: "#c7d1c6"
+  field-hover: "#92a890"
+  field-label: "#4c5d52"
+  canvas-selection: "#7cca9a"
+  error: "#b03832"
+  saved: "#3c8059"
+  unsaved: "#a66e21"
+  switch-off: "#788773"
+  status-fill: "#e6eee0"
+  status-ink: "#38553a"
+  status-amber-fill: "#f5eddd"
+  status-amber-ink: "#7d602d"
+  status-error-fill: "#f9e9e5"
+  status-error-ink: "#99382f"
 typography:
   page-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
-    fontSize: "28px"
-    fontWeight: 700
-    lineHeight: 1.45
-    letterSpacing: "-.02em"
-  editor-title:
+    fontSize: "30px"
+    fontWeight: 650
+    lineHeight: 1.2
+    letterSpacing: "-.035em"
+  detail-title:
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+    fontSize: "24px"
+    fontWeight: 650
+    lineHeight: 1.3
+    letterSpacing: "-.025em"
+  canvas-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "20px"
-    fontWeight: 700
-    lineHeight: 1.45
-    letterSpacing: "-.02em"
-  connection-section:
+    fontWeight: 650
+    lineHeight: 1.5
+    letterSpacing: "-.03em"
+  section-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "18px"
     fontWeight: 650
-    lineHeight: 1.45
-  panel-section:
-    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
-    fontSize: "15px"
-    fontWeight: 650
-    lineHeight: 1.45
+    lineHeight: 1.5
+    letterSpacing: "-.02em"
   body:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "14px"
     fontWeight: 400
-    lineHeight: 1.45
-  action:
-    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
-    fontSize: "14px"
-    fontWeight: 550
-    lineHeight: 1.45
-  detail:
+    lineHeight: 1.5
+  description:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "13px"
     fontWeight: 400
-    lineHeight: 1.45
-  label:
+    lineHeight: 1.6
+  action:
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+    fontSize: "13px"
+    fontWeight: 600
+    lineHeight: 1.4
+  field:
     fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
     fontSize: "12px"
+    fontWeight: 400
+    lineHeight: 1.5
+  label:
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+    fontSize: "11px"
     fontWeight: 600
-    lineHeight: 1.45
+    lineHeight: 1.5
+  metadata:
+    fontFamily: "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+    fontSize: "11px"
+    fontWeight: 400
+    lineHeight: 1.5
   code:
     fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace"
     fontSize: "12px"
     fontWeight: 400
     lineHeight: 1.5
 rounded:
-  status: "4px"
-  control: "5px"
-  segment: "6px"
-  dialog: "10px"
+  badge: "4px"
+  chip: "5px"
+  field: "6px"
+  control: "7px"
+  selection: "8px"
+  summary: "10px"
+  container: "12px"
+  dialog: "14px"
 spacing:
-  field-gap: "6px"
+  field-gap: "7px"
   action-gap: "8px"
-  column-gap: "12px"
-  rail: "14px"
-  compact: "16px"
-  inspector: "18px"
-  header: "20px"
-  stage: "24px"
+  compact: "12px"
+  roster: "16px"
+  inspector: "20px"
+  workspace-gap: "24px"
+  detail: "28px"
+  page: "36px"
 components:
   button-primary:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.paper}"
     typography: "{typography.action}"
     rounded: "{rounded.control}"
-    padding: "7px 12px"
+    padding: "7px 13px"
   button-primary-hover:
     backgroundColor: "{colors.accent-hover}"
   button-secondary:
@@ -101,187 +123,196 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.action}"
     rounded: "{rounded.control}"
-    padding: "7px 12px"
-  button-secondary-hover:
-    backgroundColor: "{colors.wash}"
+    padding: "7px 13px"
   button-danger:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.error}"
     typography: "{typography.action}"
     rounded: "{rounded.control}"
-    padding: "7px 12px"
+    padding: "7px 13px"
   input:
-    backgroundColor: "{colors.paper}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.control}"
-    padding: "9px 10px"
+    typography: "{typography.field}"
+    rounded: "{rounded.field}"
+    padding: "8px 10px"
+  nav-selected:
+    backgroundColor: "{colors.nav-selected}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.selection}"
+    padding: "11px"
   status-chip:
-    backgroundColor: "{colors.selection-fill}"
-    textColor: "{colors.status-blue-ink}"
-    rounded: "{rounded.status}"
-    padding: "3px 7px"
+    backgroundColor: "{colors.status-fill}"
+    textColor: "{colors.status-ink}"
+    rounded: "{rounded.chip}"
+    padding: "4px 7px"
   screen-selected:
-    backgroundColor: "{colors.selection-fill}"
+    backgroundColor: "{colors.selection}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
-    padding: "10px 8px"
-  connection-row:
+    rounded: "{rounded.selection}"
+    padding: "12px 10px"
+  plugin-container:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
-    padding: "18px 16px"
+    rounded: "{rounded.container}"
+    padding: "28px"
+  switch-off:
+    backgroundColor: "{colors.switch-off}"
+    height: "18px"
+    width: "32px"
+    rounded: "{rounded.summary}"
+  segment-selected:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.chip}"
+    padding: "5px 13px"
 ---
 
 # Design System: Castboard Administration
 
 ## Overview
 
-**Creative North Star: "The Proof Desk"**
+**Creative North Star: "The Drawing Studio"**
 
-The proof desk surrounds an accurately scaled screen draft with paper-white editing rails, a slate canvas bed, blue selection and restrained seams. The interface uses plain labels and compact, familiar controls so selection, unsaved changes and connection checks remain clear.
+A drawing studio for real screens: deep green navigation anchors mineral-white tools around a dotted drawing bed. Graphite text, evergreen selection, fine seams and compact controls make the work legible without competing with the composition. The same navigation and task header join Screens, Plugins and Connections.
 
-This system governs the administration surfaces at `/admin`, `/admin/plugins` and `/setup` only. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Colors, typography, layout geometry and images inside the preview are output content, not admin design tokens.
+This system governs `/admin`, `/admin/plugins` and `/setup`. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Fonts, colors, imagery and geometry inside the preview are output content, not admin tokens.
 
 **Key Characteristics:**
-- Neutral editing rails around the actual renderer output.
-- Linked panel-list and canvas selection.
-- Factual states and explicit connection tests.
-- One tool rail at a time above the preview on smaller screens.
+- Persistent navigation with labeled line icons.
+- A central composition with linked selection and contextual tools.
+- A compact plugin roster beside generous settings; a separate library card grid.
+- Factual states, visible focus and restrained motion.
 
 ## Colors
 
-A working blue accent sits against paper, cool gray surfaces and dark slate text. The YAML above is the normative palette; names below describe application.
+Evergreen controls and green-black navigation frame mineral whites, sage grays and graphite text. The frontmatter is normative; these names explain each color's purpose.
 
 ### Primary
-- **Working blue** (`accent`): primary save/check actions, active navigation, focus, selection labels and native checkbox accents.
-- **Deep working blue** (`accent-hover`): primary hover state and selected panel-list text.
-- **Selection blue** (`canvas-selection`): the editing outline over a selected panel; the renderer below keeps its own colors.
-- **Selection wash and seam** (`selection-fill`, `selection-line`): selected screen and tool surfaces.
+- **Evergreen** (`accent`, `accent-hover`): primary save actions, links, focus, selected context, checkbox and switch states.
+- **Sage selection** (`selection`): selected screens, panel rows and inspector tabs. The installed-plugin row has its own closely related surface (`#e5efe3`).
+- **Canvas green** (`canvas-selection`): inward editing outlines over the rendered output.
 
 ### Secondary
-- **Saved green and result green** (`saved`, `success-text`): the save-state dot and successful test text, paired with words.
-- **Unsaved amber** (`unsaved`): the unsaved-state dot.
-- **Configuration amber** (`status-amber-fill`, `status-amber-ink`): demo, adapter, browser-only and optional-tool statuses, as labeled by the source.
-- **Failure red** (`error`, `status-error-fill`, `status-error-ink`): validation, failures and blocked configuration states.
-- **Configuration blue text** (`status-blue-ink`): neutral configured/custom-module and running-state chips; it does not assert test success.
+- **Saved green / unsaved amber** (`saved`, `unsaved`): save-state dots, paired with status text.
+- **Configuration sage** (`status-fill`, `status-ink`): factual configuration chips, not a successful-test assertion.
+- **Configuration amber** (`status-amber-fill`, `status-amber-ink`): demo and adapter labels.
+- **Failure clay** (`error`, `status-error-fill`, `status-error-ink`): validation, failed checks and blocked states.
 
 ### Neutral
-- **Paper** (`paper`): rails, editable fields and factual connection rows.
-- **Control wash** (`wash`): toolbar, helper area, command surfaces and secondary hover.
-- **Canvas bed** (`bed`): neutral space around the proof.
-- **Slate ink and muted ink** (`ink`, `muted`): primary control text and supporting information.
-- **Seam and field strokes** (`line`, `field-line`, `field-hover`): surface division, editable outlines and hover emphasis.
-- **Field-label ink** (`field-label`): compact labels above inputs.
+- **Green-black navigation** (`nav`, `nav-ink`, `nav-muted`, `nav-selected`): the persistent navigation spine and its readable selected state.
+- **Mineral paper and wash** (`paper`, `wash`): editing surfaces and surrounding page background.
+- **Drawing bed** (`bed`): the neutral sage-gray canvas surround, patterned with small regular dots.
+- **Graphite and supporting ink** (`ink`, `muted`, `placeholder`, `field-label`): primary text, supporting text, placeholders and field labels.
+- **Seams and editable strokes** (`line`, `field-line`, `field-hover`): panel boundaries and field affordances; `field` gives inputs a faint mineral tint.
+- **Inactive switch** (`switch-off`): a visible off-state track, distinct from the white thumb.
 
-**The Output Boundary Rule.** Admin colors and typography belong to the editing interface. Keep dashboard themes, panel appearance and renderer geometry independent.
+**The Output Boundary Rule.** Apply admin tokens to editing controls. Keep dashboard themes, panel appearance and renderer geometry independent.
 
-**The State Has Words Rule.** Pair status color with a factual label or message. A configuration label describes configuration; only an explicit test result describes a connection check.
+**The State Has Words Rule.** Pair state colors with factual labels. Configuration and enable state do not prove connectivity; an explicit test produces the connection result.
 
 ## Typography
 
-**Interface font:** the platform UI sans stack in the frontmatter. **Code font:** the separate native monospace stack. There is no decorative display role in the admin system.
-
-The scale prioritizes control legibility and factual headings. The body and control base is compact (14px / 1.45). The ordinary browser heading weight resolves to bold; explicit section weights are preserved in the frontmatter.
+**Interface font:** the native UI sans stack in the frontmatter. **Code font:** the separate native monospace stack. This is a compact working interface; page headings establish hierarchy through size, weight and tight tracking.
 
 ### Hierarchy
-- **Page title:** Connections and Plugins headings; reduced to (24px) on Connections at the connection breakpoint.
-- **Editor title:** Screens heading and dialog titles.
-- **Connection section:** groups of checks, delivery and server tools.
-- **Panel section:** rail and inspector section headings.
-- **Body / action:** inputs, navigation and core controls; actions use the observed medium weight.
-- **Detail:** connection descriptions and supporting dialog copy.
-- **Label:** field labels; secondary metadata uses the same size with regular weight.
-- **Code:** JSON textareas and server command strings; textareas resize vertically.
+- **Page title:** Plugins and Connections headings; reduces to (27px) in their narrow layouts.
+- **Detail title:** plugin settings identity; reduces to (20px) at the intermediate plugin breakpoint.
+- **Canvas title:** the selected screen heading; reduces to (18px) on phones.
+- **Section title:** connection groups and selected module headings.
+- **Body / description:** inherited interface text and explanatory prose. Page descriptions stop at (70ch); plugin descriptions stop at (65ch).
+- **Action:** labeled buttons; smaller contextual actions use (11–12px).
+- **Field / label / metadata:** compact inspector values, labels and supporting identity. Plugin settings use (13px) values with (12px) labels; badges use (10px).
+- **Code:** JSON textareas and editable color codes. Connection commands use (11px) monospace.
 
-**The Plain Label Rule.** Use sentence-case task and field labels, compact headings and ordinary control text. Reserve monospace for JSON, commands and editable colour codes.
+**The Working Type Rule.** Use compact native sans for interface headings and controls, sentence-case labels, and monospace for JSON, commands and editable color codes.
 
 ## Layout
 
-The desktop header is (64px) high. The editor fills the remaining viewport with a left rail (228px), a flexible center with a minimum (280px), and an inspector (310px). Rails scroll independently. The center toolbar and helper area frame the stage; the renderer output scales uniformly from the selected viewport with its origin at the top left. Canvas padding is (24px), reducing to (16px) on smaller screens. Field columns split into two equal tracks with a (12px) gutter where appropriate; JSON textarea groups stack.
+The desktop app starts with a fixed navigation spine (176px) and a task header (68px). Screens uses a screen rail (220px), flexible center with minimum width (280px), and inspector (304px). Rails scroll independently. The heading and toolbar sit above the dotted stage; helper text sits below. The stage has (26px) padding and fits the actual selected viewport uniformly, with the output transform anchored at the top left. Fields use two equal tracks with a (12px) gutter where suitable; JSON groups stack.
 
-At (1099px) and below, the header wraps, the editor stacks, and the Screens & panels / Canvas / Settings switcher exposes the relevant rail above the workspace. Tool rails have their own maximum height (52dvh); the inspector stays available through Settings. Tapping a panel selects its Module context and opens Settings; dragging keeps the Canvas tool available for arranging the draft. At (520px) and below, controls and brand simplify, screen lists become one column, and the action row wraps. Between (1100px) and (1400px), header gaps tighten rather than compromising the main editor geometry.
+Between (1100px) and (1320px), navigation contracts to a labeled icon rail (76px), and editor sidebars become (200px / 288px). At (1099px) and below, the same compact navigation remains, editor tools switch between Screens & panels, Canvas and Settings, and the workspace stacks. Screens and inspector have bounded scroll areas. At (600px) and below, navigation becomes a fixed top strip (64px), the task actions form a compact grid, and Save spans two tracks. Stage padding becomes (16px); the canvas tool has a viewport-related height with a minimum (360px). A selected panel opens its Module inspector; drag interactions keep the arranging surface available.
 
-Connections uses a centered container with a maximum width (1180px) and desktop padding (36px 28px 64px). Module rows align in three columns (1.1fr / 1.4fr / 160px) with (24px) gaps; delivery and server rows use (1fr / 2fr / auto). At (720px) and below, column headings hide, identity and action share the first line, and description, results and command details span the full width. Container padding becomes (24px 16px 40px), and search takes the available width.
+Plugins uses a centered page up to (1600px), with desktop padding (34px 36px 40px). Installed mode pairs a compact roster (290–360px) with a flexible settings area of at least (360px), separated by (24px). Settings and roster have independent bounded scrolling; settings stays (24px) from the top with an internal sticky action footer. At (1600px) and wider, the roster becomes (380px) and the gutter (32px). Intermediate breakpoints at (1100px) and (1000px) tighten tracks, padding and identity. At (760px) and below, roster and settings stack, the roster is bounded to (260px), settings scrolls with the page, and its footer becomes static. Library mode uses a responsive grid of cards with minimum width (250px), becoming one column in the narrow layout.
 
-Plugin management uses a centered container with a maximum width (1500px) and padding (28px). A searchable roster sits beside contextual settings in two tracks: a flexible roster with minimum width (340px), and a settings track from (380px) to (500px), separated by (24px). The settings rail is sticky (20px from the top); the roster scrolls within its own bounded area. At (900px) and below, roster and settings stack, the settings rail becomes static, container padding is (20px 16px), and roster scrolling is bounded to (340px).
+Connections uses a centered container up to (1340px), with padding (36px 36px 64px). Connection rows align identity, description and actions in tracks (1.1fr / 1.3fr / 168px); delivery and runtime rows use (1fr / 1.8fr / auto). At (1100px), tracks and spacing tighten. At (800px), headings hide and descriptions/results span beneath identity and action; at (600px), actions stack and page padding becomes (26px 16px 36px).
 
-Spacing is an observed set of functional gaps and paddings, not a synthetic universal scale. Use the role-named spacing tokens for matching contexts; connection sections also have the implemented larger separation (34px).
+Spacing tokens are functional gaps and paddings observed in the implementation, not a fabricated universal scale. Preserve the distinct density of a compact roster, a settings workspace and the drawing stage.
 
 ## Elevation & Depth
 
-Editing rails and connection rows are flat, separated by fine strokes and tonal surfaces. The output frame carries ambient separation from the canvas bed. A selected segmented control has a small lift; dialogs and transient toasts have distinct overlay shadows. Exact shadows, focus outlines, motion and breakpoints are recorded in the sidecar because they are outside the frontmatter token schema. None of these rules constrains the independent dashboard output.
+The app is primarily flat: tonal surfaces, thin strokes and restrained corner changes separate tools. The dotted bed locates the canvas without decorating the output. Output and overlays receive diffuse shadows; selected segments and switch thumbs have small contact shadows. Exact shadow values, motion and breakpoints live in the sidecar.
 
-### Shadow Vocabulary
-- **Segment selection:** a small contact shadow (`0 1px 3px #202b3c20`).
-- **Output frame:** a diffuse proof shadow (`0 10px 30px rgba(0,0,0,.14)`).
-- **Dialog:** modal separation (`0 16px 50px rgba(0,0,0,.25)`), with a translucent backdrop (`#17294066`).
-- **Toast:** transient feedback (`0 6px 20px #18203020`).
+- **Output frame:** two soft shadows separate the actual screen from its drawing bed.
+- **Dialog / toast:** stronger modal depth and lighter transient depth distinguish overlays from the work surface.
+- **Segment / switch:** small contact shadows identify the selected segment and switch thumb.
 
-**The Proof Desk Rule.** Use seams and tonal surfaces to organize editing controls. Lift the output frame and transient feedback only where the implemented depth vocabulary supports them.
+**The Working Surface Rule.** Organize controls with seams and tonal surfaces. Reserve substantial shadows for the output frame, dialogs and transient feedback.
 
 ## Shapes
 
-Controls have gently curved corners; status chips are slightly tighter, segmented containers slightly softer, and dialogs the most rounded. Radius values are normative in the frontmatter. Rails, connection rows and inspector tabs stay square and form continuous working surfaces. Borders are generally (1px); active navigation and inspector tabs use a bottom seam (2px). The canvas selection outline sits inward (2px) to preserve the visible output boundary. The status dot is circular and always accompanied by save-state text.
+Controls and fields have gently curved corners. Selected screen and navigation rows are softer; plugin containers, library cards and connection-list groups use the container radius. Dialogs are the softest large surface. Radii are normative in the frontmatter. Internal roster and connection rows remain continuous within their outer container. Fine borders are generally (1px); the canvas selection outline sits inward (2px) to retain the true output boundary. Status dots and switch thumbs are circular.
+
+Authored SVG line icons identify navigation and plugin types. Navigation icons are (20px), with stroke width (1.7), rounded caps and joins. Disclosure arrows are small stroked CSS chevrons; they rotate with open state. Neither pattern licenses decorative glyph icons.
 
 ## Components
 
 ### Buttons
 
-Compact, familiar actions with a visible label. Primary, secondary and danger variants share the control radius and base padding from the frontmatter. Their base minimum height is (36px); header and tool-switcher actions become at least (40px) in the stacked editor. Primary hover and pressed states darken the blue. Secondary hover uses the control wash. Danger actions use error text, a pale red border (`#e5c2c2`) and a pale error hover (`#fff0f0`). Disabled controls lower opacity (.5) and use the default cursor. Every control retains the global focus-visible outline (2px with a 3px offset).
+Compact, labeled actions use the frontmatter's common padding and control radius, with a base minimum height (36px). Primary actions are evergreen with white text and a deeper hover/pressed state. Secondary controls are white and gain a pale wash and stronger seam on hover. Danger controls retain white with clay text and a pale clay seam/hover surface. Disabled opacity is (.42). Global keyboard focus is a visible accent outline (2px), offset (3px). Button color and border transitions last (160ms), ease-out.
 
 ### Inputs / Fields
 
-White, full-width inputs have a distinct field stroke, minimum height (40px), and labels above with the field-gap token. Hover strengthens the border. Focus uses the working-blue outline (2px with a 1px offset). Invalid inputs use error strokes and nearby messages; error messages wrap rather than overflowing. Checkboxes use the accent and a native checked state. Color inputs pair a swatch with an editable six-digit hex code including its leading hash. Both controls update the same draft value; invalid codes retain field validation. Reset actions use visible words. Appearance menus offer body and heading fonts with an Inherit choice; renderer-owned defaults remain intact until an explicit override is chosen.
+Full-width fields use a mineral tint, a distinct stroke, labels above, and minimum height (38px); plugin settings inputs use (40px). Hover strengthens the stroke; focus uses the accent outline (2px), offset (1px). Errors stay near the field and wrap. Textareas resize vertically. Color controls pair a swatch and editable six-digit hex value with a labeled Reset action. Inherit remains available for screen and panel appearance.
 
-### Navigation
+Plugin boolean settings use a compact switch (32px × 18px) with a white thumb (14px). The off track stays visibly outlined by its color; checked changes the track to evergreen and moves the thumb (14px). Native checkbox semantics and focus remain intact. Password fields disclose whether a value is configured and offer Clear saved value; unchanged blanks preserve existing secrets.
 
-Screens, Plugins and Connections are plain text links in the white header. The current page has blue text, medium weight and a bottom seam. Inspector tabs use the same seam with a sticky white tab bar; Screen and Module identify their contexts, and active context follows panel selection. The mobile tool switcher instead uses outlined controls and a pale selected surface. Edit / Preview uses a compact segmented control; the selected segment lifts slightly from its gray container.
+### Navigation and Segments
+
+The persistent rail uses labeled line icons, muted light text, and a lighter green selected surface with a fine border. Hover brightens the row. At narrower widths it remains labeled; on phones it becomes the top navigation. Inspector tabs use a pale selected fill. Edit / Preview and Installed / Library use inset segmented containers with a white selected segment and small contact shadow.
 
 ### Status Chips
 
-Small labels express configuration and tool state. Their fill and text vary by factual state, with compact padding and the status radius from the frontmatter. They are read-only descriptions. Test results appear separately as text; pending actions say Testing… and disable repeat invocation. Plugin enable-state labels use a neutral outline and transparent fill; Enabled uses the saved-green text, while Disabled uses muted text. These labels describe enable state, not test success.
+Small factual labels pair semantic text and color. Configuration, demo, adapter and blocked states use the documented palette. Installed-plugin enable state is inline text with a small dot, distinct from the filled connection chip. Testing and Saving messages describe pending work and suppress repeated actions. Failure messages remain visible near the relevant form or check.
 
 ### Cards / Containers
 
-The durable pattern is a flat row or working rail, not a freestanding decorative card. Connection rows have paper surfaces, bottom seams, wrapped descriptions and adjacent Test actions. Test output spans the row. The module library uses similarly restrained, full-width selectable rows. Device results have a bordered parent container and fine internal seams. The plugin roster and settings rail use a fine perimeter seam and the segment radius, with no resting shadow; roster items remain continuous rows rather than separate cards.
+Plugin roster, settings and connection groups have white or mineral surfaces, a fine perimeter seam and rounded outer corners. Installed rows stay contiguous; hover and selection distinguish the active row. Library mode uses separate cards with a plugin line icon, identity, short description and Install action. Connection groups use aligned rows with adjacent Test/Configure actions and full-width result blocks. Resting containers have no large decorative shadow.
 
 ### Plugin Roster and Settings
 
-Search and the Installed / Library segmented control share the roster header. Selected installed rows use the existing selection wash; name, version, instance identity, usage and enable state remain visible beside a labeled Configure action. Roster titles use (16px); the contextual settings title uses (22px). Schema-defined fields precede source connections and usage, followed by explicit saved-state text and a separated action footer. Remove sits apart from ordinary save/reset actions.
+Installed mode keeps search, category and collection controls above the roster. Selecting a row reveals settings beside it; identity, usage and enable state remain visible. Source connections and usage follow schema-defined settings. The action footer keeps Save settings, Reset draft, enable state and Remove together, with Remove separated where width permits. Saving locks draft and roster controls together until completion; a failed save preserves the draft and announces failure.
 
-Password fields state whether a value is configured and offer an explicit Clear saved value control. Existing secrets remain masked, and blank unchanged fields retain the saved value. Saving announces Saving… and disables roster, draft and mutation controls together so the displayed draft remains stable until the result. Failed saves restore controls and keep factual failure text near the form.
+Settings has a short vertical reveal (3px over 160ms, ease-out). This motion and switch/disclosure transitions are removed under reduced-motion preference.
 
-### Linked Selection and Proof
+### Linked Selection and Screen Canvas
 
-Selecting an item in the panel roster selects its actual renderer-placed canvas overlay and opens the matching Module inspector. The module name, compatible source and schema-defined options precede placement controls. Appearance is immediately available; identity and advanced JSON remain disclosure sections. The overlay reveals a short panel title and inward blue outline without substituting admin styling for the panel itself.
+Selecting a panel links its roster row, actual renderer placement and Module inspector. The canvas overlay provides an inward green outline and compact evergreen label. The output retains its own appearance. Schema options precede placement; appearance is available immediately, while identity and advanced JSON use disclosures.
 
-Renderers that support the editor contract expose their placement behavior directly. Grid dragging rearranges panels without overlaps; named-area layouts swap slots. Flow layouts reorder panels and expose a lower-right resize handle. Shared edges are focusable, labeled separators with orientation and a (14px) interaction strip. Their blue indicator appears on hover, keyboard focus and during dragging; the global focus outline remains visible. Arrow keys adjust a separator along its axis. On an editable panel, arrows move and Shift + arrows resize. Canvas rerenders restore focus to the same panel or separator so repeated keyboard adjustment remains possible.
+Grid dragging rearranges without overlap, named-area layouts swap slots, and flow layouts reorder with a lower-right resize handle. Shared edges use labeled, focusable separators and an interaction strip (14px); their indicator appears on hover, focus or drag. Arrow keys adjust the active separator or panel; Shift + arrows resizes a panel. Rerendering restores keyboard focus. A drag records one undo step; Escape, pointer cancellation and lost capture restore its initial geometry. Invalid placement preserves the prior layout and reports what happened.
 
-A completed drag records one undo step. Escape, pointer cancellation and lost pointer capture restore the initial geometry; an impossible placement keeps the prior layout and gives factual feedback. The selected viewport is fitted uniformly, and the preview renders the unsaved draft with screen actions disabled. Optional content fitting reduces text against actual rendered content, including supported module content inside the shadow root. It preserves the chosen appearance scale and leaves renderer geometry intact. Save, error and empty states retain factual messages.
+Preview shows the unsaved draft at the chosen viewport with screen actions disabled. Optional content fitting works against actual rendered content and preserves the chosen appearance scale and renderer geometry. Save, empty, error and loading states use factual messages.
 
-### Dialogs and Transient Feedback
+### Dialogs and Feedback
 
-Dialogs use the dialog radius, padding (24px), maximum width (440px) and viewport-safe width (`calc(100% - 32px)`). Toasts use dark ink surfaces, white text and the segment radius, centered above the bottom edge (20px) with a viewport-safe maximum width. Their messages announce through status semantics. Buttons transition only background and text color (.15s); reduced-motion preference removes transitions and smooth scrolling.
+Dialogs use the dialog radius, padding (28px), a viewport-safe width and an ordinary maximum width (440px). A translucent dark-green backdrop separates them from the editor. Toasts use navigation-dark surfaces and white text near the bottom edge, with status announcements. Reduced-motion preference removes animation, transitions and smooth scrolling across the admin interface.
 
 ## Do's and Don'ts
 
 ### Do:
 - **Do** apply this system to admin controls while preserving independent dashboard and renderer styling.
-- **Do** keep selection synchronized between the panel list, canvas overlay and contextual inspector.
-- **Do** preserve selected viewport geometry when fitting the draft into available space.
+- **Do** synchronize selection between the panel list, canvas overlay and contextual inspector.
+- **Do** preserve the selected viewport geometry when fitting the draft into available space.
 - **Do** retain renderer-owned appearance defaults until an explicit override is chosen.
 - **Do** keep drag changes reversible as one undo step and preserve keyboard focus after canvas updates.
 - **Do** retain visible labels, focus outlines and explicit validation or failure messages.
-- **Do** reflow tools into the mobile switcher and stack connection descriptions below identity and actions.
+- **Do** keep installed-plugin settings beside the roster on wide screens and stack them on narrow screens.
 
 ### Don't:
-- **Don't** treat a configuration state as proof of connectivity.
+- **Don't** treat a configuration or enable state as proof of connectivity.
 - **Don't** replace the actual draft with a decorative dashboard mockup.
-- **Don't** shrink all three desktop editor columns into a narrow viewport.
-- **Don't** turn restrained connection rows into a gallery of raised cards.
+- **Don't** shrink all desktop editor columns into a narrow viewport.
+- **Don't** apply library-card layout to the continuous installed-plugin roster or connection rows.
 - **Don't** propagate preview content fonts, colors or panel shapes into admin tokens.
 
-
-<!-- Evidence: public/admin.css, public/setup.css, public/admin.html, public/setup.html, public/admin.js, public/setup.js; .impeccable/review/desktop.png, mobile.png, mobile-settings.png, user-672.png, connections-desktop.png, connections-mobile.png. The implemented header is 64px; the direction brief's provisional 56px is not normative. The Studio interaction extension is evidenced by public/studio-model.js, public/appearance-model.js and public/app.js; preview content remains outside this admin token system. -->
-
-<!-- Plugin management extension evidence: public/plugins.html, public/plugin-admin.css, public/plugin-admin.js and public/admin.css; .impeccable/review/plugins-0.10-desktop.png, plugins-0.10-mobile.png, plugins-0.10-user-821.png and plugins-0.10-saving.png. Incumbent visual tokens are preserved. -->
+<!-- Evidence: public/admin.css, public/admin.html, public/admin.js, public/plugin-admin.css, public/plugins.html, public/plugin-admin.js, public/setup.css, public/setup.html. The later Shared admin workspace cascade and page overrides are normative for this authorized redesign. Superseded blue proof-desk declarations remain source maintenance debt, not current design tokens. No dashboard/output theme is standardized here. -->

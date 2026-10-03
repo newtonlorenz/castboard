@@ -29,7 +29,9 @@ Select a panel on the canvas or in the panel list. Fixed-grid panels snap to cel
 
 Undo and Redo apply to design edits. Native text-field undo remains available inside inputs. Discard returns to the saved design. Unsaved valid draft state is stored for this tab and offered for restoration after a reload. Unfinished invalid text is not persisted; correct it before switching selection or saving. A revision conflict leaves the draft intact, with options to download it or load the latest configuration.
 
-On smaller screens, Screens & panels, Canvas and Settings switch the visible tools. Shared settings and advanced appearance controls are collapsible. Keyboard shortcuts: Cmd/Ctrl+S to save; Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z outside text fields to undo and redo.
+On smaller screens, Studio opens on the canvas. Screens & panels, Canvas and Settings switch the visible tools, and selecting a panel opens its settings. Shared settings, advanced layout arrays and appearance controls are collapsible. Keyboard shortcuts: Cmd/Ctrl+S to save; Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z outside text fields to undo and redo.
+
+Screens, Plugins and Connections share the same navigation and control styles. In Plugins, the installed list stays beside the selected plugin’s settings on larger screens. The Library view offers search and category filters, with display plugins listed before supporting sources. Changes remain explicit: use Save settings to apply a plugin draft or Save changes to apply a screen draft.
 
 ## What it does not edit
 

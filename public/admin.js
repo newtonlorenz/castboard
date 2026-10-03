@@ -106,8 +106,8 @@ function canLeaveField() {
   if (!input) return true;
   if (input.closest('#panel-inspector')) setInspectorTab('panel');
   else if (input.closest('#screen-inspector')) setInspectorTab('screen');
-  if (input.closest('.inspector-sidebar')) { $('.studio').dataset.tool = 'settings'; for (const button of $$('[data-tool]')) button.setAttribute('aria-pressed',String(button.dataset.tool === 'settings')); }
-  if (input.closest('.screens-sidebar')) { $('.studio').dataset.tool = 'screens'; for (const button of $$('[data-tool]')) button.setAttribute('aria-pressed',String(button.dataset.tool === 'screens')); }
+  if (input.closest('.inspector-sidebar')) { $('.studio').dataset.tool = 'settings'; for (const button of $$('.mobile-tools [data-tool]')) button.setAttribute('aria-pressed',String(button.dataset.tool === 'settings')); }
+  if (input.closest('.screens-sidebar')) { $('.studio').dataset.tool = 'screens'; for (const button of $$('.mobile-tools [data-tool]')) button.setAttribute('aria-pressed',String(button.dataset.tool === 'screens')); }
   for (let node = input.parentElement; node; node = node.parentElement) if (node.tagName === 'DETAILS') node.open = true; input.focus(); input.reportValidity();
   toast('Correct the highlighted setting, or use Undo to revert it.', true); return false;
 }
@@ -311,6 +311,13 @@ function renderInspector() {
     markDirty('Layout changed'); renderCanvas();
   });
 
+  const layoutFields=$('#extension-layout-fields');
+  const advancedFields=[...layoutFields.children].filter(field=>field.querySelector('textarea'));
+  if(advancedFields.length){
+    const advanced=document.createElement('details');advanced.className='advanced-layout';
+    const summary=document.createElement('summary');summary.textContent='Advanced layout';advanced.append(summary,...advancedFields);layoutFields.append(advanced);
+  }
+
   const appearance = screen.appearance || {};
   const fallbacks = {
     background: '#07100f',
@@ -458,6 +465,8 @@ function canvasLayout(screen) {
 function renderPanelList() {
   const list = $('#panel-list'); list.replaceChildren();
   const screen = currentScreen(); if (!screen) return;
+  $('#panel-count').textContent=screen.panels.length;
+  $('#canvas-title').textContent=screen.title||state.selectedScreenId;
   for (const [index, panel] of screen.panels.entries()) {
     const button = document.createElement('button'); button.type = 'button';
     button.className = `panel-row${panel.id === state.selectedPanelId ? ' active' : ''}`;
@@ -659,7 +668,7 @@ function selectScreen(id) {
 function selectPanel(id, rerender = true) {
   if (!canLeaveField()) return;
   state.selectedPanelId = id;
-  if (rerender && window.innerWidth < 1100) {$('.studio').dataset.tool='settings';for(const button of $$('[data-tool]'))button.setAttribute('aria-pressed',String(button.dataset.tool==='settings'));}
+  if (rerender && window.innerWidth < 1100) {$('.studio').dataset.tool='settings';for(const button of $$('.mobile-tools [data-tool]'))button.setAttribute('aria-pressed',String(button.dataset.tool==='settings'));}
   setInspectorTab('panel');
   renderPanelList();
   if (rerender) {
@@ -985,7 +994,7 @@ function bindEvents() {
   $('#show-library').addEventListener('click', () => {$('#library').hidden = false; $('#plugin-search').focus();});
   $('#close-library').addEventListener('click', () => {$('#library').hidden = true; $('#show-library').focus();});
   $('#plugin-search').addEventListener('input', renderPluginLibrary);
-  for (const button of $$('[data-tool]')) button.addEventListener('click', () => {if (!canLeaveField()) return; $('.studio').dataset.tool = button.dataset.tool; for (const item of $$('[data-tool]')) item.setAttribute('aria-pressed',String(item === button)); resizeCanvasFrame();});
+  for (const button of $$('.mobile-tools [data-tool]')) button.addEventListener('click', () => {if (!canLeaveField()) return; $('.studio').dataset.tool = button.dataset.tool; for (const item of $$('.mobile-tools [data-tool]')) item.setAttribute('aria-pressed',String(item === button)); resizeCanvasFrame();});
   document.addEventListener('keydown', event => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (state.dirty) saveDesign(); }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) {event.preventDefault(); restoreHistory(event.shiftKey ? 'redo' : 'undo');}

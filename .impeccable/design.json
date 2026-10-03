@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-02T16:44:40.970477+00:00",
+  "generatedAt": "2026-10-03T11:14:31.075753+00:00",
   "title": "Design System: Castboard Administration",
   "extensions": {
     "colorMeta": {
@@ -8,548 +8,628 @@
         "role": "primary",
         "displayName": "Accent",
         "tonalRamp": [
-          "oklch(0.15 0.1649 261.35)",
-          "oklch(0.26 0.1649 261.35)",
-          "oklch(0.38 0.1649 261.35)",
-          "oklch(0.49 0.1649 261.35)",
-          "oklch(0.61 0.1649 261.35)",
-          "oklch(0.72 0.1649 261.35)",
-          "oklch(0.84 0.1649 261.35)",
-          "oklch(0.95 0.1649 261.35)"
+          "oklch(15% 0.0738 170.83)",
+          "oklch(26% 0.0738 170.83)",
+          "oklch(38% 0.0738 170.83)",
+          "oklch(49% 0.0738 170.83)",
+          "oklch(61% 0.0738 170.83)",
+          "oklch(72% 0.0738 170.83)",
+          "oklch(84% 0.0738 170.83)",
+          "oklch(95% 0.0738 170.83)"
         ]
       },
       "accent-hover": {
         "role": "primary",
         "displayName": "Accent Hover",
         "tonalRamp": [
-          "oklch(0.15 0.1468 260.32)",
-          "oklch(0.26 0.1468 260.32)",
-          "oklch(0.38 0.1468 260.32)",
-          "oklch(0.49 0.1468 260.32)",
-          "oklch(0.61 0.1468 260.32)",
-          "oklch(0.72 0.1468 260.32)",
-          "oklch(0.84 0.1468 260.32)",
-          "oklch(0.95 0.1468 260.32)"
+          "oklch(15% 0.0596 171.82)",
+          "oklch(26% 0.0596 171.82)",
+          "oklch(38% 0.0596 171.82)",
+          "oklch(49% 0.0596 171.82)",
+          "oklch(61% 0.0596 171.82)",
+          "oklch(72% 0.0596 171.82)",
+          "oklch(84% 0.0596 171.82)",
+          "oklch(95% 0.0596 171.82)"
         ]
       },
       "ink": {
         "role": "neutral",
         "displayName": "Ink",
         "tonalRamp": [
-          "oklch(0.15 0.0349 258.92)",
-          "oklch(0.26 0.0349 258.92)",
-          "oklch(0.38 0.0349 258.92)",
-          "oklch(0.49 0.0349 258.92)",
-          "oklch(0.61 0.0349 258.92)",
-          "oklch(0.72 0.0349 258.92)",
-          "oklch(0.84 0.0349 258.92)",
-          "oklch(0.95 0.0349 258.92)"
+          "oklch(15% 0.0178 172.70)",
+          "oklch(26% 0.0178 172.70)",
+          "oklch(38% 0.0178 172.70)",
+          "oklch(49% 0.0178 172.70)",
+          "oklch(61% 0.0178 172.70)",
+          "oklch(72% 0.0178 172.70)",
+          "oklch(84% 0.0178 172.70)",
+          "oklch(95% 0.0178 172.70)"
         ]
       },
       "muted": {
         "role": "neutral",
         "displayName": "Muted",
         "tonalRamp": [
-          "oklch(0.15 0.0340 259.54)",
-          "oklch(0.26 0.0340 259.54)",
-          "oklch(0.38 0.0340 259.54)",
-          "oklch(0.49 0.0340 259.54)",
-          "oklch(0.61 0.0340 259.54)",
-          "oklch(0.72 0.0340 259.54)",
-          "oklch(0.84 0.0340 259.54)",
-          "oklch(0.95 0.0340 259.54)"
+          "oklch(15% 0.0174 164.21)",
+          "oklch(26% 0.0174 164.21)",
+          "oklch(38% 0.0174 164.21)",
+          "oklch(49% 0.0174 164.21)",
+          "oklch(61% 0.0174 164.21)",
+          "oklch(72% 0.0174 164.21)",
+          "oklch(84% 0.0174 164.21)",
+          "oklch(95% 0.0174 164.21)"
+        ]
+      },
+      "placeholder": {
+        "role": "neutral",
+        "displayName": "Placeholder",
+        "tonalRamp": [
+          "oklch(15% 0.0171 157.88)",
+          "oklch(26% 0.0171 157.88)",
+          "oklch(38% 0.0171 157.88)",
+          "oklch(49% 0.0171 157.88)",
+          "oklch(61% 0.0171 157.88)",
+          "oklch(72% 0.0171 157.88)",
+          "oklch(84% 0.0171 157.88)",
+          "oklch(95% 0.0171 157.88)"
         ]
       },
       "line": {
         "role": "neutral",
         "displayName": "Line",
         "tonalRamp": [
-          "oklch(0.15 0.0139 258.35)",
-          "oklch(0.26 0.0139 258.35)",
-          "oklch(0.38 0.0139 258.35)",
-          "oklch(0.49 0.0139 258.35)",
-          "oklch(0.61 0.0139 258.35)",
-          "oklch(0.72 0.0139 258.35)",
-          "oklch(0.84 0.0139 258.35)",
-          "oklch(0.95 0.0139 258.35)"
+          "oklch(15% 0.0103 145.49)",
+          "oklch(26% 0.0103 145.49)",
+          "oklch(38% 0.0103 145.49)",
+          "oklch(49% 0.0103 145.49)",
+          "oklch(61% 0.0103 145.49)",
+          "oklch(72% 0.0103 145.49)",
+          "oklch(84% 0.0103 145.49)",
+          "oklch(95% 0.0103 145.49)"
         ]
       },
       "paper": {
         "role": "neutral",
         "displayName": "Paper",
         "tonalRamp": [
-          "oklch(0.15 0.0000 89.88)",
-          "oklch(0.26 0.0000 89.88)",
-          "oklch(0.38 0.0000 89.88)",
-          "oklch(0.49 0.0000 89.88)",
-          "oklch(0.61 0.0000 89.88)",
-          "oklch(0.72 0.0000 89.88)",
-          "oklch(0.84 0.0000 89.88)",
-          "oklch(0.95 0.0000 89.88)"
+          "oklch(15% 0.0000 89.88)",
+          "oklch(26% 0.0000 89.88)",
+          "oklch(38% 0.0000 89.88)",
+          "oklch(49% 0.0000 89.88)",
+          "oklch(61% 0.0000 89.88)",
+          "oklch(72% 0.0000 89.88)",
+          "oklch(84% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
         ]
       },
       "wash": {
         "role": "neutral",
         "displayName": "Wash",
         "tonalRamp": [
-          "oklch(0.15 0.0045 258.32)",
-          "oklch(0.26 0.0045 258.32)",
-          "oklch(0.38 0.0045 258.32)",
-          "oklch(0.49 0.0045 258.32)",
-          "oklch(0.61 0.0045 258.32)",
-          "oklch(0.72 0.0045 258.32)",
-          "oklch(0.84 0.0045 258.32)",
-          "oklch(0.95 0.0045 258.32)"
+          "oklch(15% 0.0054 117.92)",
+          "oklch(26% 0.0054 117.92)",
+          "oklch(38% 0.0054 117.92)",
+          "oklch(49% 0.0054 117.92)",
+          "oklch(61% 0.0054 117.92)",
+          "oklch(72% 0.0054 117.92)",
+          "oklch(84% 0.0054 117.92)",
+          "oklch(95% 0.0054 117.92)"
         ]
       },
       "bed": {
         "role": "neutral",
         "displayName": "Bed",
         "tonalRamp": [
-          "oklch(0.15 0.0092 258.34)",
-          "oklch(0.26 0.0092 258.34)",
-          "oklch(0.38 0.0092 258.34)",
-          "oklch(0.49 0.0092 258.34)",
-          "oklch(0.61 0.0092 258.34)",
-          "oklch(0.72 0.0092 258.34)",
-          "oklch(0.84 0.0092 258.34)",
-          "oklch(0.95 0.0092 258.34)"
+          "oklch(15% 0.0090 134.87)",
+          "oklch(26% 0.0090 134.87)",
+          "oklch(38% 0.0090 134.87)",
+          "oklch(49% 0.0090 134.87)",
+          "oklch(61% 0.0090 134.87)",
+          "oklch(72% 0.0090 134.87)",
+          "oklch(84% 0.0090 134.87)",
+          "oklch(95% 0.0090 134.87)"
         ]
       },
-      "error": {
-        "role": "secondary",
-        "displayName": "Error",
+      "selection": {
+        "role": "primary",
+        "displayName": "Selection",
         "tonalRamp": [
-          "oklch(0.15 0.1656 26.00)",
-          "oklch(0.26 0.1656 26.00)",
-          "oklch(0.38 0.1656 26.00)",
-          "oklch(0.49 0.1656 26.00)",
-          "oklch(0.61 0.1656 26.00)",
-          "oklch(0.72 0.1656 26.00)",
-          "oklch(0.84 0.1656 26.00)",
-          "oklch(0.95 0.1656 26.00)"
+          "oklch(15% 0.0160 148.40)",
+          "oklch(26% 0.0160 148.40)",
+          "oklch(38% 0.0160 148.40)",
+          "oklch(49% 0.0160 148.40)",
+          "oklch(61% 0.0160 148.40)",
+          "oklch(72% 0.0160 148.40)",
+          "oklch(84% 0.0160 148.40)",
+          "oklch(95% 0.0160 148.40)"
+        ]
+      },
+      "nav": {
+        "role": "neutral",
+        "displayName": "Nav",
+        "tonalRamp": [
+          "oklch(15% 0.0210 170.80)",
+          "oklch(26% 0.0210 170.80)",
+          "oklch(38% 0.0210 170.80)",
+          "oklch(49% 0.0210 170.80)",
+          "oklch(61% 0.0210 170.80)",
+          "oklch(72% 0.0210 170.80)",
+          "oklch(84% 0.0210 170.80)",
+          "oklch(95% 0.0210 170.80)"
+        ]
+      },
+      "nav-ink": {
+        "role": "neutral",
+        "displayName": "Nav Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0102 145.49)",
+          "oklch(26% 0.0102 145.49)",
+          "oklch(38% 0.0102 145.49)",
+          "oklch(49% 0.0102 145.49)",
+          "oklch(61% 0.0102 145.49)",
+          "oklch(72% 0.0102 145.49)",
+          "oklch(84% 0.0102 145.49)",
+          "oklch(95% 0.0102 145.49)"
+        ]
+      },
+      "nav-muted": {
+        "role": "neutral",
+        "displayName": "Nav Muted",
+        "tonalRamp": [
+          "oklch(15% 0.0188 155.75)",
+          "oklch(26% 0.0188 155.75)",
+          "oklch(38% 0.0188 155.75)",
+          "oklch(49% 0.0188 155.75)",
+          "oklch(61% 0.0188 155.75)",
+          "oklch(72% 0.0188 155.75)",
+          "oklch(84% 0.0188 155.75)",
+          "oklch(95% 0.0188 155.75)"
+        ]
+      },
+      "nav-selected": {
+        "role": "neutral",
+        "displayName": "Nav Selected",
+        "tonalRamp": [
+          "oklch(15% 0.0377 155.81)",
+          "oklch(26% 0.0377 155.81)",
+          "oklch(38% 0.0377 155.81)",
+          "oklch(49% 0.0377 155.81)",
+          "oklch(61% 0.0377 155.81)",
+          "oklch(72% 0.0377 155.81)",
+          "oklch(84% 0.0377 155.81)",
+          "oklch(95% 0.0377 155.81)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "tonalRamp": [
+          "oklch(15% 0.0028 128.49)",
+          "oklch(26% 0.0028 128.49)",
+          "oklch(38% 0.0028 128.49)",
+          "oklch(49% 0.0028 128.49)",
+          "oklch(61% 0.0028 128.49)",
+          "oklch(72% 0.0028 128.49)",
+          "oklch(84% 0.0028 128.49)",
+          "oklch(95% 0.0028 128.49)"
         ]
       },
       "field-line": {
         "role": "neutral",
         "displayName": "Field Line",
         "tonalRamp": [
-          "oklch(0.15 0.0231 254.41)",
-          "oklch(0.26 0.0231 254.41)",
-          "oklch(0.38 0.0231 254.41)",
-          "oklch(0.49 0.0231 254.41)",
-          "oklch(0.61 0.0231 254.41)",
-          "oklch(0.72 0.0231 254.41)",
-          "oklch(0.84 0.0231 254.41)",
-          "oklch(0.95 0.0231 254.41)"
+          "oklch(15% 0.0185 142.81)",
+          "oklch(26% 0.0185 142.81)",
+          "oklch(38% 0.0185 142.81)",
+          "oklch(49% 0.0185 142.81)",
+          "oklch(61% 0.0185 142.81)",
+          "oklch(72% 0.0185 142.81)",
+          "oklch(84% 0.0185 142.81)",
+          "oklch(95% 0.0185 142.81)"
         ]
       },
       "field-hover": {
         "role": "neutral",
         "displayName": "Field Hover",
         "tonalRamp": [
-          "oklch(0.15 0.0418 257.01)",
-          "oklch(0.26 0.0418 257.01)",
-          "oklch(0.38 0.0418 257.01)",
-          "oklch(0.49 0.0418 257.01)",
-          "oklch(0.61 0.0418 257.01)",
-          "oklch(0.72 0.0418 257.01)",
-          "oklch(0.84 0.0418 257.01)",
-          "oklch(0.95 0.0418 257.01)"
+          "oklch(15% 0.0423 142.85)",
+          "oklch(26% 0.0423 142.85)",
+          "oklch(38% 0.0423 142.85)",
+          "oklch(49% 0.0423 142.85)",
+          "oklch(61% 0.0423 142.85)",
+          "oklch(72% 0.0423 142.85)",
+          "oklch(84% 0.0423 142.85)",
+          "oklch(95% 0.0423 142.85)"
         ]
       },
       "field-label": {
         "role": "neutral",
         "displayName": "Field Label",
         "tonalRamp": [
-          "oklch(0.15 0.0365 260.57)",
-          "oklch(0.26 0.0365 260.57)",
-          "oklch(0.38 0.0365 260.57)",
-          "oklch(0.49 0.0365 260.57)",
-          "oklch(0.61 0.0365 260.57)",
-          "oklch(0.72 0.0365 260.57)",
-          "oklch(0.84 0.0365 260.57)",
-          "oklch(0.95 0.0365 260.57)"
-        ]
-      },
-      "selection-fill": {
-        "role": "primary",
-        "displayName": "Selection Fill",
-        "tonalRamp": [
-          "oklch(0.15 0.0174 264.49)",
-          "oklch(0.26 0.0174 264.49)",
-          "oklch(0.38 0.0174 264.49)",
-          "oklch(0.49 0.0174 264.49)",
-          "oklch(0.61 0.0174 264.49)",
-          "oklch(0.72 0.0174 264.49)",
-          "oklch(0.84 0.0174 264.49)",
-          "oklch(0.95 0.0174 264.49)"
-        ]
-      },
-      "selection-line": {
-        "role": "primary",
-        "displayName": "Selection Line",
-        "tonalRamp": [
-          "oklch(0.15 0.0482 263.13)",
-          "oklch(0.26 0.0482 263.13)",
-          "oklch(0.38 0.0482 263.13)",
-          "oklch(0.49 0.0482 263.13)",
-          "oklch(0.61 0.0482 263.13)",
-          "oklch(0.72 0.0482 263.13)",
-          "oklch(0.84 0.0482 263.13)",
-          "oklch(0.95 0.0482 263.13)"
+          "oklch(15% 0.0274 156.79)",
+          "oklch(26% 0.0274 156.79)",
+          "oklch(38% 0.0274 156.79)",
+          "oklch(49% 0.0274 156.79)",
+          "oklch(61% 0.0274 156.79)",
+          "oklch(72% 0.0274 156.79)",
+          "oklch(84% 0.0274 156.79)",
+          "oklch(95% 0.0274 156.79)"
         ]
       },
       "canvas-selection": {
         "role": "primary",
         "displayName": "Canvas Selection",
         "tonalRamp": [
-          "oklch(0.15 0.1475 258.01)",
-          "oklch(0.26 0.1475 258.01)",
-          "oklch(0.38 0.1475 258.01)",
-          "oklch(0.49 0.1475 258.01)",
-          "oklch(0.61 0.1475 258.01)",
-          "oklch(0.72 0.1475 258.01)",
-          "oklch(0.84 0.1475 258.01)",
-          "oklch(0.95 0.1475 258.01)"
+          "oklch(15% 0.1041 156.01)",
+          "oklch(26% 0.1041 156.01)",
+          "oklch(38% 0.1041 156.01)",
+          "oklch(49% 0.1041 156.01)",
+          "oklch(61% 0.1041 156.01)",
+          "oklch(72% 0.1041 156.01)",
+          "oklch(84% 0.1041 156.01)",
+          "oklch(95% 0.1041 156.01)"
         ]
       },
-      "status-blue-ink": {
+      "error": {
         "role": "secondary",
-        "displayName": "Status Blue Ink",
+        "displayName": "Error",
         "tonalRamp": [
-          "oklch(0.15 0.1148 260.55)",
-          "oklch(0.26 0.1148 260.55)",
-          "oklch(0.38 0.1148 260.55)",
-          "oklch(0.49 0.1148 260.55)",
-          "oklch(0.61 0.1148 260.55)",
-          "oklch(0.72 0.1148 260.55)",
-          "oklch(0.84 0.1148 260.55)",
-          "oklch(0.95 0.1148 260.55)"
-        ]
-      },
-      "status-amber-fill": {
-        "role": "secondary",
-        "displayName": "Status Amber Fill",
-        "tonalRamp": [
-          "oklch(0.15 0.0225 87.15)",
-          "oklch(0.26 0.0225 87.15)",
-          "oklch(0.38 0.0225 87.15)",
-          "oklch(0.49 0.0225 87.15)",
-          "oklch(0.61 0.0225 87.15)",
-          "oklch(0.72 0.0225 87.15)",
-          "oklch(0.84 0.0225 87.15)",
-          "oklch(0.95 0.0225 87.15)"
-        ]
-      },
-      "status-amber-ink": {
-        "role": "secondary",
-        "displayName": "Status Amber Ink",
-        "tonalRamp": [
-          "oklch(0.15 0.0888 74.12)",
-          "oklch(0.26 0.0888 74.12)",
-          "oklch(0.38 0.0888 74.12)",
-          "oklch(0.49 0.0888 74.12)",
-          "oklch(0.61 0.0888 74.12)",
-          "oklch(0.72 0.0888 74.12)",
-          "oklch(0.84 0.0888 74.12)",
-          "oklch(0.95 0.0888 74.12)"
-        ]
-      },
-      "status-error-fill": {
-        "role": "secondary",
-        "displayName": "Status Error Fill",
-        "tonalRamp": [
-          "oklch(0.15 0.0219 17.55)",
-          "oklch(0.26 0.0219 17.55)",
-          "oklch(0.38 0.0219 17.55)",
-          "oklch(0.49 0.0219 17.55)",
-          "oklch(0.61 0.0219 17.55)",
-          "oklch(0.72 0.0219 17.55)",
-          "oklch(0.84 0.0219 17.55)",
-          "oklch(0.95 0.0219 17.55)"
-        ]
-      },
-      "status-error-ink": {
-        "role": "secondary",
-        "displayName": "Status Error Ink",
-        "tonalRamp": [
-          "oklch(0.15 0.1449 24.93)",
-          "oklch(0.26 0.1449 24.93)",
-          "oklch(0.38 0.1449 24.93)",
-          "oklch(0.49 0.1449 24.93)",
-          "oklch(0.61 0.1449 24.93)",
-          "oklch(0.72 0.1449 24.93)",
-          "oklch(0.84 0.1449 24.93)",
-          "oklch(0.95 0.1449 24.93)"
+          "oklch(15% 0.1570 26.97)",
+          "oklch(26% 0.1570 26.97)",
+          "oklch(38% 0.1570 26.97)",
+          "oklch(49% 0.1570 26.97)",
+          "oklch(61% 0.1570 26.97)",
+          "oklch(72% 0.1570 26.97)",
+          "oklch(84% 0.1570 26.97)",
+          "oklch(95% 0.1570 26.97)"
         ]
       },
       "saved": {
         "role": "secondary",
         "displayName": "Saved",
         "tonalRamp": [
-          "oklch(0.15 0.1116 156.86)",
-          "oklch(0.26 0.1116 156.86)",
-          "oklch(0.38 0.1116 156.86)",
-          "oklch(0.49 0.1116 156.86)",
-          "oklch(0.61 0.1116 156.86)",
-          "oklch(0.72 0.1116 156.86)",
-          "oklch(0.84 0.1116 156.86)",
-          "oklch(0.95 0.1116 156.86)"
+          "oklch(15% 0.0930 156.27)",
+          "oklch(26% 0.0930 156.27)",
+          "oklch(38% 0.0930 156.27)",
+          "oklch(49% 0.0930 156.27)",
+          "oklch(61% 0.0930 156.27)",
+          "oklch(72% 0.0930 156.27)",
+          "oklch(84% 0.0930 156.27)",
+          "oklch(95% 0.0930 156.27)"
         ]
       },
       "unsaved": {
         "role": "secondary",
         "displayName": "Unsaved",
         "tonalRamp": [
-          "oklch(0.15 0.1111 72.56)",
-          "oklch(0.26 0.1111 72.56)",
-          "oklch(0.38 0.1111 72.56)",
-          "oklch(0.49 0.1111 72.56)",
-          "oklch(0.61 0.1111 72.56)",
-          "oklch(0.72 0.1111 72.56)",
-          "oklch(0.84 0.1111 72.56)",
-          "oklch(0.95 0.1111 72.56)"
+          "oklch(15% 0.1134 69.84)",
+          "oklch(26% 0.1134 69.84)",
+          "oklch(38% 0.1134 69.84)",
+          "oklch(49% 0.1134 69.84)",
+          "oklch(61% 0.1134 69.84)",
+          "oklch(72% 0.1134 69.84)",
+          "oklch(84% 0.1134 69.84)",
+          "oklch(95% 0.1134 69.84)"
         ]
       },
-      "success-text": {
-        "role": "secondary",
-        "displayName": "Success Text",
+      "switch-off": {
+        "role": "neutral",
+        "displayName": "Switch Off",
         "tonalRamp": [
-          "oklch(0.15 0.0955 154.59)",
-          "oklch(0.26 0.0955 154.59)",
-          "oklch(0.38 0.0955 154.59)",
-          "oklch(0.49 0.0955 154.59)",
-          "oklch(0.61 0.0955 154.59)",
-          "oklch(0.72 0.0955 154.59)",
-          "oklch(0.84 0.0955 154.59)",
-          "oklch(0.95 0.0955 154.59)"
+          "oklch(15% 0.0345 137.87)",
+          "oklch(26% 0.0345 137.87)",
+          "oklch(38% 0.0345 137.87)",
+          "oklch(49% 0.0345 137.87)",
+          "oklch(61% 0.0345 137.87)",
+          "oklch(72% 0.0345 137.87)",
+          "oklch(84% 0.0345 137.87)",
+          "oklch(95% 0.0345 137.87)"
+        ]
+      },
+      "status-fill": {
+        "role": "secondary",
+        "displayName": "Status Fill",
+        "tonalRamp": [
+          "oklch(15% 0.0204 131.46)",
+          "oklch(26% 0.0204 131.46)",
+          "oklch(38% 0.0204 131.46)",
+          "oklch(49% 0.0204 131.46)",
+          "oklch(61% 0.0204 131.46)",
+          "oklch(72% 0.0204 131.46)",
+          "oklch(84% 0.0204 131.46)",
+          "oklch(95% 0.0204 131.46)"
+        ]
+      },
+      "status-ink": {
+        "role": "secondary",
+        "displayName": "Status Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0563 146.15)",
+          "oklch(26% 0.0563 146.15)",
+          "oklch(38% 0.0563 146.15)",
+          "oklch(49% 0.0563 146.15)",
+          "oklch(61% 0.0563 146.15)",
+          "oklch(72% 0.0563 146.15)",
+          "oklch(84% 0.0563 146.15)",
+          "oklch(95% 0.0563 146.15)"
+        ]
+      },
+      "status-amber-fill": {
+        "role": "secondary",
+        "displayName": "Status Amber Fill",
+        "tonalRamp": [
+          "oklch(15% 0.0229 84.59)",
+          "oklch(26% 0.0229 84.59)",
+          "oklch(38% 0.0229 84.59)",
+          "oklch(49% 0.0229 84.59)",
+          "oklch(61% 0.0229 84.59)",
+          "oklch(72% 0.0229 84.59)",
+          "oklch(84% 0.0229 84.59)",
+          "oklch(95% 0.0229 84.59)"
+        ]
+      },
+      "status-amber-ink": {
+        "role": "secondary",
+        "displayName": "Status Amber Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0779 79.57)",
+          "oklch(26% 0.0779 79.57)",
+          "oklch(38% 0.0779 79.57)",
+          "oklch(49% 0.0779 79.57)",
+          "oklch(61% 0.0779 79.57)",
+          "oklch(72% 0.0779 79.57)",
+          "oklch(84% 0.0779 79.57)",
+          "oklch(95% 0.0779 79.57)"
+        ]
+      },
+      "status-error-fill": {
+        "role": "secondary",
+        "displayName": "Status Error Fill",
+        "tonalRamp": [
+          "oklch(15% 0.0183 34.30)",
+          "oklch(26% 0.0183 34.30)",
+          "oklch(38% 0.0183 34.30)",
+          "oklch(49% 0.0183 34.30)",
+          "oklch(61% 0.0183 34.30)",
+          "oklch(72% 0.0183 34.30)",
+          "oklch(84% 0.0183 34.30)",
+          "oklch(95% 0.0183 34.30)"
+        ]
+      },
+      "status-error-ink": {
+        "role": "secondary",
+        "displayName": "Status Error Ink",
+        "tonalRamp": [
+          "oklch(15% 0.1319 28.33)",
+          "oklch(26% 0.1319 28.33)",
+          "oklch(38% 0.1319 28.33)",
+          "oklch(49% 0.1319 28.33)",
+          "oklch(61% 0.1319 28.33)",
+          "oklch(72% 0.1319 28.33)",
+          "oklch(84% 0.1319 28.33)",
+          "oklch(95% 0.1319 28.33)"
         ]
       }
     },
     "typographyMeta": {
       "page-title": {
         "displayName": "Page Title",
-        "purpose": "Connections page heading; 24px on narrow connection layouts."
+        "purpose": "Page identity on Plugins and Connections."
       },
-      "editor-title": {
-        "displayName": "Editor Title",
-        "purpose": "Screens and dialog headings."
+      "detail-title": {
+        "displayName": "Detail Title",
+        "purpose": "Selected plugin identity."
       },
-      "connection-section": {
-        "displayName": "Connection Section",
-        "purpose": "Connections group heading."
-      },
-      "panel-section": {
-        "displayName": "Panel Section",
-        "purpose": "Rail section heading."
-      },
-      "body": {
-        "displayName": "Body",
-        "purpose": "Core interface text and fields."
-      },
-      "action": {
-        "displayName": "Action",
-        "purpose": "Labeled actions."
-      },
-      "detail": {
-        "displayName": "Detail",
-        "purpose": "Descriptions and supporting copy."
-      },
-      "label": {
-        "displayName": "Label",
-        "purpose": "Field labels; metadata uses regular weight."
+      "canvas-title": {
+        "displayName": "Canvas Title",
+        "purpose": "Selected screen identity."
       },
       "code": {
         "displayName": "Code",
-        "purpose": "JSON and command strings."
+        "purpose": "JSON, commands and editable color codes."
       }
     },
     "shadows": [
       {
-        "name": "segment-selection",
-        "value": "0 1px 3px #202b3c20",
-        "purpose": "Selected segment only."
-      },
-      {
         "name": "output-frame",
-        "value": "0 10px 30px rgba(0,0,0,.14)",
-        "purpose": "Separate renderer output from the canvas bed."
+        "value": "0 14px 38px #243c3026, 0 2px 6px #243c301a",
+        "purpose": "Separate the actual screen from the drawing bed."
       },
       {
         "name": "dialog",
-        "value": "0 16px 50px rgba(0,0,0,.25)",
-        "purpose": "Transient modal layer."
+        "value": "0 20px 65px #162a3040",
+        "purpose": "Modal separation."
       },
       {
         "name": "toast",
-        "value": "0 6px 20px #18203020",
+        "value": "0 8px 25px #17281b24",
         "purpose": "Transient feedback."
+      },
+      {
+        "name": "segment-selected",
+        "value": "0 1px 2px #25352a18",
+        "purpose": "Contact shadow beneath the selected segment."
+      },
+      {
+        "name": "switch-thumb",
+        "value": "0 1px 2px #243a2a30",
+        "purpose": "Contact shadow beneath the switch thumb."
       }
     ],
     "motion": [
       {
-        "name": "control-state",
-        "value": "background .15s, color .15s",
-        "purpose": "Button state transitions."
+        "name": "control-transition",
+        "value": "160ms ease-out",
+        "purpose": "Button, navigation, disclosure and switch state changes; disabled by reduced-motion preference."
       },
       {
-        "name": "reduced-motion",
-        "value": "transition: none !important; scroll-behavior: auto !important",
-        "purpose": "Applied under prefers-reduced-motion: reduce."
+        "name": "detail-reveal",
+        "value": "transform: translateY(3px) to translateY(0); 160ms ease-out",
+        "purpose": "Selected plugin detail reveal; disabled by reduced-motion preference."
       }
     ],
     "breakpoints": [
       {
-        "name": "stacked-editor",
-        "value": "1099px"
+        "name": "wide-plugin",
+        "value": "1600px"
       },
       {
-        "name": "compact-header-upper",
-        "value": "1400px"
+        "name": "compact-rail",
+        "value": "1320px"
       },
       {
-        "name": "compact-header-lower",
+        "name": "page-density",
         "value": "1100px"
       },
       {
-        "name": "narrow-controls",
-        "value": "520px"
+        "name": "stacked-studio",
+        "value": "1099px"
+      },
+      {
+        "name": "compact-plugin",
+        "value": "1000px"
       },
       {
         "name": "stacked-connections",
-        "value": "720px"
+        "value": "800px"
       },
       {
-        "name": "stacked-plugin-management",
-        "value": "900px"
+        "name": "stacked-plugins",
+        "value": "760px"
+      },
+      {
+        "name": "top-navigation",
+        "value": "600px"
       }
     ]
   },
   "components": [
     {
-      "name": "Primary action",
+      "name": "Save settings",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Save changes or initiate explicit checks.",
-      "html": "<button class=\"ds-primary\">Save changes</button>",
-      "css": ".ds-primary{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;font-weight:550;cursor:pointer;transition:background .15s,color .15s;background:var(--accent,#2459bb);border-color:var(--accent,#2459bb);color:var(--paper,#fff)}.ds-primary:hover,.ds-primary:active:not(:disabled){background:#194b9f}.ds-primary:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;}.ds-primary:disabled{opacity:.5;cursor:default} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "description": "Labeled primary action with visible keyboard focus.",
+      "html": "<button type=\"button\" class=\"ds-button-primary\">Save settings</button>",
+      "css": ".ds-button-primary{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 13px;border:1px solid var(--line,#dce2dc);border-radius:7px;font-size:13px;font-weight:600;line-height:1.4;cursor:pointer;transition:background 160ms ease-out,border-color 160ms ease-out,color 160ms ease-out;background:var(--accent,#246653);border-color:var(--accent,#246653);color:#fff;}.ds-button-primary:hover{background:var(--accent-hover,#194c3e);border-color:var(--accent-hover,#194c3e);}.ds-button-primary:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}.ds-button-primary:active{background:var(--accent-hover,#194c3e);border-color:var(--accent-hover,#194c3e);}.ds-button-primary:disabled{opacity:.42;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none;}}"
     },
     {
-      "name": "Secondary action",
+      "name": "Reset draft",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "A supporting reversible action.",
-      "html": "<button class=\"ds-secondary\">Open screen</button>",
-      "css": ".ds-secondary{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;font-weight:550;cursor:pointer;transition:background .15s,color .15s;background:var(--paper,#fff);color:var(--ink,#202b3c)}.ds-secondary:hover{background:var(--wash,#f3f5f8)}.ds-secondary:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;}.ds-secondary:active:not(:disabled){background:#dce6f8}.ds-secondary:disabled{opacity:.5;cursor:default} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "description": "Labeled secondary action with visible keyboard focus.",
+      "html": "<button type=\"button\" class=\"ds-button-secondary\">Reset draft</button>",
+      "css": ".ds-button-secondary{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 13px;border:1px solid var(--line,#dce2dc);border-radius:7px;font-size:13px;font-weight:600;line-height:1.4;cursor:pointer;transition:background 160ms ease-out,border-color 160ms ease-out,color 160ms ease-out;background:var(--paper,#fff);color:var(--ink,#24302c);}.ds-button-secondary:hover{background:#f0f3ee;border-color:#b8c5bb;}.ds-button-secondary:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}.ds-button-secondary:active{background:var(--selection,#e5efe6);}.ds-button-secondary:disabled{opacity:.42;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none;}}"
     },
     {
-      "name": "Danger action",
+      "name": "Remove",
       "kind": "button",
       "refersTo": "button-danger",
-      "description": "A visibly isolated removal action.",
-      "html": "<button class=\"ds-danger\">Remove panel</button>",
-      "css": ".ds-danger{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;font-weight:550;cursor:pointer;transition:background .15s,color .15s;background:var(--paper,#fff);color:var(--error,#a82727);border-color:#e5c2c2}.ds-danger:hover{background:#fff0f0}.ds-danger:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;}.ds-danger:disabled{opacity:.5;cursor:default} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "description": "Labeled danger action with visible keyboard focus.",
+      "html": "<button type=\"button\" class=\"ds-button-danger\">Remove</button>",
+      "css": ".ds-button-danger{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 13px;border:1px solid var(--line,#dce2dc);border-radius:7px;font-size:13px;font-weight:600;line-height:1.4;cursor:pointer;transition:background 160ms ease-out,border-color 160ms ease-out,color 160ms ease-out;background:#fff;color:var(--error,#b03832);border-color:#e4c9c4;}.ds-button-danger:hover{background:#fbefec;}.ds-button-danger:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}.ds-button-danger:active{background:var(--selection,#e5efe6);}.ds-button-danger:disabled{opacity:.42;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-button-danger{transition:none;}}"
     },
     {
-      "name": "Labeled input",
+      "name": "Inspector field",
       "kind": "input",
       "refersTo": "input",
-      "description": "A legible field with nearby validation; colour controls also expose an editable hex value.",
-      "html": "<label class=\"ds-field\"><span>Screen title</span><input value=\"Kitchen display\"></label>",
-      "css": ".ds-field{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;min-width:0}.ds-field>span{font-size:12px;font-weight:600;color:#465266}.ds-field input{font:inherit;width:100%;min-height:40px;padding:9px 10px;background:var(--paper,#fff);color:var(--ink,#202b3c);border:1px solid #bcc7d5;border-radius:5px}.ds-field input:hover{border-color:#71829a}.ds-field input:focus,.ds-field input:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:1px}.ds-field input:invalid{border-color:var(--error,#a82727)} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "description": "A labeled mineral-tinted input with distinct hover and focus strokes.",
+      "html": "<label class=\"ds-field\"><span>Screen name</span><input placeholder=\"Kitchen display\"></label>",
+      "css": ".ds-field{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;flex-direction:column;gap:7px;max-width:300px;color:#4c5d52;font-size:11px;font-weight:600;}.ds-field input{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;min-height:38px;padding:8px 10px;border:1px solid #c7d1c6;border-radius:6px;background:#fcfdfb;color:var(--ink,#24302c);font-size:12px;font-weight:400;caret-color:var(--accent,#246653);}.ds-field input::placeholder{color:#66716a;}.ds-field input:hover{border-color:#92a890;}.ds-field input:focus{outline:2px solid var(--accent,#246653);outline-offset:1px;}"
     },
     {
-      "name": "Administration navigation",
+      "name": "Selected navigation",
       "kind": "nav",
-      "description": "Plain labels and a bottom seam show the current page.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Administration\"><a href=\"#screens\" aria-current=\"page\">Screens</a><a href=\"#plugins\">Plugins</a><a href=\"#connections\">Connections</a></nav>",
-      "css": ".ds-nav{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:flex;gap:24px;background:var(--paper,#fff);height:64px}.ds-nav a{display:flex;align-items:center;text-decoration:none;color:var(--muted,#556174);border-bottom:2px solid transparent}.ds-nav a[aria-current]{color:var(--accent,#2459bb);border-bottom-color:var(--accent,#2459bb);font-weight:600}.ds-nav a:hover{color:var(--muted,#556174)}.ds-nav a[aria-current]:hover{color:var(--accent,#2459bb)}.ds-nav a:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "refersTo": "nav-selected",
+      "description": "Labeled SVG navigation on a persistent dark green surface.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Administration\"><a href=\"#screens\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 21h8m-4-4v4\"/></svg><span>Screens</span></a></nav>",
+      "css": ".ds-nav{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;width:152px;padding:12px;background:var(--nav,#202e29);}.ds-nav a{display:flex;align-items:center;gap:11px;min-height:46px;padding:11px;border:1px solid #526b57;border-radius:8px;background:#3b5243;color:#fff;font-size:13px;font-weight:600;text-decoration:none;transition:background 160ms ease-out,color 160ms ease-out;}.ds-nav svg{width:20px;height:20px;flex:none;}.ds-nav a:hover{background:#2d3f35;}.ds-nav a:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-nav a{transition:none;}}"
     },
     {
-      "name": "Configuration status",
+      "name": "Configuration chip",
       "kind": "chip",
       "refersTo": "status-chip",
-      "description": "A factual label independent of test results.",
-      "html": "<div class=\"ds-statuses\"><span class=\"ds-chip\">Custom module</span><span class=\"ds-chip ds-chip-amber\">Browser only</span><span class=\"ds-chip ds-chip-error\">Needs configuration</span></div>",
-      "css": ".ds-statuses{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:flex;gap:8px;flex-wrap:wrap}.ds-chip{font-size:12px;font-weight:550;padding:3px 7px;background:#eaf0fc;color:#254a8a;border-radius:4px}.ds-chip-amber{background:#f4eddd;color:#7c561b}.ds-chip-error{background:#fce8e8;color:#982b2b} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "description": "A read-only configuration label; it does not imply a successful test.",
+      "html": "<span class=\"ds-chip\">Configured</span>",
+      "css": ".ds-chip{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:inline-flex;padding:4px 7px;border-radius:5px;background:#e6eee0;color:#38553a;font-size:10px;font-weight:600;line-height:1.5;}"
     },
     {
       "name": "Selected screen",
       "kind": "custom",
       "refersTo": "screen-selected",
-      "description": "A selected screen row with readable metadata.",
-      "html": "<button class=\"ds-screen\"><span class=\"ds-screen-copy\"><strong>Kitchen display</strong><small>Grid \u00b7 4 panels</small></span><span class=\"ds-default\">Default</span></button>",
-      "css": ".ds-screen{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:10px 8px;min-height:58px;color:var(--ink,#202b3c);background:#eaf0fc;border:1px solid #c2d3f3;border-radius:5px;cursor:pointer}.ds-screen-copy{flex:1;min-width:0}.ds-screen-copy strong{font-size:14px;display:block;overflow-wrap:anywhere}.ds-screen-copy small{display:block;font-size:12px;color:var(--muted,#556174);margin-top:3px}.ds-default{font-size:12px;color:#2459bb;align-self:flex-start;margin-top:2px}.ds-screen:hover{background:#eaf0fc}.ds-screen:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "description": "A selected screen row with identity, path and default status.",
+      "html": "<button type=\"button\" class=\"ds-screen\"><span class=\"ds-screen-copy\"><strong>Kitchen display</strong><small>/kitchen · Grid</small></span><span class=\"ds-default\">Default</span></button>",
+      "css": ".ds-screen{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;width:192px;display:flex;flex-wrap:wrap;gap:5px;align-items:flex-start;text-align:left;min-height:76px;padding:12px 10px;border:1px solid #bfd3c0;border-radius:8px;background:var(--selection,#e5efe6);color:var(--ink,#24302c);cursor:pointer;}.ds-screen-copy{flex-basis:100%;}.ds-screen strong{display:block;font-size:13px;}.ds-screen small{display:block;font-size:11px;margin-top:5px;color:var(--muted,#5c6862);}.ds-default{font-size:10px;padding:1px 5px;border:1px solid #bbd0bc;border-radius:4px;color:var(--accent,#246653);}.ds-screen:hover{background:#eef3e9;}.ds-screen:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}"
     },
     {
-      "name": "Connection row",
+      "name": "Settings container",
       "kind": "card",
-      "refersTo": "connection-row",
-      "description": "Flat identity, configuration and explicit Test action.",
-      "html": "<article class=\"ds-connection\"><div><h3>Weather</h3><span class=\"ds-provider\">weather \u00b7 open-meteo \u00b7 1 screen</span></div><div><span class=\"ds-connection-chip\">Configured</span><p>Use Test to check this connection.</p></div><div class=\"ds-row-actions\"><button>Test</button></div></article>",
-      "css": ".ds-connection{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:grid;grid-template-columns:1.1fr 1.4fr 160px;gap:24px;padding:18px 16px;border-bottom:1px solid var(--line,#d9dfe8);background:var(--paper,#fff);color:var(--ink,#202b3c);align-items:start}.ds-connection h3{font-size:14px;margin:0}.ds-provider{display:block;font-size:12px;color:var(--muted,#556174);margin-top:5px}.ds-connection p{font-size:13px;color:var(--muted,#556174);margin:6px 0 0;overflow-wrap:anywhere}.ds-connection-chip{font-size:12px;font-weight:550;padding:3px 7px;background:#eaf0fc;color:#254a8a;border-radius:4px}.ds-row-actions{display:flex;justify-content:flex-end}.ds-row-actions button{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;font-weight:550;cursor:pointer;transition:background .15s,color .15s;padding:6px 12px;border-color:#bcc7d5;background:var(--paper,#fff);color:var(--ink,#202b3c)}.ds-row-actions button:hover{background:var(--wash,#f3f5f8)}.ds-row-actions button:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;}@media(max-width:720px){.ds-connection{grid-template-columns:1fr auto;gap:12px;padding:16px}.ds-connection>div:nth-child(2){grid-column:1/-1;grid-row:2}.ds-row-actions{grid-column:2;grid-row:1}} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
+      "refersTo": "plugin-container",
+      "description": "A quiet, bordered settings surface with a generous heading.",
+      "html": "<section class=\"ds-settings\"><h2>Weather</h2><p>Settings for this installed plugin.</p></section>",
+      "css": ".ds-settings{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;max-width:440px;padding:28px;border:1px solid var(--line,#dce2dc);border-radius:12px;background:var(--paper,#fff);color:var(--ink,#24302c);}.ds-settings h2{margin:0 0 4px;font-size:24px;font-weight:650;line-height:1.3;letter-spacing:-.025em;}.ds-settings p{margin:16px 0 0;max-width:65ch;font-size:13px;line-height:1.6;color:var(--muted,#5c6862);}"
     },
     {
-      "name": "Shared resize separator",
-      "kind": "custom",
-      "description": "An editor-enabled shared edge reveals its indicator on hover, focus and dragging; axis arrow keys resize its neighbours.",
-      "html": "<div class=\"ds-edge-sample\"><div class=\"ds-shared-edge\" tabindex=\"0\" role=\"separator\" aria-orientation=\"vertical\" aria-label=\"Resize between two panels\" aria-valuenow=\"1\"></div></div>",
-      "css": ".ds-edge-sample{position:relative;height:96px}.ds-shared-edge{position:absolute;left:50%;top:0;bottom:0;width:14px;transform:translateX(-50%);background:transparent;touch-action:none;cursor:col-resize}.ds-shared-edge::after{content:\"\";position:absolute;inset:20% 5px;background:var(--accent,#2459bb);opacity:0;border-radius:3px}.ds-shared-edge:hover::after,.ds-shared-edge:focus-visible::after,.ds-edge-sample.ds-dragging .ds-shared-edge::after{opacity:.65}.ds-shared-edge:focus-visible{outline:2px solid var(--focus,#2459bb);outline-offset:3px}"
+      "name": "Boolean setting",
+      "kind": "input",
+      "refersTo": "switch-off",
+      "description": "A compact checkbox switch with a visible off track and a moving thumb.",
+      "html": "<label class=\"ds-boolean\"><span>Show location</span><input type=\"checkbox\"></label>",
+      "css": ".ds-boolean{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;align-items:center;gap:32px;font-size:12px;font-weight:600;color:#4c5d52;}.ds-boolean input{appearance:none;width:32px;height:18px;border:0;border-radius:10px;background:#788773;position:relative;cursor:pointer;margin:0;transition:background 160ms ease-out;}.ds-boolean input::after{content:\"\";position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #243a2a30;transition:transform 160ms ease-out;}.ds-boolean input:checked{background:var(--accent,#246653);}.ds-boolean input:checked::after{transform:translateX(14px);}.ds-boolean input:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-boolean input,.ds-boolean input::after{transition:none;}}"
     },
     {
-      "name": "Selected plugin roster row",
+      "name": "Collection segments",
       "kind": "custom",
-      "description": "A flat selected plugin row carries instance identity, version, usage and factual enable state beside a Configure action.",
-      "html": "<article class=\"ds-plugin-row\"><div><h2>Clock</h2><p>Time and date with a configurable time zone.</p><p class=\"ds-plugin-meta\">clock \u00b7 1.2.0 \u00b7 0 panels</p><span class=\"ds-plugin-status\">Enabled</span></div><button class=\"ds-plugin-configure\">Configure</button></article>",
-      "css": ".ds-plugin-row{font:14px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;padding:18px;border-bottom:1px solid var(--line,#d9dfe8);background:#eaf0fc;color:var(--ink,#202b3c)}.ds-plugin-row h2{font-size:16px;margin:0 0 5px}.ds-plugin-row p{color:var(--muted,#556174);line-height:1.5;margin:5px 0}.ds-plugin-row .ds-plugin-meta{font-size:12px;overflow-wrap:anywhere}.ds-plugin-status{display:inline-block;padding:3px 7px;border:1px solid var(--line,#d9dfe8);border-radius:4px;font-size:12px;color:#268153}.ds-plugin-configure{font:inherit;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;background:var(--paper,#fff);color:var(--ink,#202b3c);font-weight:550;cursor:pointer;transition:background .15s,color .15s}.ds-plugin-configure:hover{background:var(--wash,#f3f5f8)}.ds-plugin-configure:focus-visible{outline:2px solid var(--focus,#2459bb);outline-offset:3px}.ds-plugin-configure:active:not(:disabled){background:#dce6f8}.ds-plugin-configure:disabled{opacity:.5;cursor:default}@media(max-width:900px){.ds-plugin-row{padding:16px}}@media(prefers-reduced-motion:reduce){.ds-plugin-configure{transition:none!important}}"
+      "refersTo": "segment-selected",
+      "description": "A white active segment sits in a sage inset container.",
+      "html": "<div class=\"ds-segments\" aria-label=\"Plugin collection\"><button type=\"button\" aria-pressed=\"true\">Installed</button><button type=\"button\" aria-pressed=\"false\">Library</button></div>",
+      "css": ".ds-segments{display:inline-flex;padding:3px;gap:2px;border:1px solid #cfd8cc;border-radius:8px;background:#e4e9e1;}.ds-segments button{font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;padding:5px 13px;min-height:29px;border:0;border-radius:5px;background:transparent;color:var(--muted,#5c6862);font-size:12px;cursor:pointer;}.ds-segments button[aria-pressed=true]{background:#fff;color:var(--ink,#24302c);box-shadow:0 1px 2px #25352a18;}.ds-segments button:hover{background:#f0f3ee;}.ds-segments button:focus-visible{outline:2px solid var(--focus,#246653);outline-offset:3px;}"
     }
   ],
   "narrative": {
-    "northStar": "The Proof Desk",
-    "overview": "The proof desk surrounds an accurately scaled screen draft with paper-white editing rails, a slate canvas bed, blue selection and restrained seams. The interface uses plain labels and compact, familiar controls so selection, unsaved changes and connection checks remain clear.\n\nThis system governs the administration surfaces at `/admin`, `/admin/plugins` and `/setup` only. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Colors, typography, layout geometry and images inside the preview are output content, not admin design tokens.",
+    "northStar": "The Drawing Studio",
+    "overview": "A drawing studio for real screens: deep green navigation anchors mineral-white tools around a dotted drawing bed. Graphite text, evergreen selection, fine seams and compact controls make the work legible without competing with the composition. The same navigation and task header join Screens, Plugins and Connections.\n\nThis system governs `/admin`, `/admin/plugins` and `/setup`. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Fonts, colors, imagery and geometry inside the preview are output content, not admin tokens.",
     "keyCharacteristics": [
-      "Neutral editing rails around the actual renderer output.",
-      "Linked panel-list and canvas selection.",
-      "Factual states and explicit connection tests.",
-      "One tool rail at a time above the preview on smaller screens."
+      "Persistent navigation with labeled line icons.",
+      "A central composition with linked selection and contextual tools.",
+      "A compact plugin roster beside generous settings; a separate library card grid.",
+      "Factual states, visible focus and restrained motion."
     ],
     "rules": [
       {
         "name": "The Output Boundary Rule",
-        "body": "Admin colors and typography belong to the editing interface. Keep dashboard themes, panel appearance and renderer geometry independent.",
+        "body": "Apply admin tokens to editing controls. Keep dashboard themes, panel appearance and renderer geometry independent.",
         "section": "colors"
       },
       {
         "name": "The State Has Words Rule",
-        "body": "Pair status color with a factual label or message. A configuration label describes configuration; only an explicit test result describes a connection check.",
+        "body": "Pair state colors with factual labels. Configuration and enable state do not prove connectivity; an explicit test produces the connection result.",
         "section": "colors"
       },
       {
-        "name": "The Plain Label Rule",
-        "body": "Use sentence-case task and field labels, compact headings and ordinary control text. Reserve monospace for JSON, commands and editable colour codes.",
+        "name": "The Working Type Rule",
+        "body": "Use compact native sans for interface headings and controls, sentence-case labels, and monospace for JSON, commands and editable color codes.",
         "section": "typography"
       },
       {
-        "name": "The Proof Desk Rule",
-        "body": "Use seams and tonal surfaces to organize editing controls. Lift the output frame and transient feedback only where the implemented depth vocabulary supports them.",
+        "name": "The Working Surface Rule",
+        "body": "Organize controls with seams and tonal surfaces. Reserve substantial shadows for the output frame, dialogs and transient feedback.",
         "section": "elevation"
       }
     ],
     "dos": [
       "Do apply this system to admin controls while preserving independent dashboard and renderer styling.",
-      "Do keep selection synchronized between the panel list, canvas overlay and contextual inspector.",
-      "Do preserve selected viewport geometry when fitting the draft into available space.",
+      "Do synchronize selection between the panel list, canvas overlay and contextual inspector.",
+      "Do preserve the selected viewport geometry when fitting the draft into available space.",
       "Do retain renderer-owned appearance defaults until an explicit override is chosen.",
       "Do keep drag changes reversible as one undo step and preserve keyboard focus after canvas updates.",
       "Do retain visible labels, focus outlines and explicit validation or failure messages.",
-      "Do reflow tools into the mobile switcher and stack connection descriptions below identity and actions."
+      "Do keep installed-plugin settings beside the roster on wide screens and stack them on narrow screens."
     ],
     "donts": [
-      "Don't treat a configuration state as proof of connectivity.",
+      "Don't treat a configuration or enable state as proof of connectivity.",
       "Don't replace the actual draft with a decorative dashboard mockup.",
-      "Don't shrink all three desktop editor columns into a narrow viewport.",
-      "Don't turn restrained connection rows into a gallery of raised cards.",
+      "Don't shrink all desktop editor columns into a narrow viewport.",
+      "Don't apply library-card layout to the continuous installed-plugin roster or connection rows.",
       "Don't propagate preview content fonts, colors or panel shapes into admin tokens."
     ]
   }

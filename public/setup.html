@@ -4,20 +4,21 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light"><title>Castboard · Connections</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/admin.css?v=0.10.0"><link rel="stylesheet" href="/setup.css?v=0.10.0">
+  <link rel="stylesheet" href="/admin.css?v=0.10.1"><link rel="stylesheet" href="/setup.css?v=0.10.1">
 </head>
-<body>
+<body class="admin-app connections-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Screen workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Screens</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/setup" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3h-3"/></svg><span>Connections</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>screen workspace</span></div></aside>
   <header class="topbar">
-    <a class="brand" href="/admin"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Administration</small></span></a>
-    <nav class="app-nav" aria-label="Administration"><a href="/admin">Screens</a><a href="/admin/plugins">Plugins</a><a href="/setup" aria-current="page">Connections</a></nav>
+    <div class="workspace-title">Connections</div>
     <div class="topbar-actions"><a class="button secondary" href="/">Open screen</a><button id="refresh" class="button primary" type="button">Refresh checks</button></div>
   </header>
-  <main class="connections">
-    <div class="page-heading"><h1>Connections</h1><p>Check data sources, server tools and screen delivery.</p></div>
+  <main id="main-content" class="connections">
+    <div class="page-heading"><h1>Connections</h1><p>Check data sources, screen delivery and server tools.</p></div>
     <div id="overall" class="overall" role="status"><strong>Loading configuration…</strong></div>
     <section class="connection-section" aria-labelledby="plugins-heading">
       <div class="section-head"><div><h2 id="plugins-heading">Data connections</h2><p>Use Test to check a connection, or Configure to change its settings.</p></div><label class="field search"><span>Find a plugin</span><input id="connection-search" type="search" placeholder="Search plugins"></label></div>
-      <div class="connection-columns" aria-hidden="true"><span>Module</span><span>Configuration</span><span>Check</span></div>
+      <div class="connection-columns" aria-hidden="true"><span>Plugin</span><span>Configuration</span><span>Check</span></div>
       <div id="plugin-list" class="connection-list"></div>
     </section>
     <section class="connection-section" aria-labelledby="screens-heading">
@@ -29,6 +30,6 @@
   </main>
   <dialog id="token-dialog"><form id="token-form"><header><h2>Admin access</h2></header><p class="dialog-note">Enter your admin token to view connections. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/setup.js?v=0.10.0"></script>
+  <script type="module" src="/setup.js?v=0.10.1"></script>
 </body>
 </html>

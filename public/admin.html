@@ -6,37 +6,35 @@
   <meta name="color-scheme" content="light">
   <title>Castboard · Screens</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/admin.css?v=0.10.0">
+  <link rel="stylesheet" href="/admin.css?v=0.10.1">
 </head>
-<body>
+<body class="admin-app studio-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Screen workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Screens</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/setup"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3h-3"/></svg><span>Connections</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>screen workspace</span></div></aside>
   <header class="topbar">
-    <a class="brand" href="/admin" aria-label="Castboard · Screens home">
-      <img class="brand-mark" src="/assets/castboard-logo.svg" alt="">
-      <span><strong>Castboard</strong><small>Administration</small></span>
-    </a>
-    <nav class="app-nav" aria-label="Administration"><a href="/admin" aria-current="page">Screens</a><a href="/admin/plugins">Plugins</a><a href="/setup">Connections</a></nav>
+    <div class="workspace-title">Screen Studio</div>
     <div class="topbar-center">
       <span class="status-dot" aria-hidden="true"></span>
       <span id="save-status">Loading design…</span>
     </div>
     <div class="topbar-actions">
-      <button id="undo" class="button secondary" type="button" disabled>Undo</button><button id="redo" class="button secondary" type="button" disabled>Redo</button><button id="discard" class="button secondary" type="button" disabled>Discard</button>
+      <button id="undo" title="Undo (⌘/Ctrl Z)" class="button secondary" type="button" disabled>Undo</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" class="button secondary" type="button" disabled>Redo</button><button id="discard" class="button secondary" type="button" disabled>Discard</button>
       <button id="open-screen" class="button secondary" type="button">Open screen</button>
       <button id="save-design" class="button primary" type="button" disabled>Save changes</button>
     </div>
   </header>
 
   <div id="notice" class="notice" role="status" hidden></div>
-  <nav class="mobile-tools" aria-label="Editor tools"><button data-tool="screens" aria-pressed="true">Screens &amp; panels</button><button data-tool="canvas" aria-pressed="false">Canvas</button><button data-tool="settings" aria-pressed="false">Settings</button></nav>
-  <main class="studio" aria-label="Castboard screen designer">
+  <nav class="mobile-tools" aria-label="Editor tools"><button data-tool="screens" aria-pressed="false">Screens &amp; panels</button><button data-tool="canvas" aria-pressed="true">Canvas</button><button data-tool="settings" aria-pressed="false">Settings</button></nav>
+  <main id="main-content" class="studio" data-tool="canvas" aria-label="Castboard screen designer">
     <aside class="sidebar screens-sidebar">
       <div class="section-heading">
-        <div><h1>Screens</h1></div>
+        <div><h1>Your screens</h1></div>
         <button id="add-screen" class="icon-button" type="button" title="Add screen" aria-label="Add screen">Add</button>
       </div>
       <div id="screen-list" class="screen-list" role="list"></div>
 
-      <section class="panel-roster"><h2>Panels</h2><div id="panel-list"></div><button id="show-library" class="button secondary full" type="button">Add panel</button></section>
+      <section class="panel-roster"><h2>Panels <span id="panel-count" class="count-badge"></span></h2><div id="panel-list"></div><button id="show-library" class="button secondary full" type="button">Add a panel</button></section>
       <details class="branding-section"><summary>Shared settings</summary>
         <div class="section-heading compact"><div><h2>Branding</h2></div></div>
         <label class="field"><span>Name</span><input id="brand-name" data-branding="name" autocomplete="off"></label>
@@ -49,7 +47,7 @@
     </aside>
 
     <section class="workspace">
-      <div class="workspace-toolbar">
+      <div class="canvas-heading"><h2 id="canvas-title">Screen preview</h2><span id="canvas-dimensions">Arrange and style your panels</span></div><div class="workspace-toolbar">
         <div class="segmented" aria-label="Canvas mode">
           <button type="button" class="active" data-mode="design">Edit</button>
           <button type="button" data-mode="preview">Preview</button>
@@ -182,6 +180,7 @@
           <h2 id="selected-module-name" class="module-heading"></h2><a id="manage-plugin" class="manage-plugin" href="/admin/plugins">Plugin settings</a>
           <label class="field"><span>Data source</span><select id="panel-source"></select></label>
           <div id="extension-option-fields" class="field-grid" hidden></div>
+          <button id="reset-plugin-options" class="button secondary full" type="button">Use plugin defaults</button>
           <section>
 
             <label class="field"><span>Display title</span><input id="panel-title" data-option="title" placeholder="Plugin default" autocomplete="off"></label>
@@ -283,6 +282,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/admin.js?v=0.10.0"></script>
+  <script type="module" src="/admin.js?v=0.10.1"></script>
 </body>
 </html>
