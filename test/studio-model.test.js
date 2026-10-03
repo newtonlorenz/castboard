@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { History, gridSlot, gridDelta, compatibleSource } from '../public/studio-model.js';
+import { History, screenAddress, gridSlot, gridDelta, compatibleSource } from '../public/studio-model.js';
 
 test('undo preserves a prior draft, truncates redo after a new edit, and caps retained history', () => {
  const history = new History({title:'saved'},3);
@@ -65,4 +65,39 @@ test('weighted geometry honours selected viewport and fitted scale',()=>{
 test('many shuffled moves remain bounded and never lose panel identities',()=>{
  let model=tiled();
  for(let i=0;i<40;i++){const id=['a','b','c','d'][i%4],target={...model.positions[id],column:i%2?1:3,row:i%3?1:2};const next=shuffleGrid(model,id,target);if(next)model=next;assert.ok(validPlacement(model));assert.deepEqual(Object.keys(model.positions).sort(),['a','b','c','d']);}
+});
+
+test('screen addresses need no technical input, including numbered and non-Latin names', () => {
+ assert.deepEqual(screenAddress('21 Café'), {id:'screen-21-cafe',path:'/screens/screen-21-cafe'});
+ assert.deepEqual(screenAddress('書斎'), {id:'screen',path:'/screens/screen'});
+ assert.deepEqual(screenAddress('Admin'), {id:'admin',path:'/screens/admin'});
+ const screens = {kitchen:{path:'/old-kitchen'},other:{path:'/screens/kitchen-2'}};
+ assert.deepEqual(screenAddress('Kitchen',screens), {id:'kitchen-3',path:'/screens/kitchen-3'});
+ assert.deepEqual(screenAddress('  North & South  '), {id:'north-south',path:'/screens/north-south'});
+});
+
+
+import {createScreenType as areaType} from '../examples/flexible/extensions/screen-types/area-grid/type.js';
+import {schemaDefaults} from '../public/studio-model.js';
+test('named-area creation and repeated additions stay valid without manual geometry', () => {
+ const type=areaType(),screen={type:'area-grid',layout:schemaDefaults(type.layoutSchema),panels:[]};
+ for(let i=0;i<18;i++){
+  areaEditor.add(screen,{id:`clock-${i}`,plugin:'clock'});
+  type.validateScreen(screen);
+  assert.equal(screen.panels.length,i+1);
+  assert.equal(Object.keys(areaEditor.read(screen).positions).length,i+1);
+ }
+ const removed=screen.panels.splice(3,1)[0],rowsBefore=screen.layout.rows.length;
+ areaEditor.add(screen,{id:'replacement',plugin:'clock'});
+ assert.equal(screen.panels.at(-1).position.area,removed.position.area);
+ assert.equal(screen.layout.rows.length,rowsBefore);
+ type.validateScreen(screen);
+});
+test('adding to a full named-area layout divides space and preserves every existing panel', () => {
+ const screen={layout:{areas:['main main side side','main main side side'],rows:[1,1],columns:[1,2,1,2]},panels:[{id:'main',position:{area:'main'}},{id:'side',position:{area:'side'}}]};
+ areaEditor.add(screen,{id:'clock',plugin:'clock'});
+ areaType().validateScreen(screen);
+ assert.deepEqual(screen.panels.map(p=>p.id),['main','side','clock']);
+ assert.deepEqual(screen.layout.columns,[1,2,1,2]);
+ assert.deepEqual(screen.layout.rows,[1,1]);
 });

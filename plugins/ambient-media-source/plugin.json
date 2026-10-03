@@ -12,11 +12,15 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Data provider",
+        "title": "Data source",
         "enum": [
           "demo",
           "http-json"
-        ]
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "http-json": "Web endpoint (JSON)"
+        }
       },
       "baseUrl": {
         "type": "string",
@@ -35,13 +39,15 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Timeout \u00b7 milliseconds",
+        "title": "Timeout · milliseconds",
         "minimum": 500,
-        "maximum": 120000
+        "maximum": 120000,
+        "advanced": true
       }
     }
   }

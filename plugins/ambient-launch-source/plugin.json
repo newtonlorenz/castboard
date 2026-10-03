@@ -15,7 +15,8 @@
       "executable": {
         "type": "string",
         "title": "Cast executable",
-        "default": "catt"
+        "default": "catt",
+        "advanced": true
       }
     }
   }

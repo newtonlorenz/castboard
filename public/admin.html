@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Castboard · Screens</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/admin.css?v=0.10.1">
+  <link rel="stylesheet" href="/admin.css?v=0.10.2">
 </head>
 <body class="admin-app studio-page">
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -67,6 +67,7 @@
 
       <div id="canvas-stage" class="canvas-stage">
         <div id="canvas-frame" class="canvas-frame">
+          <div id="empty-canvas" class="empty-canvas" hidden><h3>Add your first panel</h3><p>Choose a clock, weather, news or another installed plugin.</p><button id="add-first-panel" class="button primary" type="button">Choose a plugin</button></div>
           <div id="design-surface" class="design-surface" aria-label="Editable screen layout"></div>
           <iframe id="live-preview" title="Unsaved screen preview"></iframe>
         </div>
@@ -80,7 +81,7 @@
     <aside class="sidebar inspector-sidebar">
       <div class="inspector-tabs" role="tablist" aria-label="Inspector">
         <button type="button" role="tab" class="active" data-inspector="screen">Screen</button>
-        <button type="button" role="tab" data-inspector="panel">Plugin</button>
+        <button type="button" role="tab" data-inspector="panel">Panel</button>
       </div>
 
       <div id="screen-inspector" class="inspector-pane">
@@ -178,7 +179,7 @@
         </div>
         <div id="panel-fields" hidden>
           <h2 id="selected-module-name" class="module-heading"></h2><a id="manage-plugin" class="manage-plugin" href="/admin/plugins">Plugin settings</a>
-          <label class="field"><span>Data source</span><select id="panel-source"></select></label>
+          <div id="panel-source-main"><label id="panel-source-field" class="field"><span>Data source</span><select id="panel-source"></select></label></div>
           <div id="extension-option-fields" class="field-grid" hidden></div>
           <button id="reset-plugin-options" class="button secondary full" type="button">Use plugin defaults</button>
           <section>
@@ -212,7 +213,7 @@
             </div>
           </details>
 
-          <details open><summary>Appearance</summary>
+          <details><summary>Appearance</summary>
 
             <p class="section-note">Leave a field empty to inherit the screen theme.</p>
             <label class="field"><span>Font</span><select data-panel-appearance="fontFamily">
@@ -236,7 +237,7 @@
             <button id="reset-panel-style" class="button secondary full" type="button">Clear all overrides</button>
           </details>
 
-          <details><summary>Plugin and identity</summary>
+          <details><summary>Advanced panel settings</summary><div id="panel-source-advanced"></div>
             <label class="field"><span>Panel name (ID)</span><input id="panel-id" data-panel="id" autocomplete="off"></label>
             <label class="field"><span>Plugin</span><select id="panel-plugin" data-panel="plugin"></select></label>
           </details>
@@ -253,21 +254,23 @@
       <section class="plugin-library" id="library" hidden>
         <div class="section-heading compact"><div><h2>Add a panel</h2></div></div>
         <label class="field"><span>Find a plugin</span><input id="plugin-search" type="search" placeholder="Search plugins"></label>
-        <button id="close-library" type="button" class="button secondary full">Close library</button>
-        <div id="plugin-list" class="plugin-list"></div>
+        <button id="close-library" type="button" class="button secondary full">Close picker</button>
+        <div id="plugin-list" class="plugin-list"></div><p class="section-note">Need something else? <a href="/admin/plugins?collection=library">Browse the plugin library</a></p>
       </section>
     </aside>
   </main>
 
   <dialog id="screen-dialog">
     <form method="dialog" id="screen-form">
-      <header><div><h2>Add a screen</h2></div><button value="cancel" class="dialog-close" aria-label="Close">Close</button></header>
+      <header><div><h2>Add a screen</h2></div><button value="cancel" formnovalidate class="dialog-close" aria-label="Close">Close</button></header>
       <label class="field"><span>Screen name</span><input id="new-screen-title" required autocomplete="off" placeholder="Kitchen display"></label>
-      <label class="field"><span>Screen ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off" placeholder="kitchen"></label>
-      <label class="field"><span>URL path</span><input id="new-screen-path" required pattern="/.*" autocomplete="off" placeholder="/kitchen"></label>
-      <label class="field"><span>Screen type</span><select id="new-screen-type"></select></label>
-      <p class="dialog-note">Add a delivery target in your configuration to cast this screen.</p>
-      <footer><button value="cancel" class="button secondary">Cancel</button><button id="create-screen" value="default" class="button primary">Create screen</button></footer>
+      <label class="field"><span>Layout</span><select id="new-screen-type" aria-describedby="new-layout-help"></select><small id="new-layout-help"></small></label>
+      <details id="new-screen-advanced"><summary>Advanced: screen address</summary>
+        <label class="field"><span>Screen ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off"></label>
+        <label class="field"><span>Web address path</span><input id="new-screen-path" required pattern="/.*" autocomplete="off"></label>
+      </details>
+      <p id="new-screen-error" class="field-error" role="alert"></p>
+      <footer><button value="cancel" formnovalidate class="button secondary">Cancel</button><button id="create-screen" value="default" class="button primary">Create screen</button></footer>
     </form>
   </dialog>
 
@@ -282,6 +285,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/admin.js?v=0.10.1"></script>
+  <script type="module" src="/admin.js?v=0.10.2"></script>
 </body>
 </html>

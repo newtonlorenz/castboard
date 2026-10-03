@@ -1,5 +1,5 @@
 import { schemaFields } from '/schema-fields.js?v=0.10.0';
-import { History, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.10.0';
+import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.10.2';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -188,8 +188,8 @@ async function loadDesign() {
     state.history = new History(state.design);
     let draft; try { draft = JSON.parse(sessionStorage.getItem(draftKey)); } catch {}
     if (draft?.design) showNotice(draft.revision === state.revision ? 'You have an unsaved draft from this tab.' : 'An unsaved draft is available. The configuration has changed since it was started.', [
-      ['Restore draft', () => { state.design = draft.design; state.selectedScreenId = state.design.screens[draft.selected] ? draft.selected : state.design.defaultScreen; state.history.record(state.design); showNotice(''); renderAll(); markDirty(); }],
-      ['Discard draft', () => { sessionStorage.removeItem(draftKey); showNotice(''); }]
+      ['Restore draft', () => { state.design = draft.design; state.selectedScreenId = state.design.screens[draft.selected] ? draft.selected : state.design.defaultScreen; state.history.record(state.design); showNotice(''); renderAll(); markDirty(); applyRequestedPanel(); }],
+      ['Discard draft', () => { sessionStorage.removeItem(draftKey); showNotice(''); applyRequestedPanel(); }]
     ]);
     const requestedScreen=new URLSearchParams(location.search).get('screen');
     state.selectedScreenId = state.design.screens[requestedScreen] ? requestedScreen : state.design.screens[state.selectedScreenId] ? state.selectedScreenId : state.design.defaultScreen;
@@ -203,6 +203,10 @@ async function loadDesign() {
     setStatus('All changes saved', 'saved');
     updateHistory();
     $('#save-design').disabled = true;
+    if (requestedPlugin) {if(innerWidth<1100)showTool('settings');$('#plugin-search').focus();}
+    const requestedPanel=new URLSearchParams(location.search).get('panel');
+    if(currentScreen()?.panels.some(panel=>panel.id===requestedPanel))selectPanel(requestedPanel);
+    if (!draft?.design) applyRequestedPanel();
   } catch (error) {
     if (error.status === 403) {
       $('#token-error').textContent = '';
@@ -215,6 +219,16 @@ async function loadDesign() {
   }
 }
 
+function applyRequestedPanel() {
+  const url = new URL(location.href), plugin = url.searchParams.get('addPlugin');
+  if (!plugin) return;
+  const screen = url.searchParams.get('screen');
+  url.searchParams.delete('addPlugin'); history.replaceState(null, '', url);
+  if (!state.catalog.plugins.some(item=>item.id===plugin)) return showNotice('This plugin is no longer available. Choose another from Plugins.');
+  if (!state.design.screens[screen]) return showNotice('This screen is no longer available. Choose a screen before adding the plugin.');
+  state.selectedScreenId = screen; state.selectedPanelId = ''; renderAll();
+  addPanel(plugin);
+}
 function populateCatalogControls() {
   for (const select of [$('#screen-type'), $('#new-screen-type')]) {
     select.replaceChildren(...state.catalog.screenTypes.map(type => {
@@ -357,6 +371,7 @@ function renderPanelInspector() {
   setInput('#panel-plugin', panel.plugin);
   const viewContract = state.catalog.plugins.find(plugin => plugin.id === panel.plugin)?.inputContract;
   const sources = (state.catalog.sources || []).filter(source => !viewContract || source.contract === viewContract);
+  $(viewContract || panel.source ? '#panel-source-main' : '#panel-source-advanced').append($('#panel-source-field'));
   $('#panel-source').replaceChildren(...[{ id: '', name: 'Plugin default' }, ...sources].map(source => {
     const option = document.createElement('option'); option.value = source.id; option.textContent = source.id ? `${source.name} (${source.id})` : source.name; return option;
   }));
@@ -370,9 +385,11 @@ function renderPanelInspector() {
   schemaFields($('#extension-option-fields'), optionSchema, {...installedDefaults,...panel.options}, (key, value) => {
     panel.options ||= {};if(value===undefined||value==='')delete panel.options[key];else panel.options[key] = value;
     $('#panel-options').value = JSON.stringify(panel.options, null, 2);
+    $('#reset-plugin-options').disabled = !Object.keys(optionSchema?.properties||{}).some(key=>panel.options?.[key] !== undefined);
     markDirty('Panel options changed'); renderCanvas();
   });
 
+  $('#reset-plugin-options').disabled = !Object.keys(optionSchema?.properties||{}).some(key=>panel.options?.[key] !== undefined);
   $('#reset-plugin-options').onclick=()=>{panel.options||={};for(const key of Object.keys(optionSchema?.properties||{}))delete panel.options[key];markDirty('Plugin defaults restored');renderPanelInspector();renderCanvas();};
 
   $('#panel-geometry').hidden = screen.type === 'single';
@@ -434,6 +451,25 @@ function renderPanelAppearance(panel, screen) {
   }
 }
 
+function showTool(tool) {
+  $('.studio').dataset.tool = tool;
+  for (const button of $$('.mobile-tools [data-tool]')) button.setAttribute('aria-pressed', String(button.dataset.tool === tool));
+  resizeCanvasFrame();
+}
+function openPanelLibrary() {
+  if (!canLeaveField()) return;
+  state.libraryReturnTool = $('.studio').dataset.tool || 'canvas';
+  $('#plugin-search').value = '';
+  $('#library').hidden = false;
+  renderPluginLibrary();
+  if (innerWidth < 1100) showTool('settings');
+  $('#plugin-search').focus();
+}
+function closePanelLibrary() {
+  $('#library').hidden = true;
+  if (innerWidth < 1100) showTool(state.libraryReturnTool || 'canvas');
+  [$('#show-library'),$('#add-first-panel'),...$$('.canvas-panel'),...$$('.inspector-pane input')].find(el=>el?.getClientRects().length&&!el.disabled)?.focus();
+}
 function renderPluginLibrary() {
   const list = $('#plugin-list');
   const screen = currentScreen();
@@ -454,6 +490,7 @@ function renderPluginLibrary() {
     button.addEventListener('click', () => addPanel(plugin.id));
     list.append(button);
   }
+  if (!list.children.length) {const empty=document.createElement('p');empty.className='section-note';empty.textContent=state.catalog.plugins.length ? 'No plugins match. Try a different name.' : 'No display plugins installed yet. Browse the library to add one.';list.append(empty);}
 }
 
 function canvasLayout(screen) {
@@ -485,6 +522,7 @@ async function renderCanvas() {
   const generation = ++canvasGeneration;
   const screen = clone(currentScreen()); const surface = $('#design-surface');
   if (!screen) return;
+  $('#empty-canvas').hidden = screen.panels.length > 0;
   const focused = surface.contains(document.activeElement) ? {panel:document.activeElement.dataset.panel,edge:document.activeElement.dataset.edge} : null;
   if (releaseCanvas) { releaseCanvas(); releaseCanvas = null; }
   surface.replaceChildren(); surface.className = 'design-surface'; surface.removeAttribute('style');
@@ -521,7 +559,7 @@ async function renderCanvas() {
     renderSharedHandles(surface);
     if(focused?.panel) surface.querySelector(`[data-panel="${CSS.escape(focused.panel)}"]`)?.focus({preventScroll:true});
     else if(focused?.edge) surface.querySelector(`[data-edge="${CSS.escape(focused.edge)}"]`)?.focus({preventScroll:true});
-    $('#canvas-message').textContent = collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag the edges between panels to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize.' : 'Select a panel to edit its plugin options and appearance.';
+    $('#canvas-message').textContent = !screen.panels.length ? 'Start with a panel, then arrange and style it here.' : collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag the edges between panels to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize.' : 'Select a panel to edit its plugin options and appearance.';
   } catch (error) {
     if (generation !== canvasGeneration) return;
     $('#canvas-message').textContent = `Cannot preview this layout: ${error.message}`;
@@ -661,6 +699,7 @@ function selectScreen(id) {
   if (!canLeaveField()) return;
   state.selectedScreenId = id;
   state.selectedPanelId = '';
+  rememberScreen();
   setInspectorTab('screen');
   renderAll();
 }
@@ -703,6 +742,12 @@ function sendDraft() {
 }
 function refreshPreview() { sendDraft(); }
 
+function rememberScreen() {
+  const url = new URL(location.href);
+  url.searchParams.set('screen',state.selectedScreenId);
+  url.searchParams.delete('panel');
+  history.replaceState(null, '', url);
+}
 function updateOpenScreen() {
   $('#open-screen').disabled = !state.savedDesign?.screens?.[state.selectedScreenId]?.path;
 }
@@ -738,25 +783,42 @@ function uniquePanelId(plugin, panels) {
   return `${plugin}-${index}`;
 }
 
-function addPanel(plugin) {
-  const screen = currentScreen();
+async function addPanel(plugin) {
+  let screen = currentScreen();
   if (!canLeaveField()) return;
-  if (!screen || (screen.type === 'single' && screen.panels.length)) return;
+  if (!screen) return;
+  if (screen.type === 'single' && screen.panels.length) return showNotice('This layout holds one panel. Choose another layout in Screen settings to add more.');
   const panel = { id: uniquePanelId(plugin, screen.panels), plugin };
   if (screen.type === 'grid') { panel.position = gridSlot(screen); if (!panel.position) return toast('The grid is full. Increase its rows or columns before adding a panel.', true); }
   const source = compatibleSource(plugin, state.catalog); if (source) panel.source = source;
   // Display defaults stay inherited from the installed copy until explicitly edited.
   const type = state.catalog.screenTypes.find(item => item.id === screen.type);
+  let inserted=false;
   if (!['grid','flow','single'].includes(screen.type)) {
-    panel.position = schemaDefaults(type?.positionSchema); panel.size = schemaDefaults(type?.sizeSchema);
+    const before=JSON.stringify(screen),screenId=state.selectedScreenId;
+    try {
+      const renderer=await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(type?.version||'1')}`);
+      if(currentScreen()!==screen||JSON.stringify(screen)!==before)return toast('The screen changed. Choose the plugin again.',true);
+      if(typeof renderer.editor?.add==='function'){
+        const candidate=clone(screen);
+        await renderer.editor.add(candidate,panel);
+        if(currentScreen()!==screen||JSON.stringify(screen)!==before)return toast('The screen changed. Choose the plugin again.',true);
+        if(!candidate.panels.some(item=>item.id===panel.id))throw new Error('This layout could not place the new panel.');
+        screen=state.design.screens[screenId]=candidate;inserted=true;
+      }else{panel.position=schemaDefaults(type?.positionSchema);panel.size=schemaDefaults(type?.sizeSchema);}
+    }catch(error){return showNotice(`Could not add this panel: ${error.message}`);}
   }
   if (screen.type === 'flow') panel.size = { columns: 1, rows: 1 };
-  screen.panels.push(panel);
+  if(!inserted)screen.panels.push(panel);
   $('#library').hidden = true;
   state.selectedPanelId = panel.id;
   markDirty(`${pluginName(plugin)} panel added · unsaved`);
   setInspectorTab('panel');
   renderAll();
+  if (innerWidth < 1100) showTool('canvas');
+  toast(`${pluginName(plugin)} added. Save changes when you’re ready.`);
+  await renderCanvas();
+  $('#design-surface').querySelector(`[data-panel="${CSS.escape(panel.id)}"]`)?.focus({preventScroll:true});
 }
 
 function removePanel() {
@@ -848,29 +910,43 @@ function showNewScreenDialog() {
   if (!canLeaveField()) return;
   state.generatedScreenFields = true;
   $('#screen-form').reset();
-  $('#new-screen-title').value = 'New screen';
-  $('#new-screen-id').value = uniqueScreenId('new-screen');
-  $('#new-screen-path').value = `/${$('#new-screen-id').value}`;
+  $('#new-screen-advanced').open = false;
+  $('#new-screen-error').textContent = '';
+  $('#new-screen-title').value = '';
+  const address = screenAddress('', state.design.screens);
+  $('#new-screen-id').value = address.id;
+  $('#new-screen-path').value = address.path;
   $('#new-screen-type').value = state.catalog.screenTypes.some(type => type.id === 'grid') ? 'grid' : state.catalog.screenTypes[0]?.id;
+  describeNewLayout();
   $('#screen-dialog').showModal();
   $('#new-screen-title').select();
 }
 
+function describeNewLayout() {
+  const type = $('#new-screen-type').value;
+  $('#new-layout-help').textContent = ({grid:'Arrange and resize panels freely. Best for a fixed display.',flow:'Panels rearrange to fit the display. Best for tablets and different screen sizes.',single:'One panel fills the screen. Best for a news feed or camera.'})[type] || 'A custom layout supplied by an installed extension.';
+}
+function screenCreationError(message) {
+  $('#new-screen-advanced').open = true;
+  $('#new-screen-error').textContent = message;
+}
 function createScreenFromDialog() {
   const id = $('#new-screen-id').value.trim();
   const title = $('#new-screen-title').value.trim();
   const path = $('#new-screen-path').value.trim();
   const type = $('#new-screen-type').value;
-  if (!/^[a-z][a-z0-9-]*$/.test(id)) return toast('Screen ID must use lowercase letters, numbers, and hyphens.', true);
-  if (state.design.screens[id]) return toast(`Screen ID “${id}” already exists.`, true);
-  if (!path.startsWith('/')) return toast('Screen path must start with /.', true);
-  if (Object.values(state.design.screens).some(screen => screen.path === path)) return toast(`Screen path “${path}” is already in use.`, true);
+  if (!/^[a-z][a-z0-9-]*$/.test(id)) return screenCreationError('Use an ID starting with a letter, followed by lowercase letters, numbers or hyphens.');
+  if (state.design.screens[id]) return screenCreationError(`Screen ID “${id}” is already in use. Choose another.`);
+  if (!path.startsWith('/')) return screenCreationError('Start the web address path with /.');
+  if (Object.values(state.design.screens).some(screen => screen.path === path)) return screenCreationError(`Web address “${path}” is already in use. Choose another.`);
   state.design.screens[id] = { id, title: title || id, path, type, layout: defaultLayout(type), appearance: {}, panels: [] };
   state.selectedScreenId = id;
   state.selectedPanelId = '';
   markDirty('Screen created · add a panel and save');
   $('#screen-dialog').close();
+  rememberScreen();
   renderAll();
+  openPanelLibrary();
 }
 
 function duplicateScreen() {
@@ -991,8 +1067,10 @@ function bindEvents() {
   $('#undo').addEventListener('click', () => restoreHistory('undo'));
   $('#redo').addEventListener('click', () => restoreHistory('redo'));
   $('#discard').addEventListener('click', discardDraft);
-  $('#show-library').addEventListener('click', () => {$('#library').hidden = false; $('#plugin-search').focus();});
-  $('#close-library').addEventListener('click', () => {$('#library').hidden = true; $('#show-library').focus();});
+  $('#show-library').addEventListener('click', openPanelLibrary);
+  $('#add-first-panel').addEventListener('click', openPanelLibrary);
+  $('#close-library').addEventListener('click', closePanelLibrary);
+  $('#library').addEventListener('keydown', event => {if(event.key === 'Escape'){event.preventDefault();closePanelLibrary();}});
   $('#plugin-search').addEventListener('input', renderPluginLibrary);
   for (const button of $$('.mobile-tools [data-tool]')) button.addEventListener('click', () => {if (!canLeaveField()) return; $('.studio').dataset.tool = button.dataset.tool; for (const item of $$('.mobile-tools [data-tool]')) item.setAttribute('aria-pressed',String(item === button)); resizeCanvasFrame();});
   document.addEventListener('keydown', event => {
@@ -1197,12 +1275,14 @@ function bindEvents() {
     resizeCanvasFrame();
   });
 
-  $('#new-screen-id').addEventListener('input', () => { state.generatedScreenFields = false; });
+  $('#new-screen-type').addEventListener('change', describeNewLayout);
+  for (const selector of ['#new-screen-id','#new-screen-path']) $(selector).addEventListener('input', () => { state.generatedScreenFields = false; });
+  $('#screen-form').addEventListener('invalid',()=>{$('#new-screen-advanced').open=true;},true);
   $('#new-screen-title').addEventListener('input', () => {
     if (!state.generatedScreenFields) return;
-    const id = uniqueScreenId($('#new-screen-title').value);
-    $('#new-screen-id').value = id;
-    $('#new-screen-path').value = `/${id}`;
+    const address = screenAddress($('#new-screen-title').value,state.design.screens);
+    $('#new-screen-id').value = address.id;
+    $('#new-screen-path').value = address.path;
   });
   $('#screen-form').addEventListener('submit', event => {
     event.preventDefault();

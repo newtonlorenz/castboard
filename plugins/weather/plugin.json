@@ -12,13 +12,19 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Data provider",
+        "title": "Data source",
         "enum": [
           "demo",
           "open-meteo",
           "http-json",
           "file-json"
-        ]
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "open-meteo": "Open-Meteo (no account needed)",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        }
       },
       "title": {
         "type": "string",
@@ -26,15 +32,17 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
-        "maximum": 3600000
+        "maximum": 3600000,
+        "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
-        "maximum": 120000
+        "maximum": 120000,
+        "advanced": true
       },
       "url": {
         "type": "string",
@@ -62,19 +70,30 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "advanced": true
       },
       "latitude": {
         "type": "number",
         "title": "Latitude",
         "minimum": -90,
-        "maximum": 90
+        "maximum": 90,
+        "showWhen": {
+          "provider": [
+            "open-meteo"
+          ]
+        }
       },
       "longitude": {
         "type": "number",
         "title": "Longitude",
         "minimum": -180,
-        "maximum": 180
+        "maximum": 180,
+        "showWhen": {
+          "provider": [
+            "open-meteo"
+          ]
+        }
       },
       "label": {
         "type": "string",

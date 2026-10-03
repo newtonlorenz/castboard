@@ -12,13 +12,19 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Data provider",
+        "title": "Data source",
         "enum": [
           "demo",
           "alpha-vantage",
           "http-json",
           "file-json"
-        ]
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "alpha-vantage": "Alpha Vantage",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        }
       },
       "title": {
         "type": "string",
@@ -26,15 +32,17 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
-        "maximum": 3600000
+        "maximum": 3600000,
+        "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
-        "maximum": 120000
+        "maximum": 120000,
+        "advanced": true
       },
       "url": {
         "type": "string",
@@ -62,7 +70,8 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "advanced": true
       },
       "apiKey": {
         "type": "string",
@@ -76,7 +85,13 @@
       },
       "baseUrl": {
         "type": "string",
-        "title": "Quotes API URL"
+        "title": "Quotes API URL",
+        "showWhen": {
+          "provider": [
+            "alpha-vantage"
+          ]
+        },
+        "advanced": true
       },
       "currency": {
         "type": "string",
@@ -87,7 +102,13 @@
         "title": "Ticker symbols",
         "items": {
           "type": "string"
-        }
+        },
+        "showWhen": {
+          "provider": [
+            "alpha-vantage"
+          ]
+        },
+        "description": "One item per line."
       },
       "maxRows": {
         "type": "integer",
@@ -97,9 +118,14 @@
       },
       "refreshMinutes": {
         "type": "integer",
-        "title": "Quote refresh \u00b7 minutes",
+        "title": "Quote refresh · minutes",
         "minimum": 15,
-        "maximum": 10080
+        "maximum": 10080,
+        "showWhen": {
+          "provider": [
+            "alpha-vantage"
+          ]
+        }
       }
     }
   },

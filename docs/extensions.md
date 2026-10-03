@@ -76,3 +76,7 @@ Trusted plugins can implement `handleRequest(req,res,{url})` for compatibility e
 `GET /api/health` is lightweight. `/api/runtime-config` aliases public configuration for deployments whose legacy `/api/config` must keep another contract. `server.trustedProxyAddresses` can explicitly trust a loopback proxy to forward receiver identity for diagnostics; it does not grant admin access to receivers. `/api/admin/health` requires existing admin authorization and reports page requests and client heartbeats without widget values. Displays send panel loading/freshness states every 15 seconds. Extension `dispose()` runs once when the server closes. SIGTERM/SIGINT close connections and release integrations.
 
 See [the flexible example](../examples/flexible/README.md): two independently configured sources each feed two visually different views through one contract and an external renderer. It contains no private dashboard dependencies.
+
+### Adding panels in custom layouts
+
+A browser renderer may export `editor.add(screen, panel)`. Studio calls it with a cloned draft; the hook assigns layout-specific placement, appends the panel and updates layout geometry. A thrown error leaves the original draft intact. Studio also rejects a result if the user changed screens or edited the draft while the hook was running. Renderers without this hook retain the schema-based placement flow. Supply layout-schema defaults so a new screen can render immediately. The named-area example demonstrates vacant-area reuse, rectangular splitting and row growth.

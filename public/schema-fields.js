@@ -13,7 +13,7 @@ export function schemaFields(container, schema, values, changed) {
       for (const value of field.enum) {
         const option = document.createElement('option');
         option.value = String(value);
-        option.textContent = String(value);
+        option.textContent = field.enumLabels?.[value] || String(value);
         input.append(option);
       }
     } else if (['object', 'array'].includes(field.type)) {
@@ -27,7 +27,7 @@ export function schemaFields(container, schema, values, changed) {
       if (field.type === 'integer') input.step = 1;
     }
     input.id = `${container.id}-${key}`;
-    input.required = Boolean(schema.required?.includes(key));
+    input.required = field.type !== 'boolean' && Boolean(schema.required?.includes(key));
     const current = values[key] ?? field.default;
     if (field.type === 'boolean') input.checked = Boolean(current);
     else input.value = ['object', 'array'].includes(field.type) ? JSON.stringify(current ?? (field.type === 'array' ? [] : {}), null, 2) : current ?? '';

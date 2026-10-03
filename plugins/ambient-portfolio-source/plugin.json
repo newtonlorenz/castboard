@@ -21,13 +21,13 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Read data from",
+        "title": "Data source",
         "enum": [
           "services",
           "plugin"
         ],
         "enumLabels": {
-          "services": "Ambient services",
+          "services": "Shared data service",
           "plugin": "Connected plugin"
         }
       },

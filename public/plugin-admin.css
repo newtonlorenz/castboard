@@ -8,3 +8,7 @@
 @media(max-width:760px){.plugin-detail footer{position:static}.plugin-detail footer .button{flex:1}.plugin-detail footer .danger{margin-left:0}.plugin-detail .detail-heading>.plugin-status{margin-left:0}.roster-tools input::placeholder{font-size:11px}}
 
 #test-result:not(:empty){padding:12px 14px;background:#f1f5ec;color:var(--muted);font-size:12px;line-height:1.6;border-radius:6px;margin-bottom:20px}
+
+#install-advanced{margin:20px 0}#install-advanced summary{font-size:12px;color:var(--muted);cursor:pointer;padding:10px 0}#install-advanced .field{margin-top:12px}#screen-choice{padding:18px;margin-bottom:20px;background:var(--wash);border-radius:8px}#screen-choice .hint{margin-top:12px}
+
+.advanced-plugin-settings{margin-top:20px;border-top:1px solid var(--line);padding-top:12px}.advanced-plugin-settings summary{cursor:pointer;font-size:12px;color:var(--muted);padding:8px 0 16px}.advanced-plugin-settings[hidden]{display:none}.plugin-detail [hidden]{display:none!important}

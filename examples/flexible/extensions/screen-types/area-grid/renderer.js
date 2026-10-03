@@ -10,6 +10,34 @@ export function place({element,panel}) {element.style.gridArea=panel.position.ar
 
 export const editor = {
   incremental: true,
+  // New panels use a vacant area, then split the largest occupied rectangle.
+  // A one-cell grid grows a row rather than asking the user to edit area JSON.
+  add(screen, panel) {
+    const rows=screen.layout.areas.map(row=>row.trim().split(/\s+/));
+    const used=new Set(screen.panels.map(item=>item.position.area));
+    const available=rows.flat().find(area=>area!=='.'&&!used.has(area));
+    if(available){panel.position={area:available};screen.panels.push(panel);return;}
+    let area=`panel-${panel.id}`,suffix=2;
+    const names=new Set(rows.flat());
+    while(names.has(area))area=`panel-${panel.id}-${suffix++}`;
+    const y=rows.findIndex(row=>row.includes('.'));
+    if(y>=0) rows[y][rows[y].indexOf('.')]=area;
+    else {
+      const model=this.read(screen);
+      const largest=Object.entries(model.positions).sort((a,b)=>b[1].width*b[1].height-a[1].width*a[1].height)[0]?.[1];
+      if(largest&&(largest.width>1||largest.height>1)){
+        const horizontal=largest.width>=largest.height;
+        const left=largest.column-1+(horizontal?Math.ceil(largest.width/2):0);
+        const top=largest.row-1+(horizontal?0:Math.ceil(largest.height/2));
+        for(let row=top;row<largest.row-1+largest.height;row++)for(let col=left;col<largest.column-1+largest.width;col++)rows[row][col]=area;
+      }else{
+        rows.push(Array(rows[0].length).fill(area));
+        screen.layout.rows.push(1);
+      }
+    }
+    panel.position={area};screen.panels.push(panel);
+    screen.layout.areas=rows.map(row=>row.join(' '));
+  },
   read(screen) {
     const areas=screen.layout.areas.map(row=>row.trim().split(/\s+/));
     const positions={};

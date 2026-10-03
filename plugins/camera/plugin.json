@@ -12,12 +12,17 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Data provider",
+        "title": "Data source",
         "enum": [
           "demo",
           "stream",
           "camera-service"
-        ]
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "stream": "Direct camera stream",
+          "camera-service": "Camera service"
+        }
       },
       "title": {
         "type": "string",
@@ -25,24 +30,36 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
-        "maximum": 3600000
+        "maximum": 3600000,
+        "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
-        "maximum": 120000
+        "maximum": 120000,
+        "advanced": true
       },
       "baseUrl": {
         "type": "string",
-        "title": "Camera service URL"
+        "title": "Camera service URL",
+        "showWhen": {
+          "provider": [
+            "camera-service"
+          ]
+        }
       },
       "streamUrl": {
         "type": "string",
         "title": "Camera stream URL",
-        "sensitive": true
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "stream"
+          ]
+        }
       },
       "name": {
         "type": "string",
@@ -50,20 +67,44 @@
       },
       "listPath": {
         "type": "string",
-        "title": "Camera list path"
+        "title": "Camera list path",
+        "advanced": true,
+        "showWhen": {
+          "provider": [
+            "camera-service"
+          ]
+        }
       },
       "streamPath": {
         "type": "string",
-        "title": "Stream path template"
+        "title": "Stream path template",
+        "advanced": true,
+        "showWhen": {
+          "provider": [
+            "camera-service"
+          ]
+        }
       },
       "preferredId": {
         "type": "string",
-        "title": "Preferred camera ID"
+        "title": "Preferred camera ID",
+        "showWhen": {
+          "provider": [
+            "camera-service"
+          ]
+        }
       },
       "headers": {
         "type": "object",
         "title": "Request headers",
-        "sensitive": true
+        "sensitive": true,
+        "advanced": true,
+        "showWhen": {
+          "provider": [
+            "stream",
+            "camera-service"
+          ]
+        }
       }
     }
   },

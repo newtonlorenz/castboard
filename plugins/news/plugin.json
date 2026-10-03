@@ -12,14 +12,21 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Data provider",
+        "title": "Data source",
         "enum": [
           "demo",
           "rss",
           "markdown-directory",
           "http-json",
           "file-json"
-        ]
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "rss": "RSS / Atom feeds",
+          "markdown-directory": "Markdown folder",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        }
       },
       "title": {
         "type": "string",
@@ -27,15 +34,17 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
-        "maximum": 3600000
+        "maximum": 3600000,
+        "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
-        "maximum": 120000
+        "maximum": 120000,
+        "advanced": true
       },
       "url": {
         "type": "string",
@@ -48,7 +57,13 @@
       },
       "path": {
         "type": "string",
-        "title": "Markdown directory or JSON file"
+        "title": "Markdown directory or JSON file",
+        "showWhen": {
+          "provider": [
+            "file-json",
+            "markdown-directory"
+          ]
+        }
       },
       "headers": {
         "type": "object",
@@ -58,7 +73,8 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "advanced": true
       },
       "feeds": {
         "type": "array",
@@ -74,7 +90,12 @@
         "type": "integer",
         "title": "Markdown files to read",
         "minimum": 1,
-        "maximum": 100
+        "maximum": 100,
+        "showWhen": {
+          "provider": [
+            "markdown-directory"
+          ]
+        }
       },
       "maxStories": {
         "type": "integer",
@@ -84,9 +105,14 @@
       },
       "refreshMinutes": {
         "type": "integer",
-        "title": "Feed refresh \u00b7 minutes",
+        "title": "Feed refresh · minutes",
         "minimum": 1,
-        "maximum": 1440
+        "maximum": 1440,
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        }
       }
     }
   },

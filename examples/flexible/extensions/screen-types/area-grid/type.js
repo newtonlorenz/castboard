@@ -1,7 +1,7 @@
 export function createScreenType() {
   return {
-    id: 'area-grid', name: 'Named area grid', version: '1.1.0',
-    layoutSchema: {type:'object',required:['areas','rows'],properties:{areas:{type:'array',items:{type:'string'},title:'Named area rows'},rows:{type:'array',items:{type:'number',minimum:0.001},title:'Row weights'},columns:{type:'array',items:{type:'number',minimum:0.001},title:'Column weights'},gap:{type:'number',minimum:0,title:'Panel gap'},padding:{type:'number',minimum:0,title:'Screen padding'}}},
+    id: 'area-grid', name: 'Named area grid', version: '1.2.0',
+    layoutSchema: {type:'object',required:['areas','rows'],properties:{areas:{type:'array',items:{type:'string'},title:'Named area rows',default:['. .','. .']},rows:{type:'array',items:{type:'number',minimum:0.001},title:'Row weights',default:[1,1]},columns:{type:'array',items:{type:'number',minimum:0.001},title:'Column weights',default:[1,1]},gap:{type:'number',minimum:0,title:'Panel gap'},padding:{type:'number',minimum:0,title:'Screen padding'}}},
     positionSchema: {type:'object',required:['area'],properties:{area:{type:'string'}}},
     validateScreen(screen) {
       const rows=screen.layout.areas.map(row=>row.trim().split(/\s+/));

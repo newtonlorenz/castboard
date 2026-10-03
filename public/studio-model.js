@@ -136,3 +136,13 @@ export function resizeTracks(model, axis, boundary, pixels, viewport) {
   const movement=Math.max(minimum-weights[boundary-1],Math.min(weights[boundary]-minimum,pixels*total/extent));
   weights[boundary-1]+=movement;weights[boundary]-=movement;return next;
 }
+
+// Screen names are human-facing; generated addresses avoid internal route names.
+export function screenAddress(title, screens = {}) {
+  let stem = String(title).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'screen';
+  if (!/^[a-z]/.test(stem)) stem = `screen-${stem}`;
+  const paths = new Set(Object.values(screens).map(screen => screen.path));
+  let id = stem, suffix = 2;
+  while (screens[id] || paths.has(`/screens/${id}`)) id = `${stem}-${suffix++}`;
+  return {id, path: `/screens/${id}`};
+}

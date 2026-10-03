@@ -12,13 +12,19 @@
     "properties": {
       "provider": {
         "type": "string",
-        "title": "Data provider",
+        "title": "Data source",
         "enum": [
           "demo",
           "sonos-http",
           "http-json",
           "file-json"
-        ]
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "sonos-http": "Sonos bridge",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        }
       },
       "title": {
         "type": "string",
@@ -26,15 +32,17 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
-        "maximum": 3600000
+        "maximum": 3600000,
+        "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
-        "maximum": 120000
+        "maximum": 120000,
+        "advanced": true
       },
       "url": {
         "type": "string",
@@ -60,9 +68,11 @@
         "sensitive": true,
         "showWhen": {
           "provider": [
+            "sonos-http",
             "http-json"
           ]
-        }
+        },
+        "advanced": true
       },
       "baseUrl": {
         "type": "string",
@@ -75,7 +85,13 @@
       },
       "statusPath": {
         "type": "string",
-        "title": "Status path"
+        "title": "Status path",
+        "advanced": true,
+        "showWhen": {
+          "provider": [
+            "sonos-http"
+          ]
+        }
       },
       "actionMethod": {
         "type": "string",
@@ -83,11 +99,23 @@
         "enum": [
           "POST",
           "GET"
-        ]
+        ],
+        "advanced": true,
+        "showWhen": {
+          "provider": [
+            "sonos-http"
+          ]
+        }
       },
       "actions": {
         "type": "object",
-        "title": "Control paths"
+        "title": "Control paths",
+        "advanced": true,
+        "showWhen": {
+          "provider": [
+            "sonos-http"
+          ]
+        }
       },
       "showControls": {
         "type": "boolean",
