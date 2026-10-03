@@ -12,3 +12,4 @@
 #install-advanced{margin:20px 0}#install-advanced summary{font-size:12px;color:var(--muted);cursor:pointer;padding:10px 0}#install-advanced .field{margin-top:12px}#screen-choice{padding:18px;margin-bottom:20px;background:var(--wash);border-radius:8px}#screen-choice .hint{margin-top:12px}
 
 .advanced-plugin-settings{margin-top:20px;border-top:1px solid var(--line);padding-top:12px}.advanced-plugin-settings summary{cursor:pointer;font-size:12px;color:var(--muted);padding:8px 0 16px}.advanced-plugin-settings[hidden]{display:none}.plugin-detail [hidden]{display:none!important}
+.plugin-recovery{padding:16px;margin-bottom:20px;background:var(--wash);border-radius:8px}.plugin-recovery p{font-size:13px;line-height:1.6;margin:0 0 12px}.plugin-recovery button{margin:0 8px 6px 0;min-height:40px}@media(max-width:800px){.plugin-recovery button,.plugin-detail button,.plugin-roster button{min-height:44px}}

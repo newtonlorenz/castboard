@@ -33,3 +33,7 @@ body.admin-app{padding-left:176px}::selection{background:#c6dfcd;color:#163b2b}i
 
 /* Compact navigation retains readable labels on tablets and phones. */
 @media(max-width:1200px){.app-nav a{font-size:11px}}
+
+:is(#draft-conflict-dialog,#plugin-conflict-dialog){max-width:560px;width:calc(100% - 32px);max-height:85dvh;overflow:auto}:is(#draft-conflicts,#plugin-conflicts) fieldset{border:0;border-top:1px solid var(--line);padding:16px 0;margin:0}:is(#draft-conflicts,#plugin-conflicts) legend{font-size:13px;font-weight:650;padding:0 0 6px;overflow-wrap:anywhere}:is(#draft-conflicts,#plugin-conflicts) label{display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:6px;cursor:pointer;min-height:48px}:is(#draft-conflicts,#plugin-conflicts) label:has(input:checked){background:var(--selection)}:is(#draft-conflicts,#plugin-conflicts) input{margin-top:3px;flex:none}:is(#draft-conflicts,#plugin-conflicts) strong,:is(#draft-conflicts,#plugin-conflicts) small{display:block;font-size:13px;line-height:1.6}:is(#draft-conflicts,#plugin-conflicts) small{color:var(--muted);overflow-wrap:anywhere}:is(#draft-conflict-dialog,#plugin-conflict-dialog) footer{position:sticky;bottom:-28px;background:var(--paper);padding:16px 0 0;display:flex;justify-content:flex-end;gap:8px}
+@media(max-width:800px){:is(#draft-conflict-dialog,#plugin-conflict-dialog) button{min-height:44px}}
+.topbar-center{font-size:11px}

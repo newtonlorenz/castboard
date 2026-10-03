@@ -161,6 +161,12 @@ components:
     height: "18px"
     width: "32px"
     rounded: "{rounded.summary}"
+  conflict-dialog:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.dialog}"
+    padding: "28px"
+    width: "calc(100% - 32px)"
   segment-selected:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -283,6 +289,8 @@ Plugin roster, settings and connection groups have white or mineral surfaces, a 
 
 Installed mode keeps search, category and collection controls above the roster. Selecting a row reveals settings beside it; identity, usage and enable state remain visible. Source connections and usage follow schema-defined settings. The action footer keeps Save settings, Reset draft, enable state and Remove together, with Remove separated where width permits. Saving locks draft and roster controls together until completion; a failed save preserves the draft and announces failure.
 
+Recovery notices sit inline above plugin settings on a wash surface, with the selection radius and roster padding. Factual text explains the retained draft and the next action; secondary buttons have a minimum height (40px). At (800px) and below, recovery, plugin settings and roster buttons have a minimum height (44px).
+
 Settings has a short vertical reveal (3px over 160ms, ease-out). This motion and switch/disclosure transitions are removed under reduced-motion preference.
 
 ### Linked Selection and Screen Canvas
@@ -302,6 +310,10 @@ Destinations retain their names beside Send screen and Remove. Removal confirms 
 ### Dialogs and Feedback
 
 Dialogs use the dialog radius, padding (28px), a viewport-safe width and an ordinary maximum width (440px). A translucent dark-green backdrop separates them from the editor. Toasts use navigation-dark surfaces and white text near the bottom edge, with status announcements. Reduced-motion preference removes animation, transitions and smooth scrolling across the admin interface.
+
+Conflict review is shared by Screens and Plugins. It expands the ordinary dialog to a maximum width (560px), caps its height at (85dvh) and scrolls within the viewport. Each field has a legend and two native radio options, Your draft and Latest saved. Options have a minimum height (48px), compact padding (12px), and the field radius; the selected option uses the selection fill. Labels and value summaries wrap, with supporting values in muted ink. Protected values are described without being displayed.
+
+The conflict action footer stays visible while the dialog scrolls, using the paper surface, top padding (16px) and action gap. Keep editing preserves the draft; Update my draft resolves the choices before a separate save. Dialog action buttons have a minimum height (44px) at (800px) and below.
 
 ## Do's and Don'ts
 

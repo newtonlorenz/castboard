@@ -1,3 +1,4 @@
+import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
 import { schemaFields } from '/schema-fields.js?v=0.10.0';
 import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.10.2';
@@ -113,8 +114,9 @@ function canLeaveField() {
   toast('Correct the highlighted setting, or use Undo to revert it.', true); return false;
 }
 function persistDraft() {
+  if (state.pendingDraft) return;
   try {
-    if (state.dirty) sessionStorage.setItem(draftKey, JSON.stringify({ revision: state.revision, design: state.design, selected: state.selectedScreenId }));
+    if (state.dirty) sessionStorage.setItem(draftKey, JSON.stringify({ revision: state.revision, base: state.savedDesign, design: state.design, selected: state.selectedScreenId }));
     else sessionStorage.removeItem(draftKey);
   } catch { /* Storage can be disabled; editing still works. */ }
 }
@@ -137,7 +139,7 @@ function restoreHistory(direction) {
   if (!state.design.screens[state.selectedScreenId]) state.selectedScreenId = state.design.defaultScreen;
   if (!currentPanel()) state.selectedPanelId = '';
   for (const input of $$('input,textarea,select')) input.setCustomValidity('');
-  renderAll(); markDirty();
+  rememberScreen(); renderAll(); markDirty();
 }
 function discardDraft() {
   state.design = clone(state.savedDesign); state.history.record(state.design);
@@ -188,9 +190,11 @@ async function loadDesign() {
     state.runtime = await runtime.json();
     state.history = new History(state.design);
     let draft; try { draft = JSON.parse(sessionStorage.getItem(draftKey)); } catch {}
+    state.pendingDraft = draft?.design ? draft : null;
+    $('.studio').inert = Boolean(state.pendingDraft);
     if (draft?.design) showNotice(draft.revision === state.revision ? 'You have an unsaved draft from this tab.' : 'An unsaved draft is available. The configuration has changed since it was started.', [
-      ['Restore draft', () => { state.design = draft.design; state.selectedScreenId = state.design.screens[draft.selected] ? draft.selected : state.design.defaultScreen; state.history.record(state.design); showNotice(''); renderAll(); markDirty(); applyRequestedPanel(); }],
-      ['Discard draft', () => { sessionStorage.removeItem(draftKey); showNotice(''); applyRequestedPanel(); }]
+      ['Restore draft', () => restoreSavedDraft(draft)],
+      ['Discard draft', () => { state.pendingDraft = null; $('.studio').inert = false; sessionStorage.removeItem(draftKey); showNotice(''); applyRequestedPanel(); }]
     ]);
     const requestedScreen=new URLSearchParams(location.search).get('screen');
     state.selectedScreenId = state.design.screens[requestedScreen] ? requestedScreen : state.design.screens[state.selectedScreenId] ? state.selectedScreenId : state.design.defaultScreen;
@@ -1043,7 +1047,7 @@ async function saveDesign() {
     state.saving = false; $('#save-design').disabled = false; updateHistory();
     if (error.code === 'REVISION_CONFLICT') {
       setStatus('Configuration changed elsewhere', 'error');
-      showNotice('The configuration changed elsewhere. Your draft is still here.', [['Download draft', downloadDraft], ['Load latest', loadDesign]]);
+      showNotice('The configuration changed elsewhere. Your draft is still here.', [['Review latest changes', reconcileDesign], ['Download draft', downloadDraft]]);
     } else {
       setStatus('Save failed · changes are still local', 'error');
       toast(error.message, true);
@@ -1051,11 +1055,92 @@ async function saveDesign() {
   }
 }
 
+let pendingDesignMerge;
+function draftSummary(value, path) {
+  if (value === undefined) return 'Removed';
+  if (Array.isArray(value)) return path.at(-1) === 'panels' ? `${value.length} panels: ${value.map(panel => panel.options?.title || panel.options?.label || pluginName(panel.plugin) || panel.id).join(', ')}` : value.map(item=>typeof item === 'object' ? JSON.stringify(item) : String(item)).join(', ');
+  if (value && typeof value === 'object') return value.title || Object.entries(value).map(([key,item])=>`${key.replace(/([A-Z])/g,' $1')}: ${typeof item === 'object' ? JSON.stringify(item) : item}`).join(' · ');
+  return String(value);
+}
+function conflictLabel(path) {
+  const words = value => String(value).replace(/([A-Z])/g, ' $1').replace(/[-_]/g,' ').toLowerCase();
+  if (path[0] === 'screens') {
+    const screen = state.design.screens[path[1]] || state.savedDesign.screens[path[1]];
+    let parts = path.slice(2);
+    if (parts[0] === 'panels' && typeof parts[1] === 'number') {
+      const panel = screen?.panels[parts[1]];
+      parts = [panel?.options?.title || panel?.options?.label || pluginName(panel?.plugin) || 'Panel', ...parts.slice(2)];
+    }
+    return `${screen?.title || path[1]} — ${parts.map(words).join(' / ') || 'screen'}`;
+  }
+  return path.map(words).join(' / ') || 'Whole design';
+}
+function applyDesignMerge(design, result) {
+  state.pendingDraft = null; $('.studio').inert = false;
+  if (result.selected) state.selectedScreenId = result.selected;
+  state.design = design;
+  state.savedDesign = clone(result.design);
+  state.revision = result.revision;
+  state.catalog = result.catalog;
+  if (result.runtime) state.runtime = result.runtime;
+  state.history = new History(result.design);
+  state.history.record(design);
+  if (!state.design.screens[state.selectedScreenId]) state.selectedScreenId = state.design.defaultScreen;
+  if (!currentPanel()) state.selectedPanelId = '';
+  populateCatalogControls(); rememberScreen(); renderAll(); markDirty();
+  showNotice(state.dirty ? 'Your draft is ready with the latest saved changes. Review it, then save.' : 'The latest saved changes are loaded.');
+  applyRequestedPanel();
+}
+function reviewDesignMerge(base, design, result) {
+  const merged = base ? mergeDraft(base, design, result.design) : {value:result.design,conflicts:[{path:[],local:design,latest:result.design}]};
+  if (!merged.conflicts.length) return applyDesignMerge(merged.value, result);
+  pendingDesignMerge = {merged, result};
+  $('#cancel-draft-review').textContent = result.restoring ? 'Back' : 'Keep editing';
+  const list = $('#draft-conflicts'); list.replaceChildren();
+  merged.conflicts.forEach((conflict, index) => {
+    const fieldset = document.createElement('fieldset');
+    const legend = document.createElement('legend'); legend.textContent = conflictLabel(conflict.path); fieldset.append(legend);
+    for (const [value, label] of [['local','Your draft'],['latest','Latest saved']]) {
+      const option = document.createElement('label');
+      const input = document.createElement('input'); input.type = 'radio'; input.name = `conflict-${index}`; input.value = value; input.required = true;
+      const text = document.createElement('span');
+      const title = document.createElement('strong'); title.textContent = label;
+      const summary = document.createElement('small'); summary.textContent = draftSummary(conflict[value], conflict.path);
+      text.append(title, summary); option.append(input, text); fieldset.append(option);
+    }
+    list.append(fieldset);
+  });
+  $('#draft-conflict-dialog').showModal();
+}
+async function reconcileDesign() {
+  if (state.saving) return;
+  try {
+    const latest = await requestDesign();
+    const runtime = await fetch('/api/runtime-config', {cache:'no-store'});
+    if (!runtime.ok) throw new Error('Could not load the latest preview settings.');
+    latest.runtime = await runtime.json();
+    reviewDesignMerge(state.savedDesign, state.design, latest);
+  }
+  catch (error) { showNotice(`${error.message} Your draft is still here.`, [['Try again', reconcileDesign]]); }
+}
+function restoreSavedDraft(draft) {
+  if (draft.revision === state.revision) return applyDesignMerge(draft.design, {design:state.savedDesign,revision:state.revision,catalog:state.catalog,selected:draft.selected,restoring:true});
+  reviewDesignMerge(draft.base, draft.design, {design:state.savedDesign,revision:state.revision,catalog:state.catalog,selected:draft.selected,restoring:true});
+}
+
 function downloadDraft() {
   const blob = new Blob([JSON.stringify(state.design, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'castboard-design-draft.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function bindEvents() {
+  $('#cancel-draft-review').onclick = () => $('#draft-conflict-dialog').close();
+  $('#draft-conflict-form').onsubmit = event => {
+    event.preventDefault();
+    const fields = new FormData(event.target);
+    const {merged,result} = pendingDesignMerge;
+    const resolved = resolveDraft(merged, merged.conflicts.map((_,index)=>fields.get(`conflict-${index}`)));
+    $('#draft-conflict-dialog').close(); applyDesignMerge(resolved,result);
+  };
   for(const swatch of $$('input[type=color]')) {
     const input=document.createElement('input');input.type='text';input.className='hex-color';input.pattern='#[0-9a-fA-F]{6}';input.maxLength=7;input.required=true;
     const field=swatch.closest('label').querySelector('span').textContent;
