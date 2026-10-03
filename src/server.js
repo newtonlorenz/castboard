@@ -11,6 +11,7 @@ import { jsonResponse } from './core/providers.js';
 import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
 import { buildSetupReport, discoverCastDevices, testPluginConnection } from './core/setup.js';
 import { publicAsset, extensionMetadata, validateSchema } from './core/extensions.js';
+import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -88,6 +89,7 @@ export async function createApp(options = {}) {
     return runtimeConfig.server.trustedProxyAddresses?.includes(socket) && typeof forwarded==='string' && isIP(forwarded) ? forwarded : req.socket.remoteAddress;
   }
   context.getPlugin = id => byId.get(id);
+  context.getBranding=()=>runtimeConfig.branding;
   context.read = async (id, request = {}) => {
     const plugin = byId.get(id);
     if (!plugin?.getData) throw new Error(`Source is unavailable: ${id}`);
@@ -106,7 +108,7 @@ export async function createApp(options = {}) {
     reads.set(key, entry);
     return entry.pending;
   };
-  const plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
+  let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
   const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
@@ -125,6 +127,7 @@ export async function createApp(options = {}) {
     };
   }
 
+  let pluginSaveInProgress=false;
   const server = http.createServer(async (req, res) => {
     securityHeaders(res);
     let url;
@@ -157,6 +160,34 @@ export async function createApp(options = {}) {
         return jsonResponse(res,200,{ok:true});
       }
       if (req.method === 'GET' && ['/api/config','/api/runtime-config'].includes(url.pathname)) return jsonResponse(res, 200, publicConfig);
+      if (url.pathname === '/api/admin/plugins') {
+        if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{code:'ADMIN_FORBIDDEN',message:'Plugin management requires admin access'}});
+        const packages=await pluginLibrary({pluginsDir:PLUGINS_DIR,config:runtimeConfig,configDir:context.configDir});
+        const payload=()=>({ok:true,revision:configRevision(rawConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id,type:screen.type,panelCount:screen.panels.length})),packages,instances:pluginInstances(rawConfig,packages,plugins)});
+        if(req.method==='GET')return jsonResponse(res,200,payload());
+        if(req.method!=='POST')return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
+        if(!acceptsJson(req))return jsonResponse(res,415,{error:{message:'Plugin changes require JSON'}});
+        const body=await readBody(req);
+        if(pluginSaveInProgress || body.revision!==configRevision(rawConfig))return jsonResponse(res,409,{error:{code:'REVISION_CONFLICT',message:'Settings changed. Reload before saving.'}});
+        pluginSaveInProgress=true;
+        let staged;
+        try {
+          const nextRaw=changePluginConfig(rawConfig,packages,body);
+          const nextConfig=validateConfig(expandEnvironment(nextRaw,runtimeEnv));
+          for(const [id,settings] of Object.entries(nextConfig.plugins))validateSchema(settings,packages.find(pkg=>pkg.id===(settings.type||id))?.settingsSchema,`Plugin ${id} settings`);
+          staged=await discoverPlugins({pluginsDir:PLUGINS_DIR,config:nextConfig,context,reuse:plugins});
+          const nextPublic=publicAppConfig(nextConfig,staged,screenTypes);
+          const nextPath=writableConfigPath(configPath,path.dirname(configPath));
+          await writeConfigAtomic(nextPath,nextRaw);
+          const previous=plugins;
+          plugins=staged;byId=pluginMap(plugins);reads.clear();rawConfig=nextRaw;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);publicConfig=nextPublic;
+          await Promise.allSettled(previous.filter(plugin=>!plugins.includes(plugin)).map(plugin=>plugin.dispose?.()));
+          return jsonResponse(res,200,{...payload(),applied:true});
+        }catch(error){
+          if(staged)await Promise.allSettled(staged.filter(plugin=>!plugins.includes(plugin)).map(plugin=>plugin.dispose?.()));
+          return jsonResponse(res,422,{error:{code:'INVALID_PLUGIN_SETTINGS',message:error.message}});
+        }finally{pluginSaveInProgress=false;}
+      }
       if (url.pathname.startsWith('/api/admin/setup')) {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Setup access requires localhost or an authorized LAN token' } });
         if (req.method === 'GET' && url.pathname === '/api/admin/setup') return jsonResponse(res, 200, { ok: true, ...(await buildSetupReport({ config: runtimeConfig, configPath, plugins })) });
@@ -175,7 +206,8 @@ export async function createApp(options = {}) {
         if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Admin saves require application/json' } });
         const body = await readBody(req);
         const currentRevision = configRevision(rawConfig);
-        if (body.revision !== currentRevision) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'The configuration changed after this editor loaded. Reload before saving.' }, revision: currentRevision });
+        if (pluginSaveInProgress || body.revision !== currentRevision) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'The configuration changed after this editor loaded. Reload before saving.' }, revision: currentRevision });
+        pluginSaveInProgress=true;
         try {
           const nextRaw = mergeDesign(rawConfig, body.design);
           const nextConfig = validateConfig(expandEnvironment(nextRaw, runtimeEnv));
@@ -194,7 +226,7 @@ export async function createApp(options = {}) {
           return jsonResponse(res, 200, { ok: true, ...adminPayload(), applied: true });
         } catch (error) {
           return jsonResponse(res, 422, { error: { code: 'INVALID_DESIGN', message: error.message } });
-        }
+        }finally{pluginSaveInProgress=false;}
       }
 
       const apiMatch = url.pathname.match(/^\/api\/plugins\/([a-z][a-z0-9-]*)\/(data|action|stream)$/);
@@ -257,6 +289,8 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
+      if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
+      if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
       if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
@@ -287,7 +321,7 @@ export async function createApp(options = {}) {
     get config() { return runtimeConfig; },
     get rawConfig() { return rawConfig; },
     get configPath() { return configPath; },
-    plugins,
+    get plugins() { return plugins; },
     dispose,
     get screenTypes() { return screenTypes; },
     get publicConfig() { return publicConfig; },

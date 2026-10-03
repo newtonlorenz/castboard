@@ -51,7 +51,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Spotify',
-    publicConfig: () => ({ title: config.title || 'Spotify', controllable }),
+    publicConfig: () => ({ title: config.title || 'Spotify', controllable,showControls:config.showControls!==false }),
     async getData() {
       if (config.provider === 'demo') return normalizeSpotifyPlayback({
         is_playing: true,

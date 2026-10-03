@@ -1,6 +1,6 @@
 import { demoTimestamp, fetchJson, proxyStream, validateProviderConfig } from '../../src/core/providers.js';
 
-export function createPlugin({ config }) {
+export function createPlugin({ config,context }) {
   validateProviderConfig('camera', config, ['demo', 'stream', 'camera-service']);
   if (config.provider === 'stream' && !config.streamUrl) throw new Error('Plugin camera stream provider requires streamUrl');
   if (config.provider === 'camera-service' && !config.baseUrl) throw new Error('Plugin camera camera-service provider requires baseUrl');
@@ -23,9 +23,9 @@ export function createPlugin({ config }) {
     publicConfig: () => ({ title: config.title || 'Camera', name: config.name || 'Camera' }),
     async getData() {
       if (config.provider === 'demo') return { name: config.name || 'Front garden', status: 'Demo', streamUrl: null, updatedAt: demoTimestamp() };
-      if (config.provider === 'stream') return { name: config.name || 'Camera', status: 'Live', streamUrl: '/api/plugins/camera/stream', updatedAt: demoTimestamp() };
+      if (config.provider === 'stream') return { name: config.name || 'Camera', status: 'Live', streamUrl: `/api/plugins/${encodeURIComponent(context.instanceId||'camera')}/stream`, updatedAt: demoTimestamp() };
       const camera = await resolveCamera();
-      return { name: camera.name || config.name || 'Camera', status: camera.status || 'Live', streamUrl: '/api/plugins/camera/stream', updatedAt: demoTimestamp() };
+      return { name: camera.name || config.name || 'Camera', status: camera.status || 'Live', streamUrl: `/api/plugins/${encodeURIComponent(context.instanceId||'camera')}/stream`, updatedAt: demoTimestamp() };
     },
     async stream(req, res) {
       let streamUrl = config.streamUrl;

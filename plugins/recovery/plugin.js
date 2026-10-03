@@ -7,7 +7,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Recovery',
-    publicConfig: () => ({ title: config.title || 'Recovery' }),
+    publicConfig: () => ({ demo: config.provider==='demo', title: config.title || 'Recovery' }),
     async getData() {
       if (config.provider === 'demo') return { score: 82, status: 'Ready', detail: 'Sleep 91% · HRV balanced', updatedAt: demoTimestamp() };
       return readJsonSource(config, context);

@@ -1,0 +1,125 @@
+{
+  "name": "Stocks",
+  "description": "Portfolio tables and market watchlists from Alpha Vantage or JSON.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data provider",
+        "enum": [
+          "demo",
+          "alpha-vantage",
+          "http-json",
+          "file-json"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "apiKey": {
+        "type": "string",
+        "title": "Alpha Vantage API key",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "alpha-vantage"
+          ]
+        }
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Quotes API URL"
+      },
+      "currency": {
+        "type": "string",
+        "title": "Default currency"
+      },
+      "tickers": {
+        "type": "array",
+        "title": "Ticker symbols",
+        "items": {
+          "type": "string"
+        }
+      },
+      "maxRows": {
+        "type": "integer",
+        "title": "Default rows to show",
+        "minimum": 1,
+        "maximum": 100
+      },
+      "refreshMinutes": {
+        "type": "integer",
+        "title": "Quote refresh \u00b7 minutes",
+        "minimum": 15,
+        "maximum": 10080
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "currency": {
+        "type": "string",
+        "title": "Display currency"
+      },
+      "maxRows": {
+        "type": "integer",
+        "title": "Rows to show",
+        "minimum": 1,
+        "maximum": 100
+      }
+    }
+  }
+}

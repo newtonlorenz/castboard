@@ -1,0 +1,52 @@
+{
+  "name": "Focus",
+  "description": "Current and next event alongside a recovery score.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "emptyText": {
+        "type": "string",
+        "title": "Message when the calendar is clear"
+      },
+      "showRecovery": {
+        "type": "boolean",
+        "title": "Show recovery score",
+        "default": true
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "emptyText": {
+        "type": "string",
+        "title": "Message when the calendar is clear"
+      },
+      "showRecovery": {
+        "type": "boolean",
+        "title": "Show recovery score",
+        "default": true
+      }
+    }
+  },
+  "dependencies": [
+    "calendar",
+    "recovery"
+  ],
+  "defaultBindings": {
+    "calendar": "calendar",
+    "recovery": "recovery"
+  }
+}

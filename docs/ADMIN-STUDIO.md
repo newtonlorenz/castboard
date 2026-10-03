@@ -10,9 +10,9 @@ Use Connections at `/setup` for configuration checks and explicit connection tes
 - One or many screens, including title, path, screen type, and visual appearance.
 - Fixed grids through cell-based drag and resize plus numeric placement controls.
 - Responsive flows through minimum panel dimensions, spans, and panel ordering.
-- Single-plugin screens for immersive news, cameras, charts, or other modules.
+- Single-plugin screens for immersive news, cameras, charts, or other plugins.
 - Any discovered custom screen type through generated schema controls and optional layout, position, and size JSON.
-- Plugin selection and per-panel options. News is in the same plugin library and follows the same placement and sizing rules as every other module.
+- Plugin selection and per-panel options. News is in the same plugin library and follows the same placement and sizing rules as every other plugin.
 - Screen-wide typography, palette, density, borders, corners, and shadows. Castboard, Midnight Blue, Warm Paper, Amber Terminal, and Ocean presets are editable starting points.
 - Per-panel font, scale, background, accent, text, padding, border, radius, and shadow overrides. Clearing an override returns that panel to the screen theme.
 - Optional per-panel auto-fit, which reduces typography only when live content would overflow its panel.
@@ -25,7 +25,7 @@ Font choices are offline-safe stacks: modern sans, rounded, editorial serif, and
 
 Studio uses the installed screen renderer for both the editable canvas and the preview. Changes appear before saving, including on new screens. Preview controls are disabled; previewing does not issue receiver heartbeats or run provider actions through the widget SDK.
 
-Select a panel on the canvas or in the panel list. Fixed-grid panels snap to cells at any fit scale. Moving or enlarging one panel rearranges neighbouring panels into free space; if the layout cannot fit, the change is rejected without overlap. Drag a shared edge to resize neighbouring panels together. Named-area layouts can opt into swapping occupied areas and adjusting row/column weights; responsive flow panels support drag reordering and corner resizing. Escape cancels an active drag. Each completed gesture is one undo step. Other renderers expose placement through their schemas or JSON. Use Add panel to search installed view modules; a compatible data source is selected when one is available. Module settings and appearance stay in the contextual Module inspector beside the canvas. Font and heading-font overrides, editable hex colours and zero padding/radius/border values are supported. Supported renderers update draft geometry and appearance in place, retaining running media and module instances.
+Select a panel on the canvas or in the panel list. Fixed-grid panels snap to cells at any fit scale. Moving or enlarging one panel rearranges neighbouring panels into free space; if the layout cannot fit, the change is rejected without overlap. Drag a shared edge to resize neighbouring panels together. Named-area layouts can opt into swapping occupied areas and adjusting row/column weights; responsive flow panels support drag reordering and corner resizing. Escape cancels an active drag. Each completed gesture is one undo step. Other renderers expose placement through their schemas or JSON. Use Add panel to search installed view plugins; a compatible data source is selected when one is available. Panel options and appearance stay in the contextual Plugin inspector beside the canvas. Font and heading-font overrides, editable hex colours and zero padding/radius/border values are supported. Supported renderers update draft geometry and appearance in place, retaining running media and module instances.
 
 Undo and Redo apply to design edits. Native text-field undo remains available inside inputs. Discard returns to the saved design. Unsaved valid draft state is stored for this tab and offered for restoration after a reload. Unfinished invalid text is not persisted; correct it before switching selection or saving. A revision conflict leaves the draft intact, with options to download it or load the latest configuration.
 
@@ -33,14 +33,16 @@ On smaller screens, Screens & panels, Canvas and Settings switch the visible too
 
 ## What it does not edit
 
-Delivery and data access stay in the private configuration:
+Studio preserves private delivery settings. Plugin data access has its own admin surface:
 
 - Screen `targets`, `castProtocol`, and target-level protocol overrides.
 - Casting protocol settings, executables, webhook endpoints, and headers.
-- Plugin providers, integration URLs, tokens, filesystem paths, and camera addresses.
+- Plugin providers, integration URLs, tokens, filesystem paths, and camera addresses are managed separately in **Plugins** at `/admin/plugins`; protected fields are hidden.
 - The server bind address and port.
 
 The admin API constructs a small design projection and never returns those fields. When a design is saved, the server merges it into the raw configuration so `${ENVIRONMENT_REFERENCES}` remain placeholders rather than expanded secrets. A new or duplicated screen starts with no delivery targets; add them in `castboard.config.json` before casting.
+
+Plugin defaults and per-panel overrides are distinct: the inspector shows the effective installed defaults, and **Use plugin defaults** removes panel display overrides. **Plugin settings** opens the configured copy’s connection settings and usage.
 
 ## Saving and concurrency
 

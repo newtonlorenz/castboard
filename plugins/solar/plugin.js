@@ -11,7 +11,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Solar',
-    publicConfig: () => ({ title: config.title || 'Solar' }),
+    publicConfig: () => ({ demo: config.provider==='demo', title: config.title || 'Solar' }),
     async getData() {
       if (config.provider === 'demo') return { generatedKw: 3.8, loadKw: 2.1, gridImportKw: 0, gridExportKw: 1.7, updatedAt: demoTimestamp() };
       if (config.provider === 'fronius') {

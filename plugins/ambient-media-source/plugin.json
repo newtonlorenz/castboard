@@ -1,0 +1,48 @@
+{
+  "name": "Ambient media source",
+  "description": "Demo data or a compatible HTTP service for the Ambient display collection.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Sources",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data provider",
+        "enum": [
+          "demo",
+          "http-json"
+        ]
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Service URL",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000
+      }
+    }
+  }
+}

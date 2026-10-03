@@ -140,7 +140,7 @@ components:
 
 The proof desk surrounds an accurately scaled screen draft with paper-white editing rails, a slate canvas bed, blue selection and restrained seams. The interface uses plain labels and compact, familiar controls so selection, unsaved changes and connection checks remain clear.
 
-This system governs the administration surfaces at `/admin` and `/setup` only. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Colors, typography, layout geometry and images inside the preview are output content, not admin design tokens.
+This system governs the administration surfaces at `/admin`, `/admin/plugins` and `/setup` only. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Colors, typography, layout geometry and images inside the preview are output content, not admin design tokens.
 
 **Key Characteristics:**
 - Neutral editing rails around the actual renderer output.
@@ -184,7 +184,7 @@ A working blue accent sits against paper, cool gray surfaces and dark slate text
 The scale prioritizes control legibility and factual headings. The body and control base is compact (14px / 1.45). The ordinary browser heading weight resolves to bold; explicit section weights are preserved in the frontmatter.
 
 ### Hierarchy
-- **Page title:** Connections heading; reduced to (24px) at the connection breakpoint.
+- **Page title:** Connections and Plugins headings; reduced to (24px) on Connections at the connection breakpoint.
 - **Editor title:** Screens heading and dialog titles.
 - **Connection section:** groups of checks, delivery and server tools.
 - **Panel section:** rail and inspector section headings.
@@ -202,6 +202,8 @@ The desktop header is (64px) high. The editor fills the remaining viewport with 
 At (1099px) and below, the header wraps, the editor stacks, and the Screens & panels / Canvas / Settings switcher exposes the relevant rail above the workspace. Tool rails have their own maximum height (52dvh); the inspector stays available through Settings. Tapping a panel selects its Module context and opens Settings; dragging keeps the Canvas tool available for arranging the draft. At (520px) and below, controls and brand simplify, screen lists become one column, and the action row wraps. Between (1100px) and (1400px), header gaps tighten rather than compromising the main editor geometry.
 
 Connections uses a centered container with a maximum width (1180px) and desktop padding (36px 28px 64px). Module rows align in three columns (1.1fr / 1.4fr / 160px) with (24px) gaps; delivery and server rows use (1fr / 2fr / auto). At (720px) and below, column headings hide, identity and action share the first line, and description, results and command details span the full width. Container padding becomes (24px 16px 40px), and search takes the available width.
+
+Plugin management uses a centered container with a maximum width (1500px) and padding (28px). A searchable roster sits beside contextual settings in two tracks: a flexible roster with minimum width (340px), and a settings track from (380px) to (500px), separated by (24px). The settings rail is sticky (20px from the top); the roster scrolls within its own bounded area. At (900px) and below, roster and settings stack, the settings rail becomes static, container padding is (20px 16px), and roster scrolling is bounded to (340px).
 
 Spacing is an observed set of functional gaps and paddings, not a synthetic universal scale. Use the role-named spacing tokens for matching contexts; connection sections also have the implemented larger separation (34px).
 
@@ -233,15 +235,21 @@ White, full-width inputs have a distinct field stroke, minimum height (40px), an
 
 ### Navigation
 
-Screens and Connections are plain text links in the white header. The current page has blue text, medium weight and a bottom seam. Inspector tabs use the same seam with a sticky white tab bar; Screen and Module identify their contexts, and active context follows panel selection. The mobile tool switcher instead uses outlined controls and a pale selected surface. Edit / Preview uses a compact segmented control; the selected segment lifts slightly from its gray container.
+Screens, Plugins and Connections are plain text links in the white header. The current page has blue text, medium weight and a bottom seam. Inspector tabs use the same seam with a sticky white tab bar; Screen and Module identify their contexts, and active context follows panel selection. The mobile tool switcher instead uses outlined controls and a pale selected surface. Edit / Preview uses a compact segmented control; the selected segment lifts slightly from its gray container.
 
 ### Status Chips
 
-Small labels express configuration and tool state. Their fill and text vary by factual state, with compact padding and the status radius from the frontmatter. They are read-only descriptions. Test results appear separately as text; pending actions say Testing… and disable repeat invocation.
+Small labels express configuration and tool state. Their fill and text vary by factual state, with compact padding and the status radius from the frontmatter. They are read-only descriptions. Test results appear separately as text; pending actions say Testing… and disable repeat invocation. Plugin enable-state labels use a neutral outline and transparent fill; Enabled uses the saved-green text, while Disabled uses muted text. These labels describe enable state, not test success.
 
 ### Cards / Containers
 
-The durable pattern is a flat row or working rail, not a freestanding decorative card. Connection rows have paper surfaces, bottom seams, wrapped descriptions and adjacent Test actions. Test output spans the row. The module library uses similarly restrained, full-width selectable rows. Device results have a bordered parent container and fine internal seams.
+The durable pattern is a flat row or working rail, not a freestanding decorative card. Connection rows have paper surfaces, bottom seams, wrapped descriptions and adjacent Test actions. Test output spans the row. The module library uses similarly restrained, full-width selectable rows. Device results have a bordered parent container and fine internal seams. The plugin roster and settings rail use a fine perimeter seam and the segment radius, with no resting shadow; roster items remain continuous rows rather than separate cards.
+
+### Plugin Roster and Settings
+
+Search and the Installed / Library segmented control share the roster header. Selected installed rows use the existing selection wash; name, version, instance identity, usage and enable state remain visible beside a labeled Configure action. Roster titles use (16px); the contextual settings title uses (22px). Schema-defined fields precede source connections and usage, followed by explicit saved-state text and a separated action footer. Remove sits apart from ordinary save/reset actions.
+
+Password fields state whether a value is configured and offer an explicit Clear saved value control. Existing secrets remain masked, and blank unchanged fields retain the saved value. Saving announces Saving… and disables roster, draft and mutation controls together so the displayed draft remains stable until the result. Failed saves restore controls and keep factual failure text near the form.
 
 ### Linked Selection and Proof
 
@@ -275,3 +283,5 @@ Dialogs use the dialog radius, padding (24px), maximum width (440px) and viewpor
 
 
 <!-- Evidence: public/admin.css, public/setup.css, public/admin.html, public/setup.html, public/admin.js, public/setup.js; .impeccable/review/desktop.png, mobile.png, mobile-settings.png, user-672.png, connections-desktop.png, connections-mobile.png. The implemented header is 64px; the direction brief's provisional 56px is not normative. The Studio interaction extension is evidenced by public/studio-model.js, public/appearance-model.js and public/app.js; preview content remains outside this admin token system. -->
+
+<!-- Plugin management extension evidence: public/plugins.html, public/plugin-admin.css, public/plugin-admin.js and public/admin.css; .impeccable/review/plugins-0.10-desktop.png, plugins-0.10-mobile.png, plugins-0.10-user-821.png and plugins-0.10-saving.png. Incumbent visual tokens are preserved. -->

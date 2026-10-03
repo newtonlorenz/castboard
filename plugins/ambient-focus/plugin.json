@@ -1,0 +1,70 @@
+{
+  "name": "Ambient Focus",
+  "description": "Current and next calendar events in a compact display strip.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Ambient displays",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "emptyCurrent": {
+        "type": "string",
+        "title": "Message with no active event"
+      },
+      "emptyNext": {
+        "type": "string",
+        "title": "Message with no upcoming events"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "emptyCurrent": {
+        "type": "string",
+        "title": "Message with no active event"
+      },
+      "emptyNext": {
+        "type": "string",
+        "title": "Message with no upcoming events"
+      }
+    }
+  },
+  "defaultBindings": {
+    "runtime": "ambient-runtime",
+    "theme": "ambient-theme",
+    "config": "ambient-config-source",
+    "services": "ambient-services",
+    "calendar": "ambient-calendar-source",
+    "recovery": "ambient-recovery-source"
+  },
+  "dependencies": [
+    "ambient-runtime",
+    "ambient-theme",
+    "ambient-config-source",
+    "ambient-services",
+    "ambient-calendar-source",
+    "ambient-recovery-source"
+  ]
+}

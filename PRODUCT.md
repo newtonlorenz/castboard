@@ -9,3 +9,7 @@ People managing their own screens need to add and arrange panels, choose sources
 The requested redesign replaces the current admin appearance and verbose, promotional wording. Moving, resizing, previewing, editing settings and saving are all frustrating. Preserve existing settings and extension support. Keep credentials and delivery targets on the server. Keep the dashboards' appearance and functionality intact.
 
 Use direct, factual labels and familiar controls. Important states are loading, selected, unsaved, invalid, saving, failed and saved. Configuration does not prove connectivity: tests must distinguish the two.
+
+## Plugin management
+
+Plugins are reusable packages; panels are configured copies on screens. Admin provides an installed list and a library of bundled and locally installed packages. People can install independent copies, edit their connection defaults, bind sources, test, enable, disable and remove unused copies. Secrets stay on the server and saves preserve unrelated clients and existing configuration. Display-specific options remain in Studio. Shared display packages and portable HTTP source adapters ship with safe demo defaults, without household data or service credentials.

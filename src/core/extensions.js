@@ -6,7 +6,9 @@ export const EXTENSION_ID = /^[a-z][a-z0-9-]*$/;
 // External packages are trusted server code. Public asset access is separately
 // constrained to a manifest allowlist and the package's real directory.
 export async function extensionDirectories(builtin, config, kind, configDir = process.cwd()) {
-  const roots = [builtin, ...(config.extensions?.[kind] || []).map(root => path.resolve(configDir, root))];
+  const local=path.resolve(configDir,'extensions',kind);
+  let localExists=false;try{localExists=(await fs.stat(local)).isDirectory();}catch{}
+  const roots = [builtin,...(localExists?[local]:[]), ...(config.extensions?.[kind] || []).map(root => path.resolve(configDir, root))];
   const result = new Map();
   for (const root of [...new Set(roots)]) {
     const entries = await fs.readdir(root, { withFileTypes: true });

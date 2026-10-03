@@ -1,0 +1,50 @@
+{
+  "name": "Clock",
+  "description": "Time and date with a configurable time zone.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds"
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Time zone"
+      },
+      "hour12": {
+        "type": "boolean",
+        "title": "12-hour clock"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds"
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Time zone"
+      },
+      "hour12": {
+        "type": "boolean",
+        "title": "12-hour clock"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      }
+    }
+  }
+}

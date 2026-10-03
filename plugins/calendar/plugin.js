@@ -9,7 +9,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Calendar',
-    publicConfig: () => ({ title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),
+    publicConfig: () => ({ demo: config.provider==='demo', title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),
     async getData() {
       if (config.provider === 'demo') {
         const now = new Date();

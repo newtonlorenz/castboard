@@ -1,0 +1,113 @@
+{
+  "name": "Sonos",
+  "description": "Playback and controls through a Sonos HTTP bridge.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data provider",
+        "enum": [
+          "demo",
+          "sonos-http",
+          "http-json",
+          "file-json"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Sonos bridge URL",
+        "showWhen": {
+          "provider": [
+            "sonos-http"
+          ]
+        }
+      },
+      "statusPath": {
+        "type": "string",
+        "title": "Status path"
+      },
+      "actionMethod": {
+        "type": "string",
+        "title": "Control request method",
+        "enum": [
+          "POST",
+          "GET"
+        ]
+      },
+      "actions": {
+        "type": "object",
+        "title": "Control paths"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show playback controls",
+        "default": true
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show playback controls",
+        "default": true
+      }
+    }
+  }
+}

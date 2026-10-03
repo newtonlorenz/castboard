@@ -1,0 +1,25 @@
+{
+  "name": "Ambient config source",
+  "description": "Connects a typed display data contract to the configured services source.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Sources",
+  "defaultConfig": {
+    "route": "/api/config"
+  },
+  "defaultBindings": {
+    "services": "ambient-services"
+  },
+  "dependencies": [
+    "ambient-services"
+  ],
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "route": {
+        "type": "string",
+        "title": "Data route"
+      }
+    }
+  }
+}

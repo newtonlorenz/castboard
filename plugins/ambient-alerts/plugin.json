@@ -1,0 +1,66 @@
+{
+  "name": "Ambient Alerts",
+  "description": "Detection snapshots with an image and video viewer.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Ambient displays",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "maxAlerts": {
+        "type": "integer",
+        "title": "Detections to show",
+        "minimum": 1,
+        "maximum": 20,
+        "default": 5
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "maxAlerts": {
+        "type": "integer",
+        "title": "Detections to show",
+        "minimum": 1,
+        "maximum": 20,
+        "default": 5
+      }
+    }
+  },
+  "defaultBindings": {
+    "runtime": "ambient-runtime",
+    "theme": "ambient-theme",
+    "config": "ambient-config-source",
+    "services": "ambient-services",
+    "resources": "ambient-resources"
+  },
+  "dependencies": [
+    "ambient-runtime",
+    "ambient-theme",
+    "ambient-config-source",
+    "ambient-services",
+    "ambient-resources"
+  ]
+}

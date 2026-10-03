@@ -1,0 +1,30 @@
+{
+  "version": "1.1.0",
+  "license": "MIT",
+  "category": "Examples",
+  "description": "A small example of a reusable view or data source.",
+  "settingsSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "name": "Number",
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "label": {
+        "type": "string",
+        "title": "Label"
+      },
+      "unit": {
+        "type": "string",
+        "title": "Unit"
+      },
+      "digits": {
+        "type": "integer",
+        "title": "Decimal places",
+        "minimum": 0,
+        "maximum": 3
+      }
+    }
+  }
+}

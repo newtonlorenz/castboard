@@ -1,0 +1,1 @@
+export function createPlugin({config,context}) {return {id:"ambient-config-source",name:"Ambient config source",contract:"mission-config@1",getData:()=>context.read(context.bindings.services,{url:new URL('/data?'+new URLSearchParams({route:config.route||"/api/config"}),'http://local')})};}

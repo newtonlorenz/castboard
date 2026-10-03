@@ -15,3 +15,7 @@ FIRST VIEWPORT: 56px app header; Screens and Connections navigation; a 228px scr
 ## Studio interaction extension (0.9)
 
 Preserve the incumbent proof desk system. Direct panel dragging packs a fixed grid without overlaps, named-area layouts swap slots, and shared edges adjust neighbours together. Pointer cancellation restores the initial geometry; one completed gesture records one undo step. A selected module exposes its source, schema-defined options and appearance in the same editor. Font menus and editable hex colours update the actual draft. Custom renderers opt into the editor contract; plugin-owned defaults remain intact until overridden. This is an interaction extension, with no new visual world or comp round.
+
+## Plugin management extension (0.10)
+
+Preserve the proof desk. A searchable roster of installed plugins and library packages sits beside a contextual connection-settings form. Factual version, usage and enable state accompany each package. Library installation creates independently configured copies and connects dependencies; applied settings have an explicit save state. Password fields distinguish configured, unchanged and cleared values without exposing secrets. Source connections, connection tests and screen usage belong with each plugin. Mobile stacks the same roster and form. Plugin means package or configured instance; panel means a screen placement. No new world or comp round.

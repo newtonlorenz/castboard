@@ -1,0 +1,60 @@
+{
+  "name": "Ambient Camera",
+  "description": "Live camera images with automatic stream fallback.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Ambient displays",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "cameraName": {
+        "type": "string",
+        "title": "Preferred camera name"
+      },
+      "frameRefreshMs": {
+        "type": "integer",
+        "title": "Image refresh \u00b7 milliseconds",
+        "minimum": 800,
+        "maximum": 60000
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "cameraName": {
+        "type": "string",
+        "title": "Preferred camera name"
+      },
+      "frameRefreshMs": {
+        "type": "integer",
+        "title": "Image refresh \u00b7 milliseconds",
+        "minimum": 800,
+        "maximum": 60000
+      }
+    }
+  },
+  "defaultBindings": {
+    "runtime": "ambient-runtime",
+    "theme": "ambient-theme",
+    "config": "ambient-config-source",
+    "services": "ambient-services",
+    "resources": "ambient-resources"
+  },
+  "dependencies": [
+    "ambient-runtime",
+    "ambient-theme",
+    "ambient-config-source",
+    "ambient-services",
+    "ambient-resources"
+  ]
+}

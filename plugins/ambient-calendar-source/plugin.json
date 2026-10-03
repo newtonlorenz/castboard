@@ -1,0 +1,50 @@
+{
+  "name": "Ambient calendar source",
+  "description": "Connects a typed display data contract to the configured services source.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Sources",
+  "defaultConfig": {
+    "route": "/api/calendar",
+    "provider": "services"
+  },
+  "defaultBindings": {
+    "services": "ambient-services",
+    "upstream": "calendar"
+  },
+  "dependencies": [
+    "ambient-services",
+    "calendar"
+  ],
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Read data from",
+        "enum": [
+          "services",
+          "plugin"
+        ],
+        "enumLabels": {
+          "services": "Ambient services",
+          "plugin": "Connected plugin"
+        }
+      },
+      "route": {
+        "type": "string",
+        "title": "Data route",
+        "showWhen": {
+          "provider": [
+            "services"
+          ]
+        }
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Time zone",
+        "description": "Leave empty to use the screen time zone."
+      }
+    }
+  }
+}

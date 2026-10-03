@@ -1,0 +1,22 @@
+{
+  "name": "Display link launcher",
+  "description": "Opens HTTP links on a configured Cast display.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Sources",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "device": {
+        "type": "string",
+        "title": "Cast display name"
+      },
+      "executable": {
+        "type": "string",
+        "title": "Cast executable",
+        "default": "catt"
+      }
+    }
+  }
+}

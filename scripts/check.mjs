@@ -22,11 +22,12 @@ for (const file of files) {
     process.exit(result.status || 1);
   }
 }
-for (const file of ['package.json', 'castboard.config.example.json']) JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
+const jsonFiles=['package.json','castboard.config.example.json',...fs.readdirSync(path.join(root,'plugins'),{withFileTypes:true}).filter(entry=>entry.isDirectory()&&fs.existsSync(path.join(root,'plugins',entry.name,'plugin.json'))).map(entry=>'plugins/'+entry.name+'/plugin.json')];
+for (const file of jsonFiles) JSON.parse(fs.readFileSync(path.join(root,file),'utf8'));
 const shellScript = path.join(root, 'scripts', 'docker-entrypoint.sh');
 const shellResult = spawnSync('sh', ['-n', shellScript], { encoding: 'utf8' });
 if (shellResult.status !== 0) {
   process.stderr.write(shellResult.stderr || shellResult.stdout);
   process.exit(shellResult.status || 1);
 }
-console.log(`Syntax checked ${files.length} JavaScript files, 2 JSON files, and the Docker entrypoint.`);
+console.log(`Syntax checked ${files.length} JavaScript files, ${jsonFiles.length} JSON files, and the Docker entrypoint.`);

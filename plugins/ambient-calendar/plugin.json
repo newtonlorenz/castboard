@@ -1,0 +1,66 @@
+{
+  "name": "Ambient Calendar",
+  "description": "A timeline of today's timed and all-day events.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Ambient displays",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "hoursAhead": {
+        "type": "integer",
+        "title": "Timeline hours",
+        "minimum": 1,
+        "maximum": 24,
+        "default": 6
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "hoursAhead": {
+        "type": "integer",
+        "title": "Timeline hours",
+        "minimum": 1,
+        "maximum": 24,
+        "default": 6
+      }
+    }
+  },
+  "defaultBindings": {
+    "runtime": "ambient-runtime",
+    "theme": "ambient-theme",
+    "config": "ambient-config-source",
+    "services": "ambient-services",
+    "calendar": "ambient-calendar-source"
+  },
+  "dependencies": [
+    "ambient-runtime",
+    "ambient-theme",
+    "ambient-config-source",
+    "ambient-services",
+    "ambient-calendar-source"
+  ]
+}

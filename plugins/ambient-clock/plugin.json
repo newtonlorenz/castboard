@@ -1,0 +1,84 @@
+{
+  "name": "Ambient Clock",
+  "description": "Time, date and location with optional seconds and a 12-hour clock.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Ambient displays",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds",
+        "default": true
+      },
+      "hour12": {
+        "type": "boolean",
+        "title": "12-hour clock",
+        "default": false
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Time zone"
+      },
+      "location": {
+        "type": "string",
+        "title": "Location label"
+      },
+      "showDate": {
+        "type": "boolean",
+        "title": "Show date",
+        "default": true
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds",
+        "default": true
+      },
+      "hour12": {
+        "type": "boolean",
+        "title": "12-hour clock",
+        "default": false
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Time zone"
+      },
+      "location": {
+        "type": "string",
+        "title": "Location label"
+      },
+      "showDate": {
+        "type": "boolean",
+        "title": "Show date",
+        "default": true
+      }
+    }
+  },
+  "defaultBindings": {
+    "runtime": "ambient-runtime",
+    "theme": "ambient-theme",
+    "config": "ambient-config-source",
+    "services": "ambient-services"
+  },
+  "dependencies": [
+    "ambient-runtime",
+    "ambient-theme",
+    "ambient-config-source",
+    "ambient-services"
+  ]
+}

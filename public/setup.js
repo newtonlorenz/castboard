@@ -4,18 +4,6 @@ let report;
 const checks = new Map();
 let token = sessionStorage.getItem('castboard-admin-token') || '';
 
-const snippets = {
-  weather: '"weather": { "enabled": true, "provider": "open-meteo", "latitude": 40.4, "longitude": -3.7, "label": "Home" }',
-  calendar: '"calendar": { "enabled": true, "provider": "ics", "url": "${CALENDAR_ICS_URL}" }',
-  solar: '"solar": { "enabled": true, "provider": "fronius", "baseUrl": "http://inverter.local" }',
-  spotify: '"spotify": { "enabled": true, "provider": "spotify-player", "executable": "spotify_player" }',
-  sonos: '"sonos": { "enabled": true, "provider": "sonos-http", "baseUrl": "${SONOS_BACKEND_URL}" }',
-  camera: '"camera": { "enabled": true, "provider": "stream", "name": "Driveway", "streamUrl": "${CAMERA_STREAM_URL}" }',
-  news: '"news": { "enabled": true, "provider": "rss", "feeds": [{ "name": "BBC Business", "url": "https://feeds.bbci.co.uk/news/business/rss.xml" }] }',
-  recovery: '"recovery": { "enabled": true, "provider": "file-json", "path": "./data/recovery.json" }',
-  stocks: '"stocks": { "enabled": true, "provider": "alpha-vantage", "apiKey": "${ALPHA_VANTAGE_API_KEY}", "tickers": ["AAPL", "MSFT", "GOOGL"] }',
-};
-
 async function request(path, init = {}, retry = true) {
   const headers = { ...(init.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   const response = await fetch(path, { ...init, headers, cache: 'no-store' });
@@ -57,12 +45,12 @@ function runtimeRow(title, status, detail, extra = '') {
 }
 function renderModules() {
   const search = $('#connection-search').value.toLowerCase();
-  const modules = report.plugins.filter(plugin => `${plugin.name} ${plugin.id} ${plugin.provider}`.toLowerCase().includes(search));
-  $('#plugin-list').innerHTML = modules.map(plugin => {
+  const plugins = report.plugins.filter(plugin => `${plugin.name} ${plugin.id} ${plugin.provider}`.toLowerCase().includes(search));
+  $('#plugin-list').innerHTML = plugins.map(plugin => {
     const check = checks.get(plugin.id);
-    const labels = {ready:'Configured', custom:'Custom module', adapter:'Adapter', demo:'Demo data', blocked:'Tool missing'};
-    return `<article class="connection-row"><div><h3>${escapeHtml(plugin.name)}</h3><span class="provider">${escapeHtml(plugin.id)} · ${escapeHtml(plugin.provider)} · ${plugin.usedBy ? `${plugin.usedBy} screen${plugin.usedBy === 1 ? '' : 's'}` : 'Not on a screen'}</span></div><div class="connection-description"><div class="connection-state"><span class="pill ${escapeHtml(plugin.status)}">${escapeHtml(labels[plugin.status] || plugin.label)}</span></div><p>${escapeHtml(plugin.detail)}</p></div><div class="card-actions">${snippets[plugin.type || plugin.id] ? `<button type="button" data-copy="${escapeHtml(snippets[plugin.type || plugin.id])}">Copy example</button>` : ''}<button type="button" data-test-plugin="${escapeHtml(plugin.id)}" aria-label="Test ${escapeHtml(plugin.name)} (${escapeHtml(plugin.id)})" ${check?.pending ? 'disabled' : ''}>${check?.pending ? 'Testing…' : 'Test'}</button></div><div class="test-result ${check ? check.ok ? 'ok' : check.pending ? '' : 'bad' : ''}" data-result="${escapeHtml(plugin.id)}">${escapeHtml(check?.message || '')}</div></article>`;
-  }).join('') || '<p class="no-results">No modules match this search.</p>';
+    const labels = {ready:'Configured', custom:'Plugin settings', adapter:'Adapter', demo:'Demo data', blocked:'Tool missing'};
+    return `<article class="connection-row"><div><h3>${escapeHtml(plugin.name)}</h3><span class="provider">${escapeHtml(plugin.id)} · ${escapeHtml(plugin.provider)} · ${plugin.usedBy ? `${plugin.usedBy} screen${plugin.usedBy === 1 ? '' : 's'}` : 'Not on a screen'}</span></div><div class="connection-description"><div class="connection-state"><span class="pill ${escapeHtml(plugin.status)}">${escapeHtml(labels[plugin.status] || plugin.label)}</span></div><p>${escapeHtml(plugin.detail)}</p></div><div class="card-actions"><a class="button" href="/admin/plugins?plugin=${encodeURIComponent(plugin.id)}">Configure</a><button type="button" data-test-plugin="${escapeHtml(plugin.id)}" aria-label="Test ${escapeHtml(plugin.name)} (${escapeHtml(plugin.id)})" ${check?.pending ? 'disabled' : ''}>${check?.pending ? 'Testing…' : 'Test'}</button></div><div class="test-result ${check ? check.ok ? 'ok' : check.pending ? '' : 'bad' : ''}" data-result="${escapeHtml(plugin.id)}">${escapeHtml(check?.message || '')}</div></article>`;
+  }).join('') || '<p class="no-results">No plugins match this search.</p>';
   bindDynamicActions();
 }
 function render(nextReport) {
@@ -70,12 +58,11 @@ function render(nextReport) {
   const blocked = report.plugins.filter(plugin => plugin.status === 'blocked').length;
   const demos = report.plugins.filter(plugin => plugin.status === 'demo').length;
   $('#overall').className = `overall ${blocked ? 'attention' : ''}`;
-  $('#overall').innerHTML = `<strong>${report.plugins.length} modules · ${report.screens.length} screen${report.screens.length === 1 ? '' : 's'}</strong><span>${blocked ? `${blocked} modules need a server tool. ` : ''}${demos ? `${demos} use demo data. ` : ''}Connections have not been tested by this configuration check.</span>`;
-  $('#config-name').textContent = report.config.fileName;
+  $('#overall').innerHTML = `<strong>${report.plugins.length} plugins · ${report.screens.length} screen${report.screens.length === 1 ? '' : 's'}</strong><span>${blocked ? `${blocked} plugins need a server tool. ` : ''}${demos ? `${demos} use demo data. ` : ''}Connections have not been tested by this configuration check.</span>`;
   $('#runtime-cards').innerHTML = [
     runtimeRow('Castboard', 'Running', report.urls.local, report.config.usingExample ? command('cp castboard.config.example.json castboard.config.json') : ''),
     runtimeRow('Google Cast', report.tools.catt.installed ? 'Installed' : 'Optional · missing', report.tools.catt.version || 'Install catt to discover and cast to Google Cast devices.', report.tools.catt.installed ? '' : command(report.tools.catt.install)),
-    runtimeRow('Spotify playback', report.tools.spotifyPlayer.installed ? 'Installed' : 'Optional · missing', report.tools.spotifyPlayer.installed ? report.tools.spotifyPlayer.version : 'Install spotify_player only if you use its playback module.', report.tools.spotifyPlayer.installed ? command(report.tools.spotifyPlayer.authenticate) : `${command('brew install spotify_player')}${command('cargo install spotify_player --locked')}`),
+    runtimeRow('Spotify playback', report.tools.spotifyPlayer.installed ? 'Installed' : 'Optional · missing', report.tools.spotifyPlayer.installed ? report.tools.spotifyPlayer.version : 'Install spotify_player only if you use its playback plugin.', report.tools.spotifyPlayer.installed ? command(report.tools.spotifyPlayer.authenticate) : `${command('brew install spotify_player')}${command('cargo install spotify_player --locked')}`),
   ].join('');
   $('#screen-list').innerHTML = report.screens.map(screen => `<article class="delivery-row"><div><h3>${escapeHtml(screen.title)}</h3><div class="screen-meta"><span>${escapeHtml(screen.id)}</span><span>${escapeHtml(screen.protocol)}</span></div></div><p>${escapeHtml(screen.path)}</p><span class="pill ${screen.targetCount ? '' : 'demo'}">${screen.targetCount ? `${screen.targetCount} target${screen.targetCount === 1 ? '' : 's'}` : 'Browser only'}</span></article>`).join('');
   renderModules();
@@ -105,7 +92,7 @@ function bindDynamicActions() {
 
 async function load() {
   $('#overall').className = 'overall loading';
-  $('#overall').innerHTML = '<strong>Checking configuration…</strong><span>Reading modules, screens and server tools.</span>';
+  $('#overall').innerHTML = '<strong>Checking configuration…</strong><span>Reading plugins, screens and server tools.</span>';
   $('#refresh').disabled = true;
   try { render(await request('/api/admin/setup')); }
   catch (error) { $('#overall').className = 'overall attention'; $('#overall').innerHTML = `<strong>Could not load connections</strong><span>${escapeHtml(error.message)} Use Refresh checks to retry.</span>`; }

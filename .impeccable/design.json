@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-02T15:45:56.503768+00:00",
+  "generatedAt": "2026-10-02T16:44:40.970477+00:00",
   "title": "Design System: Castboard Administration",
   "extensions": {
     "colorMeta": {
@@ -419,6 +419,10 @@
       {
         "name": "stacked-connections",
         "value": "720px"
+      },
+      {
+        "name": "stacked-plugin-management",
+        "value": "900px"
       }
     ]
   },
@@ -459,7 +463,7 @@
       "name": "Administration navigation",
       "kind": "nav",
       "description": "Plain labels and a bottom seam show the current page.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Administration\"><a href=\"#screens\" aria-current=\"page\">Screens</a><a href=\"#connections\">Connections</a></nav>",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Administration\"><a href=\"#screens\" aria-current=\"page\">Screens</a><a href=\"#plugins\">Plugins</a><a href=\"#connections\">Connections</a></nav>",
       "css": ".ds-nav{font:14px/1.45 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;display:flex;gap:24px;background:var(--paper,#fff);height:64px}.ds-nav a{display:flex;align-items:center;text-decoration:none;color:var(--muted,#556174);border-bottom:2px solid transparent}.ds-nav a[aria-current]{color:var(--accent,#2459bb);border-bottom-color:var(--accent,#2459bb);font-weight:600}.ds-nav a:hover{color:var(--muted,#556174)}.ds-nav a[aria-current]:hover{color:var(--accent,#2459bb)}.ds-nav a:focus-visible{outline:2px solid var(--accent,#2459bb);outline-offset:3px;} @media(prefers-reduced-motion:reduce){[class^=\"ds-\"]{transition:none!important}}"
     },
     {
@@ -492,11 +496,18 @@
       "description": "An editor-enabled shared edge reveals its indicator on hover, focus and dragging; axis arrow keys resize its neighbours.",
       "html": "<div class=\"ds-edge-sample\"><div class=\"ds-shared-edge\" tabindex=\"0\" role=\"separator\" aria-orientation=\"vertical\" aria-label=\"Resize between two panels\" aria-valuenow=\"1\"></div></div>",
       "css": ".ds-edge-sample{position:relative;height:96px}.ds-shared-edge{position:absolute;left:50%;top:0;bottom:0;width:14px;transform:translateX(-50%);background:transparent;touch-action:none;cursor:col-resize}.ds-shared-edge::after{content:\"\";position:absolute;inset:20% 5px;background:var(--accent,#2459bb);opacity:0;border-radius:3px}.ds-shared-edge:hover::after,.ds-shared-edge:focus-visible::after,.ds-edge-sample.ds-dragging .ds-shared-edge::after{opacity:.65}.ds-shared-edge:focus-visible{outline:2px solid var(--focus,#2459bb);outline-offset:3px}"
+    },
+    {
+      "name": "Selected plugin roster row",
+      "kind": "custom",
+      "description": "A flat selected plugin row carries instance identity, version, usage and factual enable state beside a Configure action.",
+      "html": "<article class=\"ds-plugin-row\"><div><h2>Clock</h2><p>Time and date with a configurable time zone.</p><p class=\"ds-plugin-meta\">clock \u00b7 1.2.0 \u00b7 0 panels</p><span class=\"ds-plugin-status\">Enabled</span></div><button class=\"ds-plugin-configure\">Configure</button></article>",
+      "css": ".ds-plugin-row{font:14px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;padding:18px;border-bottom:1px solid var(--line,#d9dfe8);background:#eaf0fc;color:var(--ink,#202b3c)}.ds-plugin-row h2{font-size:16px;margin:0 0 5px}.ds-plugin-row p{color:var(--muted,#556174);line-height:1.5;margin:5px 0}.ds-plugin-row .ds-plugin-meta{font-size:12px;overflow-wrap:anywhere}.ds-plugin-status{display:inline-block;padding:3px 7px;border:1px solid var(--line,#d9dfe8);border-radius:4px;font-size:12px;color:#268153}.ds-plugin-configure{font:inherit;min-height:36px;padding:7px 12px;border:1px solid var(--line,#d9dfe8);border-radius:5px;background:var(--paper,#fff);color:var(--ink,#202b3c);font-weight:550;cursor:pointer;transition:background .15s,color .15s}.ds-plugin-configure:hover{background:var(--wash,#f3f5f8)}.ds-plugin-configure:focus-visible{outline:2px solid var(--focus,#2459bb);outline-offset:3px}.ds-plugin-configure:active:not(:disabled){background:#dce6f8}.ds-plugin-configure:disabled{opacity:.5;cursor:default}@media(max-width:900px){.ds-plugin-row{padding:16px}}@media(prefers-reduced-motion:reduce){.ds-plugin-configure{transition:none!important}}"
     }
   ],
   "narrative": {
     "northStar": "The Proof Desk",
-    "overview": "The proof desk surrounds an accurately scaled screen draft with paper-white editing rails, a slate canvas bed, blue selection and restrained seams. The interface uses plain labels and compact, familiar controls so selection, unsaved changes and connection checks remain clear.\n\nThis system governs the administration surfaces at `/admin` and `/setup` only. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Colors, typography, layout geometry and images inside the preview are output content, not admin design tokens.",
+    "overview": "The proof desk surrounds an accurately scaled screen draft with paper-white editing rails, a slate canvas bed, blue selection and restrained seams. The interface uses plain labels and compact, familiar controls so selection, unsaved changes and connection checks remain clear.\n\nThis system governs the administration surfaces at `/admin`, `/admin/plugins` and `/setup` only. Dashboards, panel views and screen renderers retain independent, arbitrarily customizable appearance. Colors, typography, layout geometry and images inside the preview are output content, not admin design tokens.",
     "keyCharacteristics": [
       "Neutral editing rails around the actual renderer output.",
       "Linked panel-list and canvas selection.",

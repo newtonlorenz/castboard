@@ -1,0 +1,87 @@
+{
+  "name": "Solar",
+  "description": "Energy production and usage from Fronius or JSON.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data provider",
+        "enum": [
+          "demo",
+          "fronius",
+          "http-json",
+          "file-json"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Inverter URL",
+        "showWhen": {
+          "provider": [
+            "fronius"
+          ]
+        }
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      }
+    }
+  }
+}

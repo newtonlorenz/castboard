@@ -1,0 +1,575 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787
+  },
+  "branding": {
+    "name": "Ambient demo",
+    "timeZone": "UTC",
+    "locationLabel": "Demo location"
+  },
+  "defaultScreen": "gallery",
+  "plugins": {
+    "ambient-runtime": {
+      "type": "ambient-runtime",
+      "enabled": true
+    },
+    "ambient-theme": {
+      "type": "ambient-theme",
+      "enabled": true
+    },
+    "ambient-services": {
+      "provider": "demo",
+      "type": "ambient-services",
+      "enabled": true
+    },
+    "ambient-config-source": {
+      "route": "/api/config",
+      "type": "ambient-config-source",
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services"
+      }
+    },
+    "ambient-resources": {
+      "provider": "demo",
+      "type": "ambient-resources",
+      "enabled": true
+    },
+    "ambient-alerts": {
+      "type": "ambient-alerts",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "resources": "ambient-resources"
+      }
+    },
+    "calendar": {
+      "provider": "demo",
+      "type": "calendar",
+      "enabled": true
+    },
+    "ambient-calendar-source": {
+      "route": "/api/calendar",
+      "provider": "services",
+      "type": "ambient-calendar-source",
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services",
+        "upstream": "calendar"
+      }
+    },
+    "ambient-calendar": {
+      "type": "ambient-calendar",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "calendar": "ambient-calendar-source"
+      }
+    },
+    "ambient-camera": {
+      "type": "ambient-camera",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "resources": "ambient-resources"
+      }
+    },
+    "ambient-clock": {
+      "type": "ambient-clock",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services"
+      }
+    },
+    "recovery": {
+      "provider": "demo",
+      "type": "recovery",
+      "enabled": true
+    },
+    "ambient-recovery-source": {
+      "route": "/api/whoop",
+      "provider": "services",
+      "type": "ambient-recovery-source",
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services",
+        "upstream": "recovery"
+      }
+    },
+    "ambient-focus": {
+      "type": "ambient-focus",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "calendar": "ambient-calendar-source",
+        "recovery": "ambient-recovery-source"
+      }
+    },
+    "ambient-media-source": {
+      "provider": "demo",
+      "type": "ambient-media-source",
+      "enabled": true
+    },
+    "ambient-launch-source": {
+      "type": "ambient-launch-source",
+      "enabled": true
+    },
+    "ambient-media": {
+      "type": "ambient-media",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "media": "ambient-media-source",
+        "resources": "ambient-resources",
+        "launch": "ambient-launch-source"
+      }
+    },
+    "stocks": {
+      "provider": "demo",
+      "type": "stocks",
+      "enabled": true
+    },
+    "ambient-portfolio-source": {
+      "route": "/api/dashboard/portfolio",
+      "provider": "services",
+      "type": "ambient-portfolio-source",
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services",
+        "upstream": "stocks"
+      }
+    },
+    "ambient-news": {
+      "type": "ambient-news",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "portfolio": "ambient-portfolio-source"
+      }
+    },
+    "ambient-portfolio": {
+      "type": "ambient-portfolio",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "portfolio": "ambient-portfolio-source"
+      }
+    },
+    "ambient-recovery": {
+      "type": "ambient-recovery",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "recovery": "ambient-recovery-source"
+      }
+    },
+    "solar": {
+      "provider": "demo",
+      "type": "solar",
+      "enabled": true
+    },
+    "ambient-solar-source": {
+      "route": "/api/solar",
+      "provider": "services",
+      "type": "ambient-solar-source",
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services",
+        "upstream": "solar"
+      }
+    },
+    "ambient-solar": {
+      "type": "ambient-solar",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "solar": "ambient-solar-source"
+      }
+    },
+    "weather": {
+      "provider": "demo",
+      "type": "weather",
+      "enabled": true
+    },
+    "ambient-weather-source": {
+      "route": "/api/weather",
+      "provider": "services",
+      "type": "ambient-weather-source",
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services",
+        "upstream": "weather"
+      }
+    },
+    "ambient-weather": {
+      "type": "ambient-weather",
+      "enabled": true,
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services",
+        "weather": "ambient-weather-source"
+      }
+    }
+  },
+  "screens": {
+    "gallery": {
+      "path": "/",
+      "title": "Ambient gallery",
+      "type": "grid",
+      "layout": {
+        "columns": 12,
+        "rows": 6,
+        "gap": 16,
+        "padding": 16
+      },
+      "panels": [
+        {
+          "id": "alerts",
+          "plugin": "ambient-alerts",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "calendar",
+          "plugin": "ambient-calendar",
+          "source": "ambient-calendar-source",
+          "position": {
+            "column": 4,
+            "row": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "camera",
+          "plugin": "ambient-camera",
+          "position": {
+            "column": 7,
+            "row": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "clock",
+          "plugin": "ambient-clock",
+          "source": "ambient-config-source",
+          "position": {
+            "column": 10,
+            "row": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "focus",
+          "plugin": "ambient-focus",
+          "source": "ambient-calendar-source",
+          "position": {
+            "column": 1,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "media",
+          "plugin": "ambient-media",
+          "source": "ambient-media-source",
+          "position": {
+            "column": 4,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "news",
+          "plugin": "ambient-news",
+          "position": {
+            "column": 7,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "portfolio",
+          "plugin": "ambient-portfolio",
+          "source": "ambient-portfolio-source",
+          "position": {
+            "column": 10,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "recovery",
+          "plugin": "ambient-recovery",
+          "source": "ambient-recovery-source",
+          "position": {
+            "column": 1,
+            "row": 5,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "solar",
+          "plugin": "ambient-solar",
+          "source": "ambient-solar-source",
+          "position": {
+            "column": 4,
+            "row": 5,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "id": "weather",
+          "plugin": "ambient-weather",
+          "source": "ambient-weather-source",
+          "position": {
+            "column": 7,
+            "row": 5,
+            "width": 3,
+            "height": 2
+          }
+        }
+      ]
+    },
+    "alerts": {
+      "path": "/screens/alerts",
+      "title": "Ambient Alerts",
+      "type": "single",
+      "panels": [
+        {
+          "id": "alerts",
+          "plugin": "ambient-alerts",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "calendar": {
+      "path": "/screens/calendar",
+      "title": "Ambient Calendar",
+      "type": "single",
+      "panels": [
+        {
+          "id": "calendar",
+          "plugin": "ambient-calendar",
+          "source": "ambient-calendar-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "camera": {
+      "path": "/screens/camera",
+      "title": "Ambient Camera",
+      "type": "single",
+      "panels": [
+        {
+          "id": "camera",
+          "plugin": "ambient-camera",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "clock": {
+      "path": "/screens/clock",
+      "title": "Ambient Clock",
+      "type": "single",
+      "panels": [
+        {
+          "id": "clock",
+          "plugin": "ambient-clock",
+          "source": "ambient-config-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "focus": {
+      "path": "/screens/focus",
+      "title": "Ambient Focus",
+      "type": "single",
+      "panels": [
+        {
+          "id": "focus",
+          "plugin": "ambient-focus",
+          "source": "ambient-calendar-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "media": {
+      "path": "/screens/media",
+      "title": "Ambient Media",
+      "type": "single",
+      "panels": [
+        {
+          "id": "media",
+          "plugin": "ambient-media",
+          "source": "ambient-media-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "news": {
+      "path": "/screens/news",
+      "title": "Ambient news reader",
+      "type": "single",
+      "panels": [
+        {
+          "id": "news",
+          "plugin": "ambient-news",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "portfolio": {
+      "path": "/screens/portfolio",
+      "title": "Ambient Portfolio",
+      "type": "single",
+      "panels": [
+        {
+          "id": "portfolio",
+          "plugin": "ambient-portfolio",
+          "source": "ambient-portfolio-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "recovery": {
+      "path": "/screens/recovery",
+      "title": "Ambient Recovery",
+      "type": "single",
+      "panels": [
+        {
+          "id": "recovery",
+          "plugin": "ambient-recovery",
+          "source": "ambient-recovery-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "solar": {
+      "path": "/screens/solar",
+      "title": "Ambient Solar",
+      "type": "single",
+      "panels": [
+        {
+          "id": "solar",
+          "plugin": "ambient-solar",
+          "source": "ambient-solar-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "weather": {
+      "path": "/screens/weather",
+      "title": "Ambient Weather",
+      "type": "single",
+      "panels": [
+        {
+          "id": "weather",
+          "plugin": "ambient-weather",
+          "source": "ambient-weather-source",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    }
+  }
+}

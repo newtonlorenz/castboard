@@ -1,0 +1,25 @@
+{
+  "version": "1.1.0",
+  "license": "MIT",
+  "category": "Examples",
+  "description": "A small example of a reusable view or data source.",
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "value": {
+        "type": "number",
+        "title": "Value"
+      },
+      "maximum": {
+        "type": "number",
+        "title": "Maximum",
+        "minimum": 1
+      }
+    }
+  },
+  "name": "Configurable readings",
+  "defaultConfig": {
+    "value": 35,
+    "maximum": 100
+  }
+}

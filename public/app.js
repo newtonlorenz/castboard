@@ -1,10 +1,10 @@
-import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.9.0-2';
+import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.10.0';
 
 const dashboard = document.getElementById('dashboard');
 const cleanups = [];
 window.addEventListener('pagehide', () => { for (const cleanup of cleanups.splice(0)) cleanup(); });
 
-import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.9.0-2';
+import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.10.0';
 let previewMounted;
 let previewRenderer;
 function applyScreenAppearance(appearance, branding) {
@@ -87,7 +87,7 @@ function enablePanelAutoFit(element) {
 }
 
 function visibleDesignSignature(config, screenId) {
-  return JSON.stringify({ branding: config.branding, screen: config.screens[screenId] });
+  return JSON.stringify({ branding: config.branding, plugins:config.plugins, screen: config.screens[screenId] });
 }
 
 function watchDesign(config, screen) {

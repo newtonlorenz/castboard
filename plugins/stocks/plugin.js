@@ -56,7 +56,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Stocks',
-    publicConfig: () => ({ title: config.title || (config.provider === 'alpha-vantage' ? 'Markets' : 'Portfolio'), currency: config.currency || 'USD', maxRows: config.maxRows || 6, mode: config.provider === 'alpha-vantage' ? 'watchlist' : 'portfolio' }),
+    publicConfig: () => ({ demo: config.provider==='demo', title: config.title || (config.provider === 'alpha-vantage' ? 'Markets' : 'Portfolio'), currency: config.currency || 'USD', maxRows: config.maxRows || 6, mode: config.provider === 'alpha-vantage' ? 'watchlist' : 'portfolio' }),
     async getData() {
       if (config.provider === 'demo') {
         const positions = [

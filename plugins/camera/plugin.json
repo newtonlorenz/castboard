@@ -1,0 +1,83 @@
+{
+  "name": "Camera",
+  "description": "HTTP images and browser-compatible camera streams.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data provider",
+        "enum": [
+          "demo",
+          "stream",
+          "camera-service"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Camera service URL"
+      },
+      "streamUrl": {
+        "type": "string",
+        "title": "Camera stream URL",
+        "sensitive": true
+      },
+      "name": {
+        "type": "string",
+        "title": "Camera label"
+      },
+      "listPath": {
+        "type": "string",
+        "title": "Camera list path"
+      },
+      "streamPath": {
+        "type": "string",
+        "title": "Stream path template"
+      },
+      "preferredId": {
+        "type": "string",
+        "title": "Preferred camera ID"
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "name": {
+        "type": "string",
+        "title": "Camera label"
+      }
+    }
+  }
+}

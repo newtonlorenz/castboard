@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { extensionDirectories, validateSchema } from './extensions.js';
+import { readPluginManifest } from './plugin-admin.js';
 
 const VALID_ID = /^[a-z][a-z0-9-]*$/;
 const OPTIONAL_HOOKS = ['publicConfig', 'getData', 'action', 'stream', 'handleRequest', 'dispose'];
@@ -14,9 +15,10 @@ function validateDescriptor(plugin, id) {
   }
 }
 
-export async function discoverPlugins({ pluginsDir, config, context }) {
+export async function discoverPlugins({ pluginsDir, config, context, reuse = [] }) {
   const directories = await extensionDirectories(pluginsDir, config, 'plugins', context.configDir);
-  const plugins = [];
+  const plugins = [],created=[];
+  try {
   for (const [instanceId, pluginConfig] of Object.entries(config.plugins || {}).sort(([a], [b]) => a.localeCompare(b))) {
     if (!VALID_ID.test(instanceId)) throw new Error(`Invalid plugin instance ID: ${instanceId}`);
     if (pluginConfig.enabled === false) continue;
@@ -24,26 +26,32 @@ export async function discoverPlugins({ pluginsDir, config, context }) {
     const directory = directories.get(type);
     if (!directory) throw new Error(`Plugin ${instanceId} references missing extension: ${type}`);
     const modulePath = path.join(directory, 'plugin.js');
+    const previous=reuse.find(plugin=>plugin.id===instanceId&&plugin.directory===directory&&plugin._configSignature===JSON.stringify(pluginConfig));
+    if(previous){plugins.push(previous);continue;}
+    const metadata=await readPluginManifest(directory);
     try {
       await fs.access(modulePath);
     } catch {
       throw new Error(`Plugin ${type} is missing plugin.js`);
     }
+    validateSchema(pluginConfig,metadata.settingsSchema,`Plugin ${instanceId} settings`);
     const module = await import(pathToFileURL(modulePath));
     if (typeof module.createPlugin !== 'function') throw new Error(`Plugin ${type} must export createPlugin()`);
     const plugin = await module.createPlugin({ config: pluginConfig, context: { ...context, instanceId, bindings: pluginConfig.bindings || {} } });
+    created.push(plugin);
     validateDescriptor(plugin, type);
     if (plugin.assets !== undefined && (!Array.isArray(plugin.assets) || plugin.assets.some(asset => typeof asset !== 'string' || asset.startsWith('/') || asset.split('/').includes('..')))) throw new Error(`Plugin ${type} assets must be relative package paths`);
     if (plugin.styles && (!Array.isArray(plugin.styles) || plugin.styles.some(asset => !plugin.assets?.includes(asset)))) throw new Error(`Plugin ${type} styles must be declared assets`);
     const widgetPath = path.join(directory, 'widget.js');
     let hasWidget = true;
     try { await fs.access(widgetPath); } catch { hasWidget = false; }
-    plugins.push({ ...plugin, id: instanceId, type, bindings: pluginConfig.bindings || {}, directory: path.dirname(modulePath), hasWidget });
+    plugins.push({ ...metadata, ...plugin, _configSignature:JSON.stringify(pluginConfig), id: instanceId, type, bindings: pluginConfig.bindings || {}, directory: path.dirname(modulePath), hasWidget });
   }
   const instances = new Map(plugins.map(plugin => [plugin.id, plugin]));
   for (const plugin of plugins) for (const [alias, id] of Object.entries(plugin.bindings)) if (!instances.has(id)) throw new Error(`Plugin ${plugin.id} binding ${alias} references missing instance: ${id}`);
   validatePanels(config, plugins);
   return plugins;
+  }catch(error){await Promise.allSettled(created.map(plugin=>plugin.dispose?.()));throw error;}
 }
 
 export function pluginMap(plugins) {

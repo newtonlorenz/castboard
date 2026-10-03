@@ -37,7 +37,7 @@ A source can declare `contract: 'forecast@1'`, `dataSchema` and `capabilities`. 
 
 `optionSchema`, screen-type `layoutSchema`, `positionSchema` and `sizeSchema` drive editor controls and server validation. `actionSchemas` maps allowed action names to request schemas. Advanced JSON fields remain available.
 
-The supported JSON Schema subset is `type` (object, array, string, boolean, number, integer), `required`, `properties`, `additionalProperties:false`, `items`, numeric `minimum` / `maximum`, and `enum`. UI metadata supports `title`, `description` and `default`. Defaults are editor suggestions; modules must supply runtime defaults. This is deliberately a subset, not a general JSON Schema implementation. Use extension validation hooks for richer constraints.
+The supported JSON Schema subset is `type` (object, array, string, boolean, number, integer), `required`, `properties`, `additionalProperties:false`, `items`, numeric `minimum` / `maximum`, and `enum`. UI metadata supports `title`, `description` and `default`; admin settings also support `enumLabels`, `showWhen` and `sensitive`. See [plugin manifests and admin installation](PLUGINS.md#package-metadata). Defaults are editor suggestions; modules must supply runtime defaults. This is deliberately a subset, not a general JSON Schema implementation. Use extension validation hooks for richer constraints.
 
 ## Browser lifecycle
 

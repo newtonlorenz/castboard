@@ -1,0 +1,66 @@
+{
+  "name": "Ambient Media",
+  "description": "Playback, speaker selection, volume, playlists and radio controls.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Ambient displays",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show playback controls",
+        "default": true
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 3600
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show playback controls",
+        "default": true
+      }
+    }
+  },
+  "defaultBindings": {
+    "runtime": "ambient-runtime",
+    "theme": "ambient-theme",
+    "config": "ambient-config-source",
+    "services": "ambient-services",
+    "media": "ambient-media-source",
+    "resources": "ambient-resources",
+    "launch": "ambient-launch-source"
+  },
+  "dependencies": [
+    "ambient-runtime",
+    "ambient-theme",
+    "ambient-config-source",
+    "ambient-services",
+    "ambient-media-source",
+    "ambient-resources",
+    "ambient-launch-source"
+  ]
+}

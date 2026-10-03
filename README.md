@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Your screens. Your data. Your layout.</strong><br>
-  An open-source control plane for beautiful, plugin-powered smart displays.
+  An open-source dashboard builder for beautiful, plugin-powered smart displays.
 </p>
 
 <p align="center">
@@ -56,19 +56,28 @@ npm run init
 npm start
 ```
 
-`npm run init` never overwrites an existing configuration. The starter works without accounts or API keys: local/demo modules render immediately, while the default public RSS headlines need internet access.
+`npm run init` never overwrites an existing configuration. The starter works without accounts or API keys: local/demo plugins render immediately, while the default public RSS headlines need internet access.
 
 Now open:
 
 - [`localhost:8787/setup`](http://localhost:8787/setup) — first-run checks and connection tests
 - [`localhost:8787/admin`](http://localhost:8787/admin) — visual screen studio
+- [`localhost:8787/admin/plugins`](http://localhost:8787/admin/plugins) — install, configure and test plugins
 - [`localhost:8787`](http://localhost:8787) — 10-panel Home dashboard
 - [`localhost:8787/screens/office`](http://localhost:8787/screens/office) — full-screen news wire
 - [`localhost:8787/screens/tablet`](http://localhost:8787/screens/tablet) — responsive tablet flow
 
-Use Connections at `/setup` to inspect configured modules, test data connections, view delivery target counts, check optional tools and discover Cast devices. Configuration checks and connection tests are shown separately. The same report is available in a terminal with `npm run doctor`.
+Use Connections at `/setup` to inspect configured plugins, test data connections, view delivery target counts, check optional tools and discover Cast devices. Configuration checks and connection tests are shown separately. The same report is available in a terminal with `npm run doctor`.
 
-In Studio, drag and resize panels, switch screen types, edit plugin options, and tune fonts, colors, spacing, borders, corners, shadows, and per-panel overrides. **Save & apply** validates and atomically writes the configuration; open displays pick up the design within five seconds.
+In Studio, drag and resize panels, switch screen types, edit plugin options, and tune fonts, colors, spacing, borders, corners, shadows, and per-panel overrides. **Save changes** validates and atomically writes the configuration; open displays pick up the design within five seconds.
+
+## Plugins belong in admin
+
+Use **Plugins** to browse 34 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
+
+The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
+
+![Plugin management with contextual settings](public/assets/castboard-plugins.png)
 
 ## One canvas, any screen
 

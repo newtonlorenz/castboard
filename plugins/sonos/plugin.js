@@ -24,7 +24,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Sonos',
-    publicConfig: () => ({ title: config.title || 'Sonos', controllable }),
+    publicConfig: () => ({ title: config.title || 'Sonos', controllable,showControls:config.showControls!==false }),
     async getData() {
       if (config.provider === 'demo') return normalizeSonos({ playing: true, title: 'Room Radio', artist: 'Castboard FM', album: 'Live', room: 'Kitchen', volume: 28 });
       if (config.provider === 'sonos-http') return normalizeSonos(await fetchJson(`${String(config.baseUrl).replace(/\/$/, '')}${config.statusPath || '/api/sonos/status'}`, { headers: config.headers || {} }, config.timeoutMs || 8000));

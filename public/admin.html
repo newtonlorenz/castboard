@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Castboard · Screens</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
-  <link rel="stylesheet" href="/admin.css?v=0.9.0-2">
+  <link rel="stylesheet" href="/admin.css?v=0.10.0">
 </head>
 <body>
   <header class="topbar">
@@ -14,7 +14,7 @@
       <img class="brand-mark" src="/assets/castboard-logo.svg" alt="">
       <span><strong>Castboard</strong><small>Administration</small></span>
     </a>
-    <nav class="app-nav" aria-label="Administration"><a href="/admin" aria-current="page">Screens</a><a href="/setup">Connections</a></nav>
+    <nav class="app-nav" aria-label="Administration"><a href="/admin" aria-current="page">Screens</a><a href="/admin/plugins">Plugins</a><a href="/setup">Connections</a></nav>
     <div class="topbar-center">
       <span class="status-dot" aria-hidden="true"></span>
       <span id="save-status">Loading design…</span>
@@ -82,7 +82,7 @@
     <aside class="sidebar inspector-sidebar">
       <div class="inspector-tabs" role="tablist" aria-label="Inspector">
         <button type="button" role="tab" class="active" data-inspector="screen">Screen</button>
-        <button type="button" role="tab" data-inspector="panel">Module</button>
+        <button type="button" role="tab" data-inspector="panel">Plugin</button>
       </div>
 
       <div id="screen-inspector" class="inspector-pane">
@@ -179,12 +179,12 @@
           <span></span><strong>No panel selected</strong><p>Select a panel on the canvas or add one from the library.</p>
         </div>
         <div id="panel-fields" hidden>
-          <h2 id="selected-module-name" class="module-heading"></h2>
+          <h2 id="selected-module-name" class="module-heading"></h2><a id="manage-plugin" class="manage-plugin" href="/admin/plugins">Plugin settings</a>
           <label class="field"><span>Data source</span><select id="panel-source"></select></label>
           <div id="extension-option-fields" class="field-grid" hidden></div>
           <section>
 
-            <label class="field"><span>Display title</span><input id="panel-title" data-option="title" placeholder="Module default" autocomplete="off"></label>
+            <label class="field"><span>Display title</span><input id="panel-title" data-option="title" placeholder="Plugin default" autocomplete="off"></label>
             <label class="field check-field"><span>Content sizing</span><span><input id="panel-fit-content" type="checkbox"><span>Fit text to panel<small>Reduce text size to fit this panel.</small></span></span></label>
           </section>
 
@@ -237,12 +237,12 @@
             <button id="reset-panel-style" class="button secondary full" type="button">Clear all overrides</button>
           </details>
 
-          <details><summary>Module and identity</summary>
+          <details><summary>Plugin and identity</summary>
             <label class="field"><span>Panel name (ID)</span><input id="panel-id" data-panel="id" autocomplete="off"></label>
-            <label class="field"><span>Module</span><select id="panel-plugin" data-panel="plugin"></select></label>
+            <label class="field"><span>Plugin</span><select id="panel-plugin" data-panel="plugin"></select></label>
           </details>
           <details><summary>Advanced options</summary>
-            <label class="field"><span>View</span><input id="panel-view" data-option="view" placeholder="Module default" autocomplete="off"></label>
+            <label class="field"><span>View</span><input id="panel-view" data-option="view" placeholder="Plugin default" autocomplete="off"></label>
 
             <label class="field"><span>Options (JSON)</span><textarea id="panel-options" rows="7" spellcheck="false"></textarea></label>
             <p id="options-error" class="field-error" role="alert"></p>
@@ -253,7 +253,7 @@
 
       <section class="plugin-library" id="library" hidden>
         <div class="section-heading compact"><div><h2>Add a panel</h2></div></div>
-        <label class="field"><span>Find a module</span><input id="plugin-search" type="search" placeholder="Search modules"></label>
+        <label class="field"><span>Find a plugin</span><input id="plugin-search" type="search" placeholder="Search plugins"></label>
         <button id="close-library" type="button" class="button secondary full">Close library</button>
         <div id="plugin-list" class="plugin-list"></div>
       </section>
@@ -283,6 +283,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/admin.js?v=0.9.0-2"></script>
+  <script type="module" src="/admin.js?v=0.10.0"></script>
 </body>
 </html>

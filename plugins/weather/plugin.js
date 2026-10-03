@@ -14,7 +14,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Weather',
-    publicConfig: () => ({ label: config.label || '' }),
+    publicConfig: () => ({ demo: config.provider==='demo', label: config.label || '',title:config.title||'Weather' }),
     async getData() {
       if (config.provider === 'demo') return { temperatureC: 22, condition: 'Clear', code: 0, windKph: 11, label: config.label || 'Demo town', updatedAt: demoTimestamp() };
       if (config.provider === 'open-meteo') {

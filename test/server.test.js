@@ -97,7 +97,9 @@ test('admin studio exposes only the editable design catalog', async t => {
   const payload = await response.json();
   const serialized = JSON.stringify(payload);
   assert.equal(payload.design.screens['clock-screen'].title, undefined);
-  assert.deepEqual(payload.catalog.plugins, [{ id: 'clock', type: 'clock', name: 'Clock' }, { id: 'spotify', type: 'spotify', name: 'Spotify' }]);
+  assert.deepEqual(payload.catalog.plugins.map(({id,type,name})=>({id,type,name})), [{ id: 'clock', type: 'clock', name: 'Clock' }, { id: 'spotify', type: 'spotify', name: 'Spotify' }]);
+  assert.equal(payload.catalog.plugins[0].optionSchema.properties.showSeconds.type,'boolean');
+  assert.equal(serialized.includes('settingsSchema'),false);
   assert.equal(serialized.includes('never-public'), false);
   assert.equal(serialized.includes('Private clock display'), false);
   assert.equal(serialized.includes('clock-device'), false);

@@ -1,0 +1,123 @@
+{
+  "name": "News and briefings",
+  "description": "RSS, Atom, Markdown and JSON stories with an interactive reader.",
+  "version": "1.2.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data provider",
+        "enum": [
+          "demo",
+          "rss",
+          "markdown-directory",
+          "http-json",
+          "file-json"
+        ]
+      },
+      "title": {
+        "type": "string",
+        "title": "Default title"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "Markdown directory or JSON file"
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "feeds": {
+        "type": "array",
+        "title": "RSS / Atom feeds",
+        "description": "A list of objects with name and url.",
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        }
+      },
+      "maxFiles": {
+        "type": "integer",
+        "title": "Markdown files to read",
+        "minimum": 1,
+        "maximum": 100
+      },
+      "maxStories": {
+        "type": "integer",
+        "title": "Maximum stories",
+        "minimum": 1,
+        "maximum": 200
+      },
+      "refreshMinutes": {
+        "type": "integer",
+        "title": "Feed refresh \u00b7 minutes",
+        "minimum": 1,
+        "maximum": 1440
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "view": {
+        "type": "string",
+        "title": "Presentation",
+        "enum": [
+          "compact",
+          "list",
+          "wire"
+        ]
+      },
+      "maxStories": {
+        "type": "integer",
+        "title": "Stories to show",
+        "minimum": 1,
+        "maximum": 200
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Seconds per story",
+        "minimum": 1,
+        "maximum": 300
+      }
+    }
+  }
+}

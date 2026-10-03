@@ -87,7 +87,7 @@ export async function buildSetupReport({ config, configPath, plugins }) {
   const pluginReports = Object.entries(config.plugins || {}).filter(([, value]) => value?.enabled !== false).map(([id, value]) => {
     const provider = value.provider || 'local';
     const type = installed.get(id)?.type || id;
-    const [status, label, detail] = PROVIDERS[type]?.[provider] || ['custom', 'Custom plugin', 'Review this plugin’s documentation for setup details.'];
+    const [status, label, detail] = PROVIDERS[type]?.[provider] || (provider==='demo'?['demo','Demo data','Sample data. Configure a source in Plugins.']:['custom', 'Plugin settings', 'Configure this plugin and its source connections in Plugins.']);
     const blockedByTool = type === 'spotify' && provider === 'spotify-player' && !spotifyPlayer.installed;
     return {
       id,
@@ -126,7 +126,7 @@ export async function buildSetupReport({ config, configPath, plugins }) {
 export async function testPluginConnection(plugins, pluginId) {
   const plugin = plugins.find(item => item.id === pluginId);
   if (!plugin) throw Object.assign(new Error(`Plugin not found: ${pluginId}`), { statusCode: 404, code: 'PLUGIN_NOT_FOUND' });
-  if (!plugin.getData) return { ok: true, pluginId, message: 'This plugin runs entirely in the browser.' };
+  if (!plugin.getData) return { ok: true, pluginId, message: 'No data connection to test. This plugin provides display, styling or action support.' };
   const started = Date.now();
   try {
     await plugin.getData();
