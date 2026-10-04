@@ -33,3 +33,9 @@ test('partial sensor failures keep available vehicle data; total connection fail
   data=await plugin.getData();assert.equal(data.batteryPercent,80);assert.equal(data.chargingKw,null);assert.equal(data.charging,null);
   globalThis.fetch=async()=>{throw new Error('private upstream failure');};await assert.rejects(plugin.getData(),error=>error.message==='Home Assistant vehicle sensors are unavailable');
 });
+
+test('compact vehicle views retain selected range, charging state and sample labeling',()=>{
+ const view=nativeVehicle({data:{batteryPercent:75,charging:false,rangeKm:160.9344},options:{compact:true,showPower:false,showRange:true,distanceUnit:'mi',demo:true}});
+ assert.match(view.title,/Sample/);assert.match(view.lines[0].text,/Not charging/);
+ assert.equal(view.lines[1].text,'100 mi range');assert.ok(view.lines.every(line=>line.kind==='small'));
+});

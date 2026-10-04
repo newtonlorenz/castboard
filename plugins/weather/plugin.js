@@ -13,7 +13,7 @@ export function createPlugin({ config, context }) {
     assets: ['style.css', 'forecast.js'],
     styles: ['style.css'],
     name: 'Weather',
-    publicConfig: () => ({ demo: config.provider==='demo', label: config.label || '', title: config.title || 'Weather', view: config.view || 'current', forecastLayout: config.forecastLayout || 'auto', hours: config.hours || 12, days: config.days || 7, refreshSeconds: config.refreshSeconds || 300 }),
+    publicConfig: () => ({compact:config.compact===true,  demo: config.provider==='demo', label: config.label || '', title: config.title || 'Weather', view: config.view || 'current', forecastLayout: config.forecastLayout || 'auto', hours: config.hours || 12, days: config.days || 7, refreshSeconds: config.refreshSeconds || 300 }),
     async getData() {
       if (config.provider === 'demo') return { ...forecastDemo(), label: config.label || 'Demo town' };
       if (config.provider === 'open-meteo') {

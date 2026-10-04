@@ -158,3 +158,17 @@ test('native image identity survives changing data but rejects reassignment and 
   const reconfigured=await service.scene('desk',device);
   assert.notEqual(reconfigured.panels[1].image.resourceId,reassigned.panels[1].image.resourceId);
 });
+
+
+test('display saves preserve environment-backed renderer credentials',async t=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-device-env-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+ const raw=configFixture();raw.embedded={rendererUrl:'http://renderer.example.test',rendererToken:'${RENDERER_KEY}'};
+ const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(raw));
+ const secret='fixture-renderer-secret-at-least-32-characters';
+ const app=await createApp({configPath,env:{RENDERER_KEY:secret},logger:{error(){}}});
+ app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();return app.dispose();});
+ const base=`http://127.0.0.1:${app.server.address().port}`;
+ const report=await(await fetch(base+'/api/admin/devices')).json();
+ const response=await fetch(base+'/api/admin/devices',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({revision:report.revision,action:'update',id:'desk',device:{mode:'frame'}})});
+ assert.equal(response.status,200);const saved=await fs.readFile(configPath,'utf8');assert.equal(JSON.parse(saved).embedded.rendererToken,'${RENDERER_KEY}');assert.equal(saved.includes(secret),false);assert.equal(JSON.parse(saved).devices.desk.mode,'frame');
+});

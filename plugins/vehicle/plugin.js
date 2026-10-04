@@ -12,7 +12,7 @@ export function createPlugin({config,context}) {
   }
   return {
     id:'vehicle',name:'Vehicle',assets:['style.css','model.js'],styles:['style.css'],nativeView:nativeVehicle,
-    publicConfig:()=>({demo:config.provider==='demo',title:config.title || 'Vehicle',label:config.label || '',showPower:config.showPower!==false,showRange:config.showRange===true,distanceUnit:config.distanceUnit || 'km',refreshSeconds:config.refreshSeconds || 30}),
+    publicConfig:()=>({compact:config.compact===true, demo:config.provider==='demo',title:config.title || 'Vehicle',label:config.label || '',showPower:config.showPower!==false,showRange:config.showRange===true,distanceUnit:config.distanceUnit || 'km',refreshSeconds:config.refreshSeconds || 30}),
     async getData(){
       if(config.provider==='demo')return normalizeVehicle({label:config.label || 'Demo vehicle',batteryPercent:72,chargingKw:4.8,charging:true,rangeKm:286,updatedAt:new Date().toISOString()});
       if(config.provider!=='home-assistant')return normalizeVehicle(await readJsonSource(config,context));

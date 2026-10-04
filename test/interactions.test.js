@@ -40,3 +40,10 @@ test('design extraction and saves retain modal compositions and private display 
   assert.equal(draft.screens.details.targets,undefined);
   const merged=mergeDesign(current,draft);assert.equal(merged.screens.details.presentation,'modal');assert.deepEqual(merged.screens.details.viewport,current.screens.details.viewport);assert.deepEqual(merged.screens.details.targets,current.screens.details.targets);assert.deepEqual(merged.screens.home.panels,current.screens.home.panels);
 });
+
+test('whole-panel targets are opt-in booleans and survive design saves',()=>{
+ const current=config();current.screens.home.panels[0].interaction.showButton=false;
+ assert.doesNotThrow(()=>validateConfig(current));
+ const saved=mergeDesign(current,extractDesign(current));assert.equal(saved.screens.home.panels[0].interaction.showButton,false);
+ current.screens.home.panels[0].interaction.showButton='false';assert.throws(()=>validateConfig(current),/showButton must be a boolean/);
+});

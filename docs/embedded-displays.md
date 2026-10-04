@@ -37,6 +37,28 @@ confirmation; the browser and reference native receiver show explicit Cancel and
 Confirm controls. Existing widget-specific controls continue to work in live
 browser/image mode.
 
+For a dense overview, turn off **On tap → Show action button**. The whole
+panel remains a tap target, and a labeled keyboard-focusable control remains
+available. Existing plugin buttons, links and inputs retain their own behavior.
+In JSON this is `interaction.showButton: false`; the default is a visible button.
+Native scenes mark this case with `eventTarget: "panel"`.
+
+### Compact overview example
+
+[`examples/embedded/compact.config.json`](../examples/embedded/compact.config.json)
+is a self-contained 320 × 240 sample: clock, current weather and UV, solar,
+calendar, vehicle and a camera shortcut. Weather and calendar open detail
+compositions, and the camera button opens its refreshable image. The sample uses
+labeled demonstration data; connect each plugin before using it as a live display.
+
+Clock, Weather, Solar, Calendar and Vehicle expose **Compact layout** in Studio.
+This is a panel option, so the same plugin can supply a small overview and a
+larger detail view. Camera's **Shortcut** display mode avoids fetching an image
+for the overview; add an On tap destination and use Snapshot in the detail panel.
+The example is a starting composition, not a mandatory layout for other screens.
+On viewports at most 320 pixels high, browser modals use the full viewport while
+keeping Close and the detail controls visible. Native modals remain detail pages.
+
 ## 2. Register the receiver
 
 Open **Displays → Add display**, enter its name, screen, resolution, drawing mode
@@ -189,7 +211,7 @@ nativeView({data, options}) {
 
 `data` comes from the panel's selected source. `read(alias)` resolves explicit
 bindings. Lines are limited to 40, with 240 characters each; kinds are `metric`,
-`body` or `muted`. Castboard supplies bounds, appearance, freshness and the panel's
+`body`, `muted` or `small` (compact text using the receiver’s smaller font). Castboard supplies bounds, appearance, freshness and the panel's
 configured interaction. Optional `controls` (up to eight) contain `label`,
 `action`, optional `payload` and optional `confirmation`. They operate only the
 panel's assigned source and appear only when device actions are enabled. Spotify

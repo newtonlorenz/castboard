@@ -68,7 +68,7 @@ void CastboardReceiver::network() {
   auto request=[&](const String& path,const String& body,size_t limit,Result* result)->int {
     std::unique_ptr<WiFiClient> client;
     if(base.startsWith("https://")){auto* tls=new WiFiClientSecure();tls->setCACert(settings_.rootCA);client.reset(tls);}else client.reset(new WiFiClient());
-    HTTPClient http;http.setConnectTimeout(3000);http.setTimeout(5000);http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
+    HTTPClient http;http.setConnectTimeout(3000);http.setTimeout(path=="/frame" || path=="/touch" ? 45000 : 15000);http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
     if(!http.begin(*client,base+path))return -1;
     http.addHeader("Authorization",String("Bearer ")+settings_.connectionKey);
     const char* headers[]={"X-Frame-Id","X-Frame-Width","X-Frame-Height","X-Frame-Format"};http.collectHeaders(headers,4);
@@ -191,6 +191,7 @@ void CastboardReceiver::display(Result* result) {
       auto* box=lv_obj_create(canvas_);lv_obj_remove_style_all(box);auto bounds=panel["bounds"];auto style=panel["appearance"];
       lv_obj_set_pos(box,bounds["x"]|0,bounds["y"]|0);lv_obj_set_size(box,bounds["width"]|160,bounds["height"]|100);
       lv_obj_set_style_bg_opa(box,LV_OPA_COVER,0);lv_obj_set_style_bg_color(box,color(style["background"],"#14201e"),0);lv_obj_set_style_text_color(box,color(style["textColor"],"#f3faf7"),0);lv_obj_set_style_radius(box,style["radius"]|12,0);lv_obj_set_style_pad_all(box,style["padding"]|12,0);lv_obj_set_style_pad_row(box,6,0);lv_obj_set_flex_flow(box,LV_FLEX_FLOW_COLUMN);
+      if(panel["event"].is<const char*>() && String(panel["eventTarget"]|"")=="panel")attach(box,panel["event"]);
       const char* title=panel["title"]|"";if(*title)label(box,title,14);
       if(panel["image"].is<JsonObjectConst>()) {
         auto drawn=std::unique_ptr<DrawnImage>(new DrawnImage());
@@ -208,13 +209,13 @@ void CastboardReceiver::display(Result* result) {
       }
       const int scale=style["fontScale"]|100;
       for(JsonObjectConst item:panel["lines"].as<JsonArrayConst>()){
-        const String kind=item["kind"]|"body";auto* text=label(box,item["text"]|"",(kind=="metric"?32:20)*scale/100);
+        const String kind=item["kind"]|"body";auto* text=label(box,item["text"]|"",(kind=="metric"?32:kind=="small"?14:20)*scale/100);
         if(kind=="muted")lv_obj_set_style_text_color(text,color(style["mutedColor"],"#91a49e"),0);
       }
       for(JsonObjectConst control:panel["controls"].as<JsonArrayConst>()){
         auto* btn=button(box,control["label"]|"Action",control["event"]|"");lv_obj_set_width(btn,lv_pct(100));
       }
-      if(panel["event"].is<const char*>()){auto* btn=button(box,panel["label"]|"Open",panel["event"]);lv_obj_set_width(btn,lv_pct(100));}
+      if(panel["event"].is<const char*>() && String(panel["eventTarget"]|"")!="panel"){auto* btn=button(box,panel["label"]|"Open",panel["event"]);lv_obj_set_width(btn,lv_pct(100));}
     }
     if(doc["confirmation"].is<JsonObjectConst>()){
       auto* overlay=lv_obj_create(canvas_);lv_obj_set_size(overlay,lv_pct(100),lv_pct(100));lv_obj_set_pos(overlay,0,0);lv_obj_set_flex_flow(overlay,LV_FLEX_FLOW_COLUMN);

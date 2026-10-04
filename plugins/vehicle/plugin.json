@@ -1,7 +1,7 @@
 {
   "name": "Vehicle",
   "description": "Battery, charging power and range from Home Assistant or your own JSON source.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "category": "Display",
   "defaultConfig": {
@@ -175,6 +175,11 @@
         "title": "Refresh \u00b7 seconds",
         "minimum": 15,
         "maximum": 3600
+      },
+      "compact": {
+        "type": "boolean",
+        "title": "Compact layout",
+        "default": false
       }
     }
   },
@@ -210,6 +215,11 @@
         "title": "Refresh \u00b7 seconds",
         "minimum": 15,
         "maximum": 3600
+      },
+      "compact": {
+        "type": "boolean",
+        "title": "Compact layout",
+        "default": false
       }
     }
   }

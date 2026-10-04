@@ -6,8 +6,9 @@ export function validateInteraction(interaction, screens, plugins, label = 'Inte
   if (interaction === undefined) return;
   if (!interaction || typeof interaction !== 'object' || Array.isArray(interaction)) throw new Error(`${label} must be an object`);
   if (!INTERACTION_TYPES.includes(interaction.type)) throw new Error(`${label} has an unsupported type`);
-  const allowed = new Set(['type', 'screenId', 'source', 'action', 'payload', 'label', 'confirmation']);
+  const allowed = new Set(['type', 'screenId', 'source', 'action', 'payload', 'label', 'confirmation', 'showButton']);
   for (const key of Object.keys(interaction)) if (!allowed.has(key)) throw new Error(`${label}.${key} is not supported`);
+  if(interaction.showButton!==undefined && typeof interaction.showButton!=='boolean')throw new Error(`${label}.showButton must be a boolean`);
   for (const key of ['label', 'confirmation']) if (interaction[key] !== undefined && (typeof interaction[key] !== 'string' || interaction[key].length > 240)) throw new Error(`${label}.${key} must be text up to 240 characters`);
   if (['modal', 'screen'].includes(interaction.type)) {
     if (typeof interaction.screenId !== 'string' || !Object.hasOwn(screens, interaction.screenId)) throw new Error(`${label} references an unknown screen`);

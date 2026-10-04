@@ -35,3 +35,19 @@ test('provider JSON responses are size-bounded and upstream errors are not refle
   globalThis.fetch = async () => new Response('{"error":{"message":"private backend detail"}}', { status: 500 });
   await assert.rejects(fetchJson('http://provider.test'), error => error.message === 'Provider returned HTTP 500');
 });
+
+test('Fronius keeps missing readings unknown and preserves import/export signs',async t=>{
+ const {createPlugin}=await import('../plugins/solar/plugin.js');
+ const original=globalThis.fetch;t.after(()=>{globalThis.fetch=original;});
+ let site={P_PV:0},sentHeaders;globalThis.fetch=async(url,options)=>{sentHeaders=options.headers;return new Response(JSON.stringify({Body:{Data:{Site:site}}}));};
+ const plugin=createPlugin({config:{provider:'fronius',baseUrl:'http://solar.example.test',headers:{Authorization:'Bearer fixture-only'}},context:{}});
+ let data=await plugin.getData();assert.equal(sentHeaders.Authorization,'Bearer fixture-only');assert.equal(JSON.stringify(plugin.publicConfig()).includes('fixture-only'),false);assert.equal(data.generatedKw,0);assert.equal(data.loadKw,null);assert.equal(data.gridImportKw,null);assert.equal(data.gridExportKw,null);
+ site={P_PV:3800,P_Load:-2000,P_Grid:-1800};data=await plugin.getData();assert.equal(data.loadKw,2);assert.equal(data.gridExportKw,1.8);assert.equal(data.gridImportKw,0);
+ site.P_Grid=1200;data=await plugin.getData();assert.equal(data.gridImportKw,1.2);assert.equal(data.gridExportKw,0);
+});
+
+test('native camera shortcuts retain their label when the action button is hidden',()=>{
+ const plugin=createCamera({config:{provider:'demo'},context:{}});
+ const result=plugin.nativeView({data:{},options:{displayMode:'shortcut'},panel:{interaction:{type:'modal',showButton:false,label:'View camera'}}});
+ assert.equal(result.title,'View camera');assert.equal(result.image,undefined);
+});

@@ -84,7 +84,7 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
         if(spec.key!==undefined && (typeof spec.key!=='string' || spec.key.length>128))throw deviceError('Invalid native image identity');
         if(!deviceScope(config,device).plugins.has(source) || !getPlugin(source)?.stream || !params || typeof params!=='object' || Array.isArray(params) || Object.entries(params).some(([key,value])=>!/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(key) || !['string','number','boolean'].includes(typeof value)) || JSON.stringify(params).length>1024) throw deviceError('Invalid native image resource');
         const width=Math.max(1,Math.min(device.width,Math.floor(bounds.width-style.padding*2)));
-        const reserved=(result.title?20:0)+(result.lines.length?result.lines.length*26:0)+controls.length*50+(event?50:0);
+        const reserved=(result.title?20:0)+(result.lines.length?result.lines.length*26:0)+controls.length*50+(event && panel.interaction.showButton!==false?50:0);
         const height=Math.max(1,Math.min(device.height,Math.floor(bounds.height-style.padding*2-reserved-6)));
         if(images.size>=4 || [...images.values()].reduce((sum,item)=>sum+item.width*item.height,0)+width*height>device.width*device.height*2) throw deviceError('Native images exceed the display budget');
         const index=String(panelIndex),fit=spec.fit==='cover'?'cover':'contain';
@@ -92,8 +92,8 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
         image={index,width,height,format:'rgb565',resourceId:hash({revision:item.revision,screenId,panelId:panel.id,source,params,width,height,fit,background:style.background,key:spec.key || ''})};
       }
       return { id: panel.id, bounds: Object.fromEntries(['x', 'y', 'width', 'height'].map(key => [key, Math.round(bounds[key] + (key === 'y' ? offset : 0))])), appearance: appearance(screen, panel), title: boundedText(result.title, 80), state,
-        lines: result.lines.slice(0, 40).map(line => ({ text: boundedText(line.text), kind: ['metric', 'body', 'muted'].includes(line.kind) ? line.kind : 'body' })),
-        ...(event ? { event, label: interactionLabel(panel.interaction, config.screens) } : {}),
+        lines: result.lines.slice(0, 40).map(line => ({ text: boundedText(line.text), kind: ['metric', 'body', 'muted', 'small'].includes(line.kind) ? line.kind : 'body' })),
+        ...(event ? { event, label: interactionLabel(panel.interaction, config.screens), ...(panel.interaction.showButton===false?{eventTarget:'panel'}:{}) } : {}),
         ...(controls.length ? {controls} : {}), ...(image ? {image} : {}),
       };
     }));

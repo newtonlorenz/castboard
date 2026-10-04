@@ -2,6 +2,7 @@ import {title} from '/widget-kit.js';
 
 export function mount({element,config,context}) {
   element.classList.add('camera-widget');
+  if(config.displayMode==='shortcut'){element.classList.add('camera-shortcut');element.textContent=context.panel.interaction && context.panel.interaction.showButton!==false?'':config.title || context.panel.interaction?.label || config.name || 'Camera';return;}
   element.innerHTML=`${config.showTitle===false?'':title(config.title || config.name || 'Camera')}<div class="camera-picture"><p class="camera-placeholder">Connecting…</p></div><footer class="camera-controls"><span class="camera-status" role="status">Waiting for image</span>${config.showRefresh===false?'':'<button type="button" data-camera-refresh data-castboard-ui="local">Refresh image</button>'}</footer>`;
   const picture=element.querySelector('.camera-picture'),status=element.querySelector('.camera-status'),button=element.querySelector('[data-camera-refresh]');
   let current,pending,busy=false,timeout,decodeTimer;

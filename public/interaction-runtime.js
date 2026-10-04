@@ -48,6 +48,7 @@ export function createInteractionRuntime({ config, screenId, host, preview, moun
     // input semantics or turning its nested controls into an invalid button.
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'panel-interaction';
+    if(panel.interaction.showButton===false)button.classList.add('panel-tap-target');
     button.dataset.castboardUi = 'panel';
     button.textContent = panel.interaction.label || ({modal:'Details',screen:'Open',back:'Back',close:'Close',action:'Run action'}[panel.interaction.type]);
     button.setAttribute('aria-label', interactionLabel(panel.interaction, config.screens));

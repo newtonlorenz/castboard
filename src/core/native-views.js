@@ -10,7 +10,7 @@ const media = (name, {data, options}) => ({...view(options.title || name, [line(
 export const nativeViews = {
   clock({ options, branding, now = new Date() }) {
     const timeZone = options.timeZone || branding.timeZone || 'UTC';
-    return view(options.title || 'Clock', [line(new Intl.DateTimeFormat('en', { timeZone, hour: '2-digit', minute: '2-digit', ...(options.showSeconds ? { second: '2-digit' } : {}), hour12: options.hour12 === true }).format(now), 'metric'), line(new Intl.DateTimeFormat('en', { timeZone, weekday: 'long', month: 'short', day: 'numeric' }).format(now))]);
+    return view(options.compact?'':options.title || 'Clock', [line(new Intl.DateTimeFormat('en', { timeZone, hour: '2-digit', minute: '2-digit', ...(options.showSeconds ? { second: '2-digit' } : {}), hour12: options.hour12 === true }).format(now), options.compact?'small':'metric'), line(new Intl.DateTimeFormat('en', { timeZone, weekday: options.compact?'short':'long', month: 'short', day: 'numeric' }).format(now),options.compact?'small':'body')]);
   },
   weather({ data, options, branding = {}, now = new Date() }) {
     const mode = options.view || 'current', zone = data.timeZone || branding.timeZone || 'UTC', lines = [];
@@ -19,6 +19,7 @@ export const nativeViews = {
       if (!value || Number.isNaN(date.getTime())) return '—';
       try { return new Intl.DateTimeFormat('en', format).format(date); } catch { return new Intl.DateTimeFormat('en', {...format,timeZone:'UTC'}).format(date); }
     };
+    if(options.compact && mode==='current')return view('',[line(`${number(data.temperatureC,'°C')} · UV ${number(data.uvIndex)}`,'small'),line((data.condition || 'Conditions unavailable')+(options.demo?' · Sample':''),'small')]);
     if (mode === 'current' || mode === 'forecast') lines.push(line(number(data.temperatureC, '°C'), 'metric'), line(data.condition), line(`Wind ${number(data.windKph, ' km/h')} · UV ${number(data.uvIndex)}`, 'muted'));
     if (mode === 'hourly' || mode === 'forecast') {
       lines.push(line('Next hours', 'muted'));
@@ -37,13 +38,13 @@ export const nativeViews = {
     const lines=list(events,event=>{
       const date=new Date(event.start);
       const time=!event.start || /^\d{4}-\d{2}-\d{2}$/.test(event.start) ? 'All day' : Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat('en',{hour:'2-digit',minute:'2-digit',timeZone:branding.timeZone || 'UTC'}).format(date);
-      return line(`${time}  ${event.title || event.summary || ''}`);
+      return line(`${time}  ${event.title || event.summary || ''}`,options.compact?'small':'body');
     });
-    return view(options.title || 'Calendar',lines.length?lines:[line('No upcoming events')]);
+    return view((options.title || 'Calendar')+(options.demo?' · Sample':''),lines.length?lines:[line('No upcoming events')]);
   },
   news: ({ data, options }) => view(options.title || 'News', list(data.stories, item => line(item.title))),
   stocks: ({ data, options }) => view(options.title || 'Stocks', list(data.positions, item => line(`${item.symbol || item.name || ''}  ${number(item.price)}  ${number(item.changePct, '%')}`))),
-  solar: ({ data, options }) => view(options.title || 'Solar', [line(number(data.generatedKw, ' kW'), 'metric'), line(`Home ${number(data.loadKw, ' kW')}`), line(`Import ${number(data.gridImportKw, ' kW')}`), line(`Export ${number(data.gridExportKw, ' kW')}`)]),
+  solar: ({ data, options }) => options.compact?view((options.title || 'Solar')+(options.demo?' · Sample':''),[line(`Solar ${number(data.generatedKw,' kW')}`,'small'),line(`Home ${number(data.loadKw,' kW')}`,'small'),line(`Import ${number(data.gridImportKw,' kW')}`,'small'),line(`Export ${number(data.gridExportKw,' kW')}`,'small')]):view(options.title || 'Solar', [line(number(data.generatedKw, ' kW'), 'metric'), line(`Home ${number(data.loadKw, ' kW')}`), line(`Import ${number(data.gridImportKw, ' kW')}`), line(`Export ${number(data.gridExportKw, ' kW')}`)]),
   recovery: ({ data, options }) => view(options.title || 'Recovery', [line(number(data.score, ' / 100'), 'metric'), line(data.status), line(data.detail)]),
   async focus({ options, read }) {
     const calendar = await read('calendar');

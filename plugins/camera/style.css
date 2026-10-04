@@ -7,3 +7,5 @@
 .camera-status{font-size:.6875em;line-height:1.3;color:var(--muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .camera-controls button{flex:none;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font-size:.75em;cursor:pointer}
 .camera-controls button:hover:not(:disabled){border-color:var(--accent)}.camera-controls button:disabled{opacity:.45;cursor:wait}
+
+.camera-shortcut{align-items:center;justify-content:center}.camera-shortcut>.panel-interaction:not(.panel-tap-target){inset:4px;max-width:none;width:calc(100% - 8px);height:calc(100% - 8px);padding:4px}

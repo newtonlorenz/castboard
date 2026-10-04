@@ -16,12 +16,12 @@ const temperature=value=>`${number(value)}°`;
 
 export function mount({ element, config, context }) {
   let data,pageIndex=0,lastSize='';
-  element.classList.add('weather-widget');
+  element.classList.add('weather-widget');element.classList.toggle('weather-compact',config.compact===true);
   const dateLabel=(value,options)=>{
     const date=new Date(value);if(!value || Number.isNaN(date.getTime()))return '—';
     try{return new Intl.DateTimeFormat(undefined,options).format(date);}catch{return new Intl.DateTimeFormat(undefined,{...options,timeZone:'UTC'}).format(date);}
   };
-  const current=()=>`<div class="weather-main"><span class="weather-icon">${weatherIcon(data.code)}</span><strong class="weather-temp">${temperature(data.temperatureC)}</strong><span class="weather-condition">${escapeHtml(data.condition || 'Conditions unavailable')}</span></div><div class="weather-detail">Wind ${number(data.windKph)} km/h · UV ${number(data.uvIndex)}</div>`;
+  const current=()=>`<div class="weather-main"><span class="weather-icon">${weatherIcon(data.code)}</span><strong class="weather-temp">${temperature(data.temperatureC)}</strong><span class="weather-condition">${escapeHtml((data.condition || 'Conditions unavailable')+(config.compact && config.demo?' · Sample':''))}</span></div><div class="weather-detail">Wind ${number(data.windKph)} km/h · UV ${number(data.uvIndex)}</div>`;
   const rows=(kind,items,zone)=>items.length?`<div class="weather-rows">${items.map(item=>`<div class="weather-row" data-forecast-time="${escapeHtml(kind==='hourly'?item.time:item.date)}"><time>${escapeHtml(kind==='hourly'?dateLabel(item.time,{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:zone}):dateLabel(`${item.date}T12:00:00Z`,{weekday:'short',timeZone:'UTC'}))}</time><span class="weather-row-icon" title="${escapeHtml(item.condition || '')}">${weatherIcon(item.code)}</span><strong>${kind==='hourly'?temperature(item.temperatureC):`${temperature(item.highC)} <span class="weather-low">${temperature(item.lowC)}</span>`}</strong><small aria-label="Chance of rain">${number(item.precipitationProbability)}%</small></div>`).join('')}</div>`:'<p class="weather-empty">Forecast unavailable</p>';
   const render=(forcePaged=false)=>{
     if(!data)return;
@@ -38,7 +38,7 @@ export function mount({ element, config, context }) {
       if(mode==='hourly' || mode==='forecast')body+=`<section class="weather-forecast"><h3>Next hours</h3>${rows('hourly',(Array.isArray(data.hourly)?data.hourly:[]).filter(hour=>Date.parse(hour.time)+3600000>Date.now()).slice(0,config.hours || 12),zone)}</section>`;
       if(mode==='daily' || mode==='forecast')body+=`<section class="weather-forecast"><h3>Coming days</h3>${rows('daily',(Array.isArray(data.daily)?data.daily:[]).slice(0,config.days || 7),zone)}</section>`;
     }
-    element.innerHTML=`${title(config.title || 'Weather',meta)}<div class="weather-content">${body}</div>${pager}`;
+    element.innerHTML=`${config.compact && mode==='current'?'':title(config.title || 'Weather',meta)}<div class="weather-content">${body}</div>${pager}`;
     const content=element.querySelector('.weather-content');
     if(!paged && mode!=='current' && config.forecastLayout!=='full' && content.scrollHeight>content.clientHeight+1)render(true);
   };

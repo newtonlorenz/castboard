@@ -276,7 +276,7 @@ function renderAll() {
   renderBranding();
   renderInspector();
   renderPluginLibrary();
-  renderCanvas();
+  resizeCanvasFrame();
   updateOpenScreen();
 }
 
@@ -390,6 +390,8 @@ function renderInteractionFields() {
   $('#interaction-destination').hidden=!['modal','screen'].includes(interaction.type);
   $('#interaction-action-fields').hidden=interaction.type!=='action';
   $('#interaction-label-field').hidden=!interaction.type;
+  $('#interaction-show-button-field').hidden=!interaction.type;
+  $('#interaction-show-button').checked=interaction.showButton!==false;
   $('#interaction-screen').replaceChildren(...[{id:'',title:'Choose a destination'},...Object.entries(state.design.screens).map(([id,screen])=>({id,title:screen.title||id}))].map(item=>new Option(item.title,item.id)));
   $('#interaction-screen').value=interaction.screenId || '';
   $('#interaction-edit').disabled=!state.design.screens[interaction.screenId];
@@ -403,6 +405,7 @@ function saveInteractionFields() {
   const type=$('#interaction-type').value;
   if(!type){delete panel.interaction;markDirty('Tap behaviour changed');renderInteractionFields();renderCanvas();return;}
   const next={type};
+  if(!$('#interaction-show-button').checked)next.showButton=false;
   if(['modal','screen'].includes(type))next.screenId=$('#interaction-screen').value;
   if(type==='action'){
     next.action=$('#interaction-action').value.trim();
@@ -1260,6 +1263,7 @@ function bindEvents() {
     else delete panel.interaction;
     markDirty('Tap behaviour changed');renderInteractionFields();renderCanvas();
   };
+  $('#interaction-show-button').addEventListener('change',saveInteractionFields);
   for(const field of ['screen','source','action','payload','label','confirmation'])$('#interaction-'+field).addEventListener('change',()=>{saveInteractionFields();if(field==='screen')$('#interaction-edit').disabled=!state.design.screens[$('#interaction-screen').value];});
   $('#interaction-edit').onclick=()=>{if(!canLeaveField())return;state.selectedScreenId=currentPanel().interaction.screenId;state.selectedPanelId='';rememberScreen();renderAll();setInspectorTab('screen');};
   $('#interaction-create').onclick=()=>{

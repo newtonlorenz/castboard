@@ -37,3 +37,10 @@ existing firmware features before replacing it. Native mode has text, button and
 optional image renderer; they update at the configured display interval. Browser
 widgets and their specific controls use image mode. Neither mode is a full-rate
 video transport.
+
+## USB diagnostics
+
+Open the USB serial console at 115200 baud and send `status`. The example reports
+Wi-Fi state, signal strength, free heap, free PSRAM and receiver errors. It also
+reports every 30 seconds. Credentials are never printed. These diagnostics do
+not confirm that physical pixels or touch alignment are correct.

@@ -5,3 +5,5 @@
 @container(max-height:80px){.vehicle-widget{gap:4px}.vehicle-widget>.widget-head{font-size:.625em;min-height:12px}.vehicle-battery strong{font-size:1.25em}.vehicle-battery svg{width:22px}.vehicle-battery>span{display:none}.vehicle-status{font-size:.625em}}
 
 .vehicle-battery,.vehicle-status,.vehicle-range{max-width:32rem;width:100%}
+
+.vehicle-compact{gap:4px;justify-content:center}.vehicle-compact>.widget-head{font-size:.75em;min-height:0}.vehicle-summary{display:flex;gap:10px;align-items:baseline;font-variant-numeric:tabular-nums}.vehicle-summary strong{font-size:1em}.vehicle-summary span{font-size:.8125em;color:var(--muted)}

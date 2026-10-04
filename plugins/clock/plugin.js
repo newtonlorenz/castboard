@@ -7,6 +7,6 @@ export function createPlugin({ config }) {
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Clock',
-    publicConfig: () => ({ showSeconds: config.showSeconds === true,timeZone:config.timeZone||'',hour12:config.hour12===true,title:config.title||'' }),
+    publicConfig: () => ({compact:config.compact===true,  showSeconds: config.showSeconds === true,timeZone:config.timeZone||'',hour12:config.hour12===true,title:config.title||'' }),
   };
 }

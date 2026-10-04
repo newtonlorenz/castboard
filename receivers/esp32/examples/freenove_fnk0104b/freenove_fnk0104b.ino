@@ -5,8 +5,15 @@
 
 CastboardReceiver receiver({CASTBOARD_SERVER, CASTBOARD_DEVICE_ID, CASTBOARD_KEY, CASTBOARD_ROOT_CA});
 
+void printStatus() {
+  Serial.printf("Wi-Fi: %s | signal: %d dBm | heap: %u | PSRAM free: %u | receiver: %s\n",
+    WiFi.status() == WL_CONNECTED ? "connected" : "offline", WiFi.RSSI(),
+    ESP.getFreeHeap(), ESP.getFreePsram(), *receiver.status() ? receiver.status() : "ready");
+}
+
 void setup() {
   Serial.begin(115200);
+  Serial.println("Castboard FNK0104B receiver. Commands: status, help.");
   freenove_begin();
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
@@ -22,5 +29,18 @@ void loop() {
     lastRetry = millis();
     WiFi.reconnect();
   }
+  // Bounded local diagnostics; never print Wi-Fi or Castboard credentials.
+  static String command;
+  while (Serial.available()) {
+    const char ch = Serial.read();
+    if (ch == '\n' || ch == '\r') {
+      command.trim();
+      if (command == "status") printStatus();
+      else if (command.length()) Serial.println("Commands: status, help.");
+      command = "";
+    } else if (command.length() < 32) command += ch;
+  }
+  static uint32_t lastStatus = 0;
+  if (uint32_t(millis() - lastStatus) >= 30000) { lastStatus = millis(); printStatus(); }
   delay(5);
 }

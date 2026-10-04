@@ -172,6 +172,10 @@ Free Global Quote data is generally end-of-day rather than realtime. The HTTP/fi
 "solar": { "enabled": true, "provider": "fronius", "baseUrl": "http://192.168.1.20" }
 ```
 
+Fronius also accepts optional `headers` for an authenticated proxy. Header values
+remain server-side; use environment references for credentials. Missing power
+readings remain unavailable, while a measured zero stays zero.
+
 ### ICS calendar
 
 ```json

@@ -24,5 +24,7 @@ export function nativeVehicle({data,options={}}) {
   const value=normalizeVehicle(data),lines=[{text:value.batteryPercent===null?'Battery unavailable':`${displayNumber(value.batteryPercent)}% battery`,kind:'metric'},{text:vehicleStatus(value),kind:'body'}];
   if(options.showPower!==false)lines.push({text:value.chargingKw===null?'Charging power unavailable':`${displayNumber(value.chargingKw,1)} kW`,kind:'body'});
   if(options.showRange===true)lines.push({text:value.rangeKm===null?'Range unavailable':`${displayNumber(options.distanceUnit==='mi'?value.rangeKm/1.609344:value.rangeKm)} ${options.distanceUnit==='mi'?'mi':'km'} range`,kind:'muted'});
-  return {title:options.title || value.label || 'Vehicle',lines};
+  const compactLines=[{text:`${displayNumber(value.batteryPercent)}% battery · ${options.showPower!==false?displayNumber(value.chargingKw,1)+' kW':vehicleStatus(value)}`,kind:'small'}];
+  if(options.showRange===true)compactLines.push({...lines.at(-1),kind:'small'});
+  return {title:(options.title || value.label || 'Vehicle')+(options.demo?' · Sample':''),lines:options.compact?compactLines:lines};
 }

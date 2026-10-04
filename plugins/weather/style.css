@@ -18,3 +18,6 @@
 
 .weather-main,.weather-detail,.weather-forecast,.weather-rows{max-width:42rem}
 .weather-pagination{max-width:42rem}
+
+.weather-compact[data-weather-view=current]{justify-content:center;gap:2px}
+.weather-compact[data-weather-view=current] .weather-main{margin:0;gap:6px}.weather-compact[data-weather-view=current] .weather-temp{font-size:1.25em}.weather-compact[data-weather-view=current] .weather-icon{width:20px}.weather-compact[data-weather-view=current] .weather-condition{font-size:.75em;line-height:1.1}.weather-compact[data-weather-view=current] .weather-detail{margin-top:3px;font-size:.6875em}.weather-compact[data-weather-view=current] .weather-content{flex:none;overflow:visible}

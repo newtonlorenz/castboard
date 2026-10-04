@@ -84,7 +84,9 @@ export function changeDeviceConfig(raw, body, defaults = {}) {
       ...(token ? { tokenHash: deviceTokenHash(token) } : {}),
     };
   } else throw deviceError('Unknown display operation');
-  validateDevices(next);
+  // Renderer credentials can be environment references in the raw document.
+  // The server validates those after expansion, before writing the change.
+  validateDevices({...next,embedded:undefined});
   return { config: next, token };
 }
 
