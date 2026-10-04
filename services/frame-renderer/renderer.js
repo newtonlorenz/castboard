@@ -2,6 +2,14 @@ import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 
 const fail = (message, statusCode = 422) => Object.assign(new Error(message), { statusCode });
+const closeTarget = (page, point = null) => page.evaluate(point => {
+  const dialog = [...document.querySelectorAll('.screen-modal[open]')].at(-1);
+  const button = dialog?.querySelector('.screen-modal-header [data-castboard-ui="close"]');
+  if (!button || button.disabled || !dialog.dataset.castboardOverlay) return null;
+  const {x, y, width, height} = button.getBoundingClientRect();
+  if (!width || !height || (point && !button.contains(document.elementFromPoint(point.x, point.y)))) return null;
+  return {id: dialog.dataset.castboardOverlay, x, y, width, height};
+}, point && {x:point.x,y:point.y});
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 32);
 export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleMs = 300000 }) {
   const origin = new URL(appOrigin).origin;
@@ -25,7 +33,7 @@ export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleM
     if (session && session.signature !== signature) { await close(id); session = null; }
     if (!session) {
       if (sessions.size >= maxSessions) throw fail('The image renderer has reached its display limit', 503);
-      session = { signature, busy: true, lastSeen: Date.now(), events: new Map() };
+      session = { signature, busy: true, lastSeen: Date.now(), events: new Map(), frames: new Map() };
       sessions.set(id, session);
     } else session.busy = true;
     session.lastSeen = Date.now();
@@ -61,8 +69,20 @@ export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleM
         if (session.events.has(event.eventId)) {
           if (session.events.get(event.eventId) !== fingerprint) throw fail('Event ID already used', 409);
         } else {
-          if (!session.frameId || event.frameId !== session.frameId) throw fail('The display changed; fetch a fresh frame', 409);
           if (!Number.isFinite(event.x) || !Number.isFinite(event.y) || event.x < 0 || event.y < 0 || event.x >= width || event.y >= height) throw fail('Touch is outside the display');
+          if (!session.frameId || event.frameId !== session.frameId) {
+            // A background clock/camera frame may overtake a queued close tap.
+            // Only the same, still-visible close target can use a recent frame;
+            // arbitrary widget actions and taps from older dialogs stay rejected.
+            const previous = session.frames.get(event.frameId);
+            const current = await closeTarget(session.page, event);
+            if (!previous || Date.now() - previous.at > 15000 || !current ||
+                JSON.stringify(previous.close) !== JSON.stringify(current) ||
+                event.x < current.x || event.x >= current.x + current.width ||
+                event.y < current.y || event.y >= current.y + current.height) {
+              throw fail('The display changed; fetch a fresh frame', 409);
+            }
+          }
           session.events.set(event.eventId, fingerprint);
           if (session.events.size > 128) session.events.delete(session.events.keys().next().value);
           await session.page.mouse.click(event.x, event.y);
@@ -80,7 +100,12 @@ export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleM
           buffer.writeUInt16LE(((data[index] & 0xf8) << 8) | ((data[index + 1] & 0xfc) << 3) | (data[index + 2] >> 3), pixel * 2);
         }
       }
-      session.frameId = hash(buffer);
+      const close = await closeTarget(session.page);
+      // Identical pixels from a newly opened modal are a different touch view.
+      session.frameId = hash(hash(buffer) + (close?.id || ''));
+      session.frames.delete(session.frameId);
+      session.frames.set(session.frameId, { at: Date.now(), close });
+      if (session.frames.size > 8) session.frames.delete(session.frames.keys().next().value);
       return { buffer, frameId: session.frameId, width, height, format };
     } catch (error) {
       if (!session.page || session.page.isClosed() || !session.frameId && error.statusCode !== 409) {

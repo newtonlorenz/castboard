@@ -145,6 +145,21 @@ recovers in place. Physical heap and reconnect testing remain required. The refe
 receiver uses bundled Montserrat fonts; frame mode preserves arbitrary web fonts.
 It reports a resolution mismatch instead of drawing to incorrect coordinates.
 
+On short touchscreens, modal close controls have a wider target with space from
+both screen edges. The reference receiver keeps a pressed view stable until the
+finger lifts, shows “Updating…” immediately for accepted taps, and suppresses
+repeat taps while that update is pending. Network requests run between polls;
+input does not wait for the configured refresh interval, although a download
+already in progress must finish first. The Freenove USB `status` command includes
+accepted tap count and the most recent input-to-update time in milliseconds.
+
+The image renderer retains up to eight recent frame references for 15 seconds.
+An older-frame tap is accepted only on the same visible modal's unchanged close
+button. Navigation changes, different dialogs, moved or covered controls, and
+other stale touches still require a fresh frame. A replacement may briefly need
+three RGB565 buffers if a held touch defers applying an in-flight update.
+
+
 Compile the API/link harness (does not operate a physical panel):
 
 ```sh

@@ -112,3 +112,39 @@ test('display packages upload from Admin and keep their per-device settings on d
   await page.locator('[data-remove-adapter="example-monochrome"]').click();await page.locator('#device-confirm-ok').click();await page.locator('#adapter-example-monochrome').waitFor({state:'detached'});
   assert.deepEqual(errors,[]);
 });
+
+test('a close tap survives a background frame refresh but cannot close a different modal', {skip:!enabled,timeout:60000}, async t=>{
+  const {chromium}=await import('playwright');
+  const {createFrameRenderer}=await import('../renderer.js');
+  const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});
+  t.after(()=>browser.close());
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-close-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const key='only-for-automated-close-button-test';
+  const device={name:'Touch test',screenId:'home',mode:'frame',width:320,height:240,format:'rgb565',refreshMs:3000,enabled:true,touch:true,allowActions:false,tokenHash:deviceTokenHash(key)};
+  const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},plugins:{clock:{enabled:true}},screens:{home:{title:'Home',path:'/',type:'single',panels:[{id:'clock',plugin:'clock',interaction:{type:'modal',screenId:'details'}}]},details:{title:'Details',path:'/details',type:'single',presentation:'modal',panels:[{id:'detail-clock',plugin:'clock'}]}},devices:{image:device}};
+  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
+  const app=await createApp({configPath});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();return app.dispose();});
+  let page;
+  const trackedBrowser={async newContext(options){const context=await browser.newContext(options);context.on('page',value=>{page=value;});return context;}};
+  const renderer=createFrameRenderer({browser:trackedBrowser,appOrigin:`http://127.0.0.1:${app.server.address().port}`});t.after(()=>renderer.dispose());
+  const input={id:'image',token:key,width:320,height:240,format:'rgb565',revision:'close-test'};
+  const home=await renderer.render(input);
+  const open=await renderer.render({...input,event:{frameId:home.frameId,eventId:'open-modal-1',x:80,y:80}});
+  const close=page.locator('.screen-modal-header button');
+  const box=await close.boundingBox();
+  assert.ok(box.width>=80 && box.height>=44,'close must have a large target');
+  assert.ok(box.x>=12 && box.y>=8 && box.x+box.width<=308,'close must be inset from the glass edge');
+  // Force pixels to change without changing the dialog or its controls, like a
+  // clock/camera update arriving while the receiver is transmitting its tap.
+  await page.locator('dialog .widget').evaluate(el=>{el.style.background='#56310e';});
+  const refreshed=await renderer.render(input);assert.notEqual(refreshed.frameId,open.frameId);
+  const tap={frameId:open.frameId,eventId:'close-modal-1',x:box.x+box.width/2,y:box.y+box.height/2};
+  await renderer.render({...input,event:tap});assert.equal(await page.locator('dialog[open]').count(),0);
+  // Retrying the same event is harmless, and an old close never applies to a
+  // freshly opened dialog even when it has identical title and coordinates.
+  await renderer.render({...input,event:tap});assert.equal(await page.locator('dialog[open]').count(),0);
+  const current=await renderer.render(input);
+  await renderer.render({...input,event:{frameId:current.frameId,eventId:'open-modal-2',x:80,y:80}});
+  await assert.rejects(renderer.render({...input,event:{...tap,eventId:'close-old-modal'}}),/fresh frame/);
+  assert.equal(await page.locator('dialog[open]').count(),1);
+});

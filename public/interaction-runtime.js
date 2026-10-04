@@ -1,6 +1,8 @@
 import { initialNavigation, navigate, interactionLabel } from './interaction-model.js';
 import { postPluginAction } from './widget-kit.js';
 
+let overlaySequence = 0;
+
 // The browser and embedded service share navigation semantics. Rendering remains
 // separate so opening a modal never disposes or replaces the underlying panels.
 export function createInteractionRuntime({ config, screenId, host, preview, mount }) {
@@ -66,6 +68,8 @@ export function createInteractionRuntime({ config, screenId, host, preview, moun
   function openOverlay(id, trigger) {
     const screen = config.screens[id];
     const dialog = document.createElement('dialog'); dialog.className = 'screen-modal';
+    // Distinguish successive dialogs even when their title and layout match.
+    dialog.dataset.castboardOverlay = `${Date.now().toString(36)}-${++overlaySequence}`;
     const heading = document.createElement('header'); heading.className = 'screen-modal-header';
     const title = document.createElement('h2'); title.id = `castboard-modal-${overlays.length}`; title.textContent = screen.title || id;
     dialog.setAttribute('aria-labelledby', title.id);

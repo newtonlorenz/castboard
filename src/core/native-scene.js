@@ -29,7 +29,7 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
     const type = getScreenType(screen.type || 'grid');
     if (!type?.nativeLayout) throw deviceError('This layout needs image mode', 422);
     const modal = item.navigation.modals.length > 0;
-    const offset = modal || item.navigation.history.length ? 48 : 0;
+    const offset = modal || item.navigation.history.length ? 64 : 0;
     const viewport = { width: device.width, height: device.height - offset };
     const boxes = await type.nativeLayout(screen, viewport);
     if (!Array.isArray(boxes) || boxes.length !== screen.panels.length || boxes.length > 100) throw deviceError('The native layout returned invalid panel bounds');

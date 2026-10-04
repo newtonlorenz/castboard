@@ -42,7 +42,9 @@ video transport.
 
 Open the USB serial console at 115200 baud and send `status`. The example reports
 Wi-Fi state, signal strength, free heap, free PSRAM, active drawing mode, accepted
-update count and receiver errors. Send `refresh` (or `fetch`) to request the current
+update count, accepted tap count, most recent input-to-update time, and receiver
+errors. A queued tap shows “Updating…” immediately on the display; an existing
+network download can still delay its response. Send `refresh` (or `fetch`) to request the current
 configuration and view immediately in either mode. It does not operate plugins;
 server-side source caching still applies. The example also
 reports every 30 seconds. Credentials are never printed. These diagnostics do

@@ -25,28 +25,33 @@ class CastboardReceiver {
   CastboardReceiver& operator=(const CastboardReceiver&) = delete;
   bool begin(lv_obj_t* parent = nullptr);
   void loop();
-  const char* status() const { return status_.c_str(); }
+  const char* status() const { return inputPending_ ? "Updating..." : status_.c_str(); }
   // Call from the LVGL/application task. Network work remains on its own task.
   void refresh() { refreshRequested_.store(true); }
   const char* mode() const { return native_ ? "native" : "image"; }
   uint32_t updates() const { return updates_; }
+  uint32_t touches() const { return touches_; }
+  uint32_t lastInputMs() const { return lastInputMs_; }
  private:
   struct Event { bool native; char control[96]; char revision[40]; char id[40]; int x; int y; };
   struct NativeImage { String index,resourceId; std::shared_ptr<uint8_t> bytes; size_t length=0; int width=0,height=0; String error; };
   struct DrawnImage { NativeImage value; castboard_lvgl::Image descriptor{}; lv_obj_t* object=nullptr; lv_obj_t* slot=nullptr; };
-  struct Result { uint8_t* bytes=nullptr; size_t length=0; bool native=false; int width=0; int height=0; String revision; String error; String format; std::vector<NativeImage> images; };
+  struct Result { uint8_t* bytes=nullptr; size_t length=0; bool native=false; bool input=false; int width=0; int height=0; String revision; String error; String format; std::vector<NativeImage> images; };
   Settings settings_;
   QueueHandle_t events_=nullptr, results_=nullptr;
   TaskHandle_t task_=nullptr;
   lv_obj_t* parent_=nullptr;
   lv_obj_t* statusLabel_=nullptr;
   lv_obj_t* canvas_=nullptr;
+  lv_obj_t* frameObject_=nullptr;
+  bool pressed_=false;
   castboard_lvgl::Image image_{};
   uint8_t* pixels_=nullptr;
   std::vector<std::unique_ptr<DrawnImage>> nativeImages_;
-  String revision_, status_;
+  String revision_, status_, labelText_;
   bool native_=false;
-  uint32_t updates_=0;
+  uint32_t updates_=0, touches_=0, inputStarted_=0, lastInputMs_=0;
+  std::atomic<bool> inputPending_{false};
   std::atomic<bool> refreshRequested_{false};
   std::atomic<bool> connected_{false};
   static void networkTask(void* self);

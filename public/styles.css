@@ -90,6 +90,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media(max-height:320px){
  .screen-modal{inset:0;margin:0;width:100vw;height:100dvh;max-height:none;border-radius:0}
- .screen-modal-header{box-sizing:border-box;height:48px;padding:2px 6px;gap:8px}
- .screen-modal-header h2{font-size:16px}.screen-modal .screen-modal-content{height:calc(100dvh - 48px);min-height:0}
+ .screen-modal-header{box-sizing:border-box;height:64px;padding:8px 12px;gap:12px}
+ .screen-modal-header button{flex:none;min-width:80px;min-height:44px}
+ .screen-modal-header h2{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .screen-modal-header h2{font-size:16px}.screen-modal .screen-modal-content{height:calc(100dvh - 64px);min-height:0}
 }
