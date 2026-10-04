@@ -70,7 +70,7 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
         }
       }
       return { id: panel.id, bounds: Object.fromEntries(['x', 'y', 'width', 'height'].map(key => [key, Math.round(bounds[key] + (key === 'y' ? offset : 0))])), appearance: appearance(screen, panel), title: boundedText(result.title, 80), state,
-        lines: result.lines.slice(0, 16).map(line => ({ text: boundedText(line.text), kind: ['metric', 'body', 'muted'].includes(line.kind) ? line.kind : 'body' })),
+        lines: result.lines.slice(0, 40).map(line => ({ text: boundedText(line.text), kind: ['metric', 'body', 'muted'].includes(line.kind) ? line.kind : 'body' })),
         ...(event ? { event, label: interactionLabel(panel.interaction, config.screens) } : {}),
         ...(controls.length ? {controls} : {}),
       };

@@ -1,0 +1,7 @@
+.vehicle-widget{display:flex;flex-direction:column;gap:8px}.vehicle-widget>.widget-head{letter-spacing:.02em;text-transform:none;font-size:.75em;min-height:16px}
+.vehicle-battery{display:flex;align-items:center;gap:12px;margin-top:auto}.vehicle-battery svg{width:38px;flex:none;color:var(--accent)}.vehicle-battery strong{font-size:2.25em;font-variant-numeric:tabular-nums;line-height:1.1}.vehicle-battery>span{font-size:.875em;color:var(--muted)}
+.vehicle-status{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.875em;line-height:1.3}.vehicle-status strong{font-size:1em;white-space:nowrap}.vehicle-range{color:var(--muted);font-size:.8125em}.vehicle-status:last-child,.vehicle-range{margin-bottom:auto}
+@container(max-height:110px){.vehicle-battery{gap:8px}.vehicle-battery svg{width:28px}.vehicle-battery strong{font-size:1.5em}.vehicle-battery>span,.vehicle-status{font-size:.75em}.vehicle-range{font-size:.6875em}}
+@container(max-height:80px){.vehicle-widget{gap:4px}.vehicle-widget>.widget-head{font-size:.625em;min-height:12px}.vehicle-battery strong{font-size:1.25em}.vehicle-battery svg{width:22px}.vehicle-battery>span{display:none}.vehicle-status{font-size:.625em}}
+
+.vehicle-battery,.vehicle-status,.vehicle-range{max-width:32rem;width:100%}

@@ -74,7 +74,7 @@ In Studio, drag and resize panels, switch screen types, edit plugin options, and
 
 ## Plugins belong in admin
 
-Use **Plugins** to browse 34 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
+Use **Plugins** to browse 35 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
 
 The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
 

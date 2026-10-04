@@ -1,11 +1,12 @@
 {
   "name": "Weather",
-  "description": "Local weather from Open-Meteo or your own JSON source.",
-  "version": "1.2.0",
+  "description": "Current conditions, UV, hourly and seven-day forecasts from Open-Meteo or your own data.",
+  "version": "1.3.0",
   "license": "MIT",
   "category": "Display",
   "defaultConfig": {
-    "provider": "demo"
+    "provider": "demo",
+    "cacheMs": 300000
   },
   "settingsSchema": {
     "type": "object",
@@ -32,14 +33,14 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache · milliseconds",
+        "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout · milliseconds",
+        "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true
@@ -98,6 +99,54 @@
       "label": {
         "type": "string",
         "title": "Location label"
+      },
+      "view": {
+        "type": "string",
+        "title": "Show",
+        "enum": [
+          "current",
+          "hourly",
+          "daily",
+          "forecast"
+        ],
+        "enumLabels": {
+          "current": "Current weather",
+          "hourly": "Hourly forecast",
+          "daily": "Daily forecast",
+          "forecast": "Current and forecast"
+        }
+      },
+      "hours": {
+        "type": "integer",
+        "title": "Forecast hours",
+        "minimum": 1,
+        "maximum": 24
+      },
+      "days": {
+        "type": "integer",
+        "title": "Forecast days",
+        "minimum": 1,
+        "maximum": 7
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 30,
+        "maximum": 3600
+      },
+      "forecastLayout": {
+        "type": "string",
+        "title": "Forecast layout",
+        "enum": [
+          "auto",
+          "paged",
+          "full"
+        ],
+        "enumLabels": {
+          "auto": "Fit the panel",
+          "paged": "Pages with Previous / Next",
+          "full": "Full forecast (scrollable)"
+        }
       }
     }
   },
@@ -111,6 +160,54 @@
       "title": {
         "type": "string",
         "title": "Title"
+      },
+      "view": {
+        "type": "string",
+        "title": "Show",
+        "enum": [
+          "current",
+          "hourly",
+          "daily",
+          "forecast"
+        ],
+        "enumLabels": {
+          "current": "Current weather",
+          "hourly": "Hourly forecast",
+          "daily": "Daily forecast",
+          "forecast": "Current and forecast"
+        }
+      },
+      "hours": {
+        "type": "integer",
+        "title": "Forecast hours",
+        "minimum": 1,
+        "maximum": 24
+      },
+      "days": {
+        "type": "integer",
+        "title": "Forecast days",
+        "minimum": 1,
+        "maximum": 7
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 30,
+        "maximum": 3600
+      },
+      "forecastLayout": {
+        "type": "string",
+        "title": "Forecast layout",
+        "enum": [
+          "auto",
+          "paged",
+          "full"
+        ],
+        "enumLabels": {
+          "auto": "Fit the panel",
+          "paged": "Pages with Previous / Next",
+          "full": "Full forecast (scrollable)"
+        }
       }
     }
   }

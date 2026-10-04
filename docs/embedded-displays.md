@@ -176,14 +176,14 @@ nativeView({data, options}) {
 ```
 
 `data` comes from the panel's selected source. `read(alias)` resolves explicit
-bindings. Lines are limited to 16, with 240 characters each; kinds are `metric`,
+bindings. Lines are limited to 40, with 240 characters each; kinds are `metric`,
 `body` or `muted`. Castboard supplies bounds, appearance, freshness and the panel's
 configured interaction. Optional `controls` (up to eight) contain `label`,
 `action`, optional `payload` and optional `confirmation`. They operate only the
 panel's assigned source and appear only when device actions are enabled. Spotify
 and Sonos provide Previous, Play/Pause and Next this way. Provider errors render an unavailable state rather than
 made-up values. Standard Clock, Weather, Calendar, News, Stocks, Solar, Recovery,
-Focus, Spotify and Sonos include text views. Focus needs its Calendar/Recovery
+Focus, Spotify, Sonos and Vehicle include text views. Focus needs its Calendar/Recovery
 sources assigned through bindings or another panel. Other plugins use image mode
 until their own native view is supplied.
 
@@ -200,10 +200,11 @@ npm run check
 npm ci --prefix services/frame-renderer
 # Install Chromium once, or set CASTBOARD_CHROMIUM_PATH to an existing binary.
 npx --prefix services/frame-renderer playwright install chromium
-CASTBOARD_BROWSER_TESTS=1 node --test services/frame-renderer/test/browser.test.js
+CASTBOARD_BROWSER_TESTS=1 node --test services/frame-renderer/test/*.test.js
 ```
 
 The browser suite exercises rendering, modal touches, duplicate/stale inputs,
-independent sessions, native parity, safe preview and one-time registration keys.
+independent sessions, native parity, safe preview, one-time registration keys,
+display-plugin uploads and tap-only forecasts at 320 × 240.
 Physical board support still requires a successful board build, installation and
 observed display/touch checks on that board; a protocol test does not establish it.

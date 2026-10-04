@@ -1,0 +1,216 @@
+{
+  "name": "Vehicle",
+  "description": "Battery, charging power and range from Home Assistant or your own JSON source.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display",
+  "defaultConfig": {
+    "provider": "demo",
+    "showPower": true,
+    "showRange": false,
+    "cacheMs": 15000
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "type": "string",
+        "title": "Data source",
+        "enum": [
+          "demo",
+          "home-assistant",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "home-assistant": "Home Assistant",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        }
+      },
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000,
+        "advanced": true
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000,
+        "advanced": true
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        },
+        "advanced": true
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Home Assistant URL",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "token": {
+        "type": "string",
+        "title": "Home Assistant token",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        },
+        "sensitive": true
+      },
+      "batteryEntity": {
+        "type": "string",
+        "title": "Battery percentage entity",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "powerEntity": {
+        "type": "string",
+        "title": "Charging power entity (optional)",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "chargingEntity": {
+        "type": "string",
+        "title": "Charging state entity (optional)",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "rangeEntity": {
+        "type": "string",
+        "title": "Range entity (optional)",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "powerUnit": {
+        "type": "string",
+        "title": "Charging power unit",
+        "enum": [
+          "auto",
+          "W",
+          "kW"
+        ],
+        "enumLabels": {
+          "auto": "Use sensor unit",
+          "W": "Watts",
+          "kW": "Kilowatts"
+        },
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "label": {
+        "type": "string",
+        "title": "Vehicle label"
+      },
+      "showPower": {
+        "type": "boolean",
+        "title": "Show charging power"
+      },
+      "showRange": {
+        "type": "boolean",
+        "title": "Show range"
+      },
+      "distanceUnit": {
+        "type": "string",
+        "title": "Distance unit",
+        "enum": [
+          "km",
+          "mi"
+        ]
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "label": {
+        "type": "string",
+        "title": "Vehicle label"
+      },
+      "showPower": {
+        "type": "boolean",
+        "title": "Show charging power"
+      },
+      "showRange": {
+        "type": "boolean",
+        "title": "Show range"
+      },
+      "distanceUnit": {
+        "type": "string",
+        "title": "Distance unit",
+        "enum": [
+          "km",
+          "mi"
+        ]
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Refresh \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600
+      }
+    }
+  }
+}

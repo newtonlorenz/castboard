@@ -1,6 +1,6 @@
 // Optional, deliberately small views for microcontrollers. Browser widgets keep
 // their richer charts, animation, video and arbitrary HTML in image mode.
-const number = (value, unit = '') => Number.isFinite(Number(value)) && value !== null ? `${Number(value).toLocaleString('en', { maximumFractionDigits: 1 })}${unit}` : '—';
+const number = (value, unit = '') => Number.isFinite(Number(value)) && value !== null && value !== '' ? `${Number(value).toLocaleString('en', { maximumFractionDigits: 1 })}${unit}` : '—';
 const line = (text, kind = 'body') => ({ text: String(text ?? '').slice(0, 240), kind });
 const list = (items, format) => (Array.isArray(items) ? items : []).slice(0, 12).map(format);
 const view = (title, lines) => ({ title, lines: lines.filter(item => item?.text) });
@@ -12,7 +12,26 @@ export const nativeViews = {
     const timeZone = options.timeZone || branding.timeZone || 'UTC';
     return view(options.title || 'Clock', [line(new Intl.DateTimeFormat('en', { timeZone, hour: '2-digit', minute: '2-digit', ...(options.showSeconds ? { second: '2-digit' } : {}), hour12: options.hour12 === true }).format(now), 'metric'), line(new Intl.DateTimeFormat('en', { timeZone, weekday: 'long', month: 'short', day: 'numeric' }).format(now))]);
   },
-  weather: ({ data, options }) => view(options.title || 'Weather', [line(number(data.temperatureC, '°C'), 'metric'), line(data.condition), line(data.label), line(`Wind ${number(data.windKph, ' km/h')}`, 'muted')]),
+  weather({ data, options, branding = {}, now = new Date() }) {
+    const mode = options.view || 'current', zone = data.timeZone || branding.timeZone || 'UTC', lines = [];
+    const dateLabel = (value, format) => {
+      const date = new Date(value);
+      if (!value || Number.isNaN(date.getTime())) return '—';
+      try { return new Intl.DateTimeFormat('en', format).format(date); } catch { return new Intl.DateTimeFormat('en', {...format,timeZone:'UTC'}).format(date); }
+    };
+    if (mode === 'current' || mode === 'forecast') lines.push(line(number(data.temperatureC, '°C'), 'metric'), line(data.condition), line(`Wind ${number(data.windKph, ' km/h')} · UV ${number(data.uvIndex)}`, 'muted'));
+    if (mode === 'hourly' || mode === 'forecast') {
+      lines.push(line('Next hours', 'muted'));
+      const hours = (Array.isArray(data.hourly) ? data.hourly : []).filter(hour => Date.parse(hour.time) + 3600000 > now.getTime()).slice(0, Math.min(24, options.hours || 12));
+      lines.push(...(hours.length ? hours.map(hour => line(`${dateLabel(hour.time, {hour:'2-digit',minute:'2-digit',hour12:false,timeZone:zone})}  ${number(hour.temperatureC, '°C')}  ${hour.condition || ''}`)) : [line('Hourly forecast unavailable')]));
+    }
+    if (mode === 'daily' || mode === 'forecast') {
+      lines.push(line('Coming days', 'muted'));
+      const days = (Array.isArray(data.daily) ? data.daily : []).slice(0, Math.min(7, options.days || 7));
+      lines.push(...(days.length ? days.map(day => line(`${dateLabel(`${day.date}T12:00:00Z`, {weekday:'short',timeZone:'UTC'})}  ${number(day.highC, '°')} / ${number(day.lowC, '°')}  ${day.condition || ''}`)) : [line('Daily forecast unavailable')]));
+    }
+    return view(options.title || 'Weather', lines);
+  },
   calendar({data, options, branding, now = new Date()}) {
     const events=(data.events || []).filter(event=>!event.end || new Date(event.end)>now).slice(0,options.maxEvents || 5);
     const lines=list(events,event=>{
