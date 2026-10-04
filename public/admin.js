@@ -2,8 +2,8 @@ import { validateInteraction } from '/interaction-model.js';
 import { displayKinds, displayKind, preferredDisplay, rememberDisplay } from '/display-guide.js';
 import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
-import { schemaFields } from '/schema-fields.js?v=0.11.0';
-import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.11.0';
+import { schemaFields } from '/schema-fields.js?v=0.13.0';
+import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.13.0';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -1103,7 +1103,7 @@ function validateDesign() {
       panelIds.add(panel.id);
       if (!state.catalog.plugins.some(plugin => plugin.id === panel.plugin)) errors.push(`${panel.id} references unavailable plugin “${panel.plugin}”.`);
       const module = state.catalog.plugins.find(item => item.id === panel.plugin);
-      const source = (state.catalog.sources || []).find(item => item.id === (panel.source || panel.plugin));
+      const source = (state.catalog.sources || []).find(item => item.id === (panel.source || module?.defaultSource || panel.plugin));
       if (module?.inputContract && (!source || source.contract !== module.inputContract)) errors.push(`${panel.id} needs a compatible data source.`);
       if (screen.type === 'grid') {
         const layout = canvasLayout(screen);

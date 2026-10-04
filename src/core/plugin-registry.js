@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { extensionDirectories, validateSchema } from './extensions.js';
-import { readPluginManifest } from './plugin-admin.js';
+import { readPluginManifest, privateField } from './plugin-admin.js';
 
 const VALID_ID = /^[a-z][a-z0-9-]*$/;
 const OPTIONAL_HOOKS = ['publicConfig', 'getData', 'action', 'stream', 'handleRequest', 'dispose', 'nativeView'];
@@ -42,10 +42,28 @@ export async function discoverPlugins({ pluginsDir, config, context, reuse = [] 
     validateDescriptor(plugin, type);
     if (plugin.assets !== undefined && (!Array.isArray(plugin.assets) || plugin.assets.some(asset => typeof asset !== 'string' || asset.startsWith('/') || asset.split('/').includes('..')))) throw new Error(`Plugin ${type} assets must be relative package paths`);
     if (plugin.styles && (!Array.isArray(plugin.styles) || plugin.styles.some(asset => !plugin.assets?.includes(asset)))) throw new Error(`Plugin ${type} styles must be declared assets`);
+    if(pluginConfig.timeZone){try{new Intl.DateTimeFormat('en',{timeZone:pluginConfig.timeZone}).format();}catch{throw new Error('Enter an IANA time zone, such as Europe/Madrid or America/New_York');}}
+    if(pluginConfig.locale){try{new Intl.DateTimeFormat(pluginConfig.locale).format();}catch{throw new Error('Enter a language locale such as en-GB, es-ES or de-DE');}}
+    if((pluginConfig.goodThreshold!==undefined || pluginConfig.warningThreshold!==undefined) && (pluginConfig.goodThreshold ?? 67)<=(pluginConfig.warningThreshold ?? 34))throw new Error('The good score threshold must be higher than the medium score threshold');
+    const appearance=metadata.optionSchema?.properties || {};
+    const displayDefaults={},displayConfig={};
+    for(const [key,field]of Object.entries(appearance)){
+      if(privateField(key,field,pluginConfig[key]))continue;
+      if(field.default!==undefined)displayDefaults[key]=field.default;
+      if(pluginConfig[key]!==undefined)displayConfig[key]=pluginConfig[key];
+    }
+    const publicConfig=plugin.publicConfig;
+    plugin.publicConfig=function(){
+      const exposed=publicConfig ? publicConfig.call(this) : {};
+      if(!exposed || typeof exposed!=='object' || Array.isArray(exposed) || typeof exposed.then==='function')throw new Error(`Plugin ${instanceId}.publicConfig() must return a synchronous object`);
+      return {...displayDefaults,...exposed,...displayConfig};
+    };
+    const sourceAlias=plugin.publicConfig().sourceAlias;
+    if(plugin.inputContract && sourceAlias && pluginConfig.bindings?.[sourceAlias])plugin.defaultSource=pluginConfig.bindings[sourceAlias];
     const widgetPath = path.join(directory, 'widget.js');
     let hasWidget = true;
     try { await fs.access(widgetPath); } catch { hasWidget = false; }
-    plugins.push({ ...metadata, ...plugin, _configSignature:JSON.stringify(pluginConfig), id: instanceId, type, bindings: pluginConfig.bindings || {}, directory: path.dirname(modulePath), hasWidget });
+    plugins.push({ ...metadata, ...plugin, name:pluginConfig.displayName || metadata.name || plugin.name, optionSchema:metadata.optionSchema || plugin.optionSchema, _configSignature:JSON.stringify(pluginConfig), id: instanceId, type, bindings: pluginConfig.bindings || {}, directory: path.dirname(modulePath), hasWidget });
   }
   const instances = new Map(plugins.map(plugin => [plugin.id, plugin]));
   for (const plugin of plugins) for (const [alias, id] of Object.entries(plugin.bindings)) if (!instances.has(id)) throw new Error(`Plugin ${plugin.id} binding ${alias} references missing instance: ${id}`);
@@ -68,7 +86,7 @@ export function validatePanels(config, plugins) {
       for (const [alias, id] of Object.entries(panel.bindings || {})) if (!instances.has(id)) throw new Error(`Panel ${panel.id} binding ${alias} references missing instance: ${id}`);
       if (panel.source && !instances.get(panel.source)?.getData) throw new Error(`Panel ${panel.id} references missing source: ${panel.source}`);
       const view = instances.get(panel.plugin);
-      const source = instances.get(panel.source || panel.plugin);
+      const source = instances.get(panel.source || (panel.bindings?.[view.publicConfig?.().sourceAlias]) || view.defaultSource || panel.plugin);
       if (view.inputContract && view.inputContract !== source?.contract) throw new Error(`Panel ${panel.id} requires ${view.inputContract}, received ${source?.contract || 'untyped source'}`);
       if (panel.interaction?.type === 'action') {
         const source = instances.get(panel.interaction.source || panel.source || panel.plugin);

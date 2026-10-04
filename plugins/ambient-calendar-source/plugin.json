@@ -1,9 +1,9 @@
 {
-  "name": "Ambient calendar source",
-  "description": "Connects a typed display data contract to the configured services source.",
-  "version": "1.0.0",
+  "name": "Calendar Adapter",
+  "description": "Convert a connected calendar plugin or shared service into the timeline format used by dashboard panels.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Sources",
+  "category": "Data connectors",
   "defaultConfig": {
     "route": "/api/calendar",
     "provider": "services"
@@ -19,6 +19,13 @@
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -29,7 +36,9 @@
         "enumLabels": {
           "services": "Shared data service",
           "plugin": "Connected plugin"
-        }
+        },
+        "description": "Choose the compatible data service or connected plugin that supplies this copy.",
+        "group": "Data source"
       },
       "route": {
         "type": "string",
@@ -38,12 +47,15 @@
           "provider": [
             "services"
           ]
-        }
+        },
+        "description": "Route exposed by the shared service, such as /api/weather. Only supported routes can be used.",
+        "group": "Data source"
       },
       "timeZone": {
         "type": "string",
         "title": "Time zone",
-        "description": "Leave empty to use the screen time zone."
+        "description": "Leave empty to use the screen time zone.",
+        "group": "Data source"
       }
     }
   }

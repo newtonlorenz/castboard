@@ -21,10 +21,10 @@ export function chargingState(state) {
 export function displayNumber(value,digits=0){return value===null || value===undefined?'—':Number(value).toLocaleString('en',{maximumFractionDigits:digits});}
 export function vehicleStatus(data){return data.charging===true?'Charging':data.charging===false?'Not charging':'Charging status unavailable';}
 export function nativeVehicle({data,options={}}) {
-  const value=normalizeVehicle(data),lines=[{text:value.batteryPercent===null?'Battery unavailable':`${displayNumber(value.batteryPercent)}% battery`,kind:'metric'},{text:vehicleStatus(value),kind:'body'}];
+  const value=normalizeVehicle(data),lines=[{text:value.batteryPercent===null?'Battery unavailable':`${displayNumber(value.batteryPercent)}% battery`,kind:'metric'},...(options.showStatus===false?[]:[{text:vehicleStatus(value),kind:'body'}])];
   if(options.showPower!==false)lines.push({text:value.chargingKw===null?'Charging power unavailable':`${displayNumber(value.chargingKw,1)} kW`,kind:'body'});
   if(options.showRange===true)lines.push({text:value.rangeKm===null?'Range unavailable':`${displayNumber(options.distanceUnit==='mi'?value.rangeKm/1.609344:value.rangeKm)} ${options.distanceUnit==='mi'?'mi':'km'} range`,kind:'muted'});
-  const compactLines=[{text:`${displayNumber(value.batteryPercent)}% battery · ${options.showPower!==false?displayNumber(value.chargingKw,1)+' kW':vehicleStatus(value)}`,kind:'small'}];
+  const compactLines=[{text:`${displayNumber(value.batteryPercent)}% battery · ${options.showPower!==false?displayNumber(value.chargingKw,1)+' kW':options.showStatus===false?'':vehicleStatus(value)}`,kind:'small'}];
   if(options.showRange===true)compactLines.push({...lines.at(-1),kind:'small'});
   return {title:(options.title || value.label || 'Vehicle')+(options.demo?' · Sample':''),lines:options.compact?compactLines:lines};
 }

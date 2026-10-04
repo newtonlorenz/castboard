@@ -1,30 +1,11 @@
 export async function mount({element,context,config}) {
  const {scope}=await import(context.source('runtime').asset('runtime.js'));
- const {document,request,resourceUrl,setTimeout,setInterval,clearTimeout,clearInterval}=await scope(element,context,"<div class=\"card player-card\">\n            <div class=\"card-label\">Now Playing</div>\n            <div class=\"player-top\">\n                <div id=\"player-art\" class=\"player-art placeholder\" aria-label=\"Player art placeholder\">\u266a</div>\n                <div class=\"player-meta\">\n                    <div class=\"player-kicker\">\n                        <div id=\"player-speaker\" class=\"player-speaker\">Sonos</div>\n                        <div id=\"player-state\" class=\"player-state\" data-state=\"idle\" aria-live=\"polite\">\n                            <span class=\"player-state-eq\" aria-hidden=\"true\"><i></i><i></i><i></i></span>\n                            <span id=\"player-state-label\">Ready</span>\n                        </div>\n                    </div>\n                    <div id=\"player-title\" class=\"player-title\" title=\"Open Spotify Web\">Nothing playing</div>\n                    <div id=\"player-subtitle\" class=\"player-subtitle\">Spotify / Sonos</div>\n                </div>\n            </div>\n            <div class=\"player-controls\">\n                <button class=\"player-btn\" id=\"player-radio\" aria-label=\"Start radio from current song\" title=\"Song Radio\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <circle class=\"icon-fill\" cx=\"12\" cy=\"12\" r=\"2.2\"></circle>\n                        <path d=\"M8.4 8.5a5 5 0 0 0 0 7M15.6 8.5a5 5 0 0 1 0 7\"></path>\n                        <path d=\"M5.6 5.8a8.8 8.8 0 0 0 0 12.4M18.4 5.8a8.8 8.8 0 0 1 0 12.4\"></path>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-prev\" aria-label=\"Previous track\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path d=\"M7 6v12\"></path>\n                        <path class=\"icon-fill\" d=\"M18.2 6.5v11a1 1 0 0 1-1.55.83L8.8 12.83a1 1 0 0 1 0-1.66l7.85-5.5a1 1 0 0 1 1.55.83Z\"></path>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-toggle\" data-state=\"paused\" aria-label=\"Play or pause\">\n                    <svg class=\"player-icon icon-play\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path class=\"icon-fill\" d=\"M8.25 5.7v12.6a1.15 1.15 0 0 0 1.8.95l8.45-6.3a1.18 1.18 0 0 0 0-1.9l-8.45-6.3a1.15 1.15 0 0 0-1.8.95Z\"></path>\n                    </svg>\n                    <svg class=\"player-icon icon-pause\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <rect class=\"icon-fill\" x=\"7\" y=\"5.5\" width=\"3.6\" height=\"13\" rx=\"1.1\"></rect>\n                        <rect class=\"icon-fill\" x=\"13.4\" y=\"5.5\" width=\"3.6\" height=\"13\" rx=\"1.1\"></rect>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-next\" aria-label=\"Next track\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path class=\"icon-fill\" d=\"M5.8 6.5v11a1 1 0 0 0 1.55.83l7.85-5.5a1 1 0 0 0 0-1.66l-7.85-5.5a1 1 0 0 0-1.55.83Z\"></path>\n                        <path d=\"M17 6v12\"></path>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-dj\" aria-label=\"Start Spotify DJ\" title=\"Spotify DJ\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path d=\"M5 15.5v-3M9 18v-8M13 16.5v-5M17 18v-8\"></path>\n                        <path d=\"m18.5 4 .55 1.45L20.5 6l-1.45.55L18.5 8l-.55-1.45L16.5 6l1.45-.55L18.5 4Z\"></path>\n                    </svg>\n                </button>\n            </div>\n            <div class=\"player-actions\">\n                <button class=\"player-select-btn\" id=\"player-choose-speaker\">Choose Sonos</button>\n                <button class=\"player-select-btn\" id=\"player-choose-playlist\">Playlists</button>\n                <button id=\"player-volume\" class=\"player-volume\" type=\"button\">Vol --</button>\n            </div>\n        </div><dialog id=\"link-modal\" class=\"link-modal\">\n        <div class=\"link-modal-panel\">\n            <div class=\"link-modal-topbar\">\n                <div id=\"link-modal-title\" class=\"link-modal-title\">Open link</div>\n                <button id=\"link-modal-cast\" class=\"link-modal-btn\">Open on Hub</button>\n                <button id=\"link-modal-close\" class=\"link-modal-btn\">Close</button>\n            </div>\n            <div class=\"link-modal-body\">\n                <div id=\"link-modal-launcher\" class=\"link-modal-launcher\">\n                    <div class=\"link-modal-launcher-title\">Open Spotify</div>\n                    <div class=\"link-modal-launcher-copy\">Spotify Web does not embed reliably inside DashCast. Use the button below to open it on the Hub, or keep using the Sonos controls here in Dashboard.</div>\n                    <button id=\"link-modal-launcher-btn\" class=\"link-modal-launcher-btn\">Open Spotify on Hub</button>\n                </div>\n                <div id=\"sonos-group-list\" class=\"sonos-group-list\"></div>\n                <div id=\"spotify-playlist-list\" class=\"spotify-playlist-list\"></div>\n                <div id=\"sonos-volume-control\" class=\"sonos-volume-control\">\n                    <div id=\"sonos-volume-value\" class=\"sonos-volume-value\">--</div>\n                    <input id=\"sonos-volume-slider\" class=\"sonos-volume-slider\" type=\"range\" min=\"0\" max=\"100\" step=\"1\" value=\"0\" aria-label=\"Sonos volume\">\n                </div>\n                <iframe id=\"link-modal-frame\" class=\"link-modal-frame\" referrerpolicy=\"no-referrer\"></iframe>\n            </div>\n        </div>\n    </dialog>",'mission.css');
+ const {document,request,setTimeout,setInterval,clearTimeout}=await scope(element,context,"<div class=\"card player-card\">\n            <div class=\"card-label\">Now Playing</div>\n            <div class=\"player-top\">\n                <div id=\"player-art\" class=\"player-art placeholder\" aria-label=\"Player art placeholder\">\u266a</div>\n                <div class=\"player-meta\">\n                    <div class=\"player-kicker\">\n                        <div id=\"player-speaker\" class=\"player-speaker\">Sonos</div>\n                        <div id=\"player-state\" class=\"player-state\" data-state=\"idle\" aria-live=\"polite\">\n                            <span class=\"player-state-eq\" aria-hidden=\"true\"><i></i><i></i><i></i></span>\n                            <span id=\"player-state-label\">Ready</span>\n                        </div>\n                    </div>\n                    <div id=\"player-title\" class=\"player-title\" title=\"Open Spotify Web\">Nothing playing</div>\n                    <div id=\"player-subtitle\" class=\"player-subtitle\">Spotify / Sonos</div>\n                </div>\n            </div>\n            <div class=\"player-controls\">\n                <button class=\"player-btn\" id=\"player-radio\" aria-label=\"Start radio from current song\" title=\"Song Radio\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <circle class=\"icon-fill\" cx=\"12\" cy=\"12\" r=\"2.2\"></circle>\n                        <path d=\"M8.4 8.5a5 5 0 0 0 0 7M15.6 8.5a5 5 0 0 1 0 7\"></path>\n                        <path d=\"M5.6 5.8a8.8 8.8 0 0 0 0 12.4M18.4 5.8a8.8 8.8 0 0 1 0 12.4\"></path>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-prev\" aria-label=\"Previous track\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path d=\"M7 6v12\"></path>\n                        <path class=\"icon-fill\" d=\"M18.2 6.5v11a1 1 0 0 1-1.55.83L8.8 12.83a1 1 0 0 1 0-1.66l7.85-5.5a1 1 0 0 1 1.55.83Z\"></path>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-toggle\" data-state=\"paused\" aria-label=\"Play or pause\">\n                    <svg class=\"player-icon icon-play\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path class=\"icon-fill\" d=\"M8.25 5.7v12.6a1.15 1.15 0 0 0 1.8.95l8.45-6.3a1.18 1.18 0 0 0 0-1.9l-8.45-6.3a1.15 1.15 0 0 0-1.8.95Z\"></path>\n                    </svg>\n                    <svg class=\"player-icon icon-pause\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <rect class=\"icon-fill\" x=\"7\" y=\"5.5\" width=\"3.6\" height=\"13\" rx=\"1.1\"></rect>\n                        <rect class=\"icon-fill\" x=\"13.4\" y=\"5.5\" width=\"3.6\" height=\"13\" rx=\"1.1\"></rect>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-next\" aria-label=\"Next track\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path class=\"icon-fill\" d=\"M5.8 6.5v11a1 1 0 0 0 1.55.83l7.85-5.5a1 1 0 0 0 0-1.66l-7.85-5.5a1 1 0 0 0-1.55.83Z\"></path>\n                        <path d=\"M17 6v12\"></path>\n                    </svg>\n                </button>\n                <button class=\"player-btn\" id=\"player-dj\" aria-label=\"Start Spotify DJ\" title=\"Spotify DJ\">\n                    <svg class=\"player-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">\n                        <path d=\"M5 15.5v-3M9 18v-8M13 16.5v-5M17 18v-8\"></path>\n                        <path d=\"m18.5 4 .55 1.45L20.5 6l-1.45.55L18.5 8l-.55-1.45L16.5 6l1.45-.55L18.5 4Z\"></path>\n                    </svg>\n                </button>\n            </div>\n            <div class=\"player-actions\">\n                <button class=\"player-select-btn\" id=\"player-choose-speaker\">Choose Sonos</button>\n                <button class=\"player-select-btn\" id=\"player-choose-playlist\">Playlists</button>\n                <button id=\"player-volume\" class=\"player-volume\" type=\"button\">Vol --</button>\n            </div>\n        </div><dialog id=\"link-modal\" class=\"link-modal\">\n        <div class=\"link-modal-panel\">\n            <div class=\"link-modal-topbar\">\n                <div id=\"link-modal-title\" class=\"link-modal-title\">Open link</div>\n                <button id=\"link-modal-cast\" class=\"link-modal-btn\">Open on Hub</button>\n                <button id=\"link-modal-close\" class=\"link-modal-btn\">Close</button>\n            </div>\n            <div class=\"link-modal-body\">\n                <div id=\"link-modal-launcher\" class=\"link-modal-launcher\">\n                    <div class=\"link-modal-launcher-title\">Open Spotify</div>\n                    <div class=\"link-modal-launcher-copy\">Spotify Web does not embed reliably inside DashCast. Use the button below to open it on the Hub, or keep using the Sonos controls here in Dashboard.</div>\n                    <button id=\"link-modal-launcher-btn\" class=\"link-modal-launcher-btn\">Open Spotify on Hub</button>\n                </div>\n                <div id=\"sonos-group-list\" class=\"sonos-group-list\"></div>\n                <div id=\"spotify-playlist-list\" class=\"spotify-playlist-list\"></div>\n                <div id=\"sonos-volume-control\" class=\"sonos-volume-control\">\n                    <div id=\"sonos-volume-value\" class=\"sonos-volume-value\">--</div>\n                    <input id=\"sonos-volume-slider\" class=\"sonos-volume-slider\" type=\"range\" min=\"0\" max=\"100\" step=\"1\" value=\"0\" aria-label=\"Sonos volume\">\n                </div>\n                <iframe id=\"link-modal-frame\" class=\"link-modal-frame\" referrerpolicy=\"no-referrer\"></iframe>\n            </div>\n        </div>\n    </dialog>",'mission.css');
 
     if(config.showControls===false) for(const node of document.querySelectorAll('.player-controls,.player-actions,.player-selects'))node.hidden=true;
     // ===== CONFIGURATION =====
 
-    const REFRESH = {
-        CLOCK: 1000,
-        WEATHER: 600000,
-        SOLAR: 15000,
-        RECOVERY: 600000,
-        STATUS: 60000,
-        PORTFOLIO: 15000,
-        CALENDAR: 600000,
-        CAMERA_ALERTS: 10000,
-    };
-
-    let dashConfig = { briefings: [], worldMonitorPort: 3000, weather: {}, calendar: {}, camera: {}, clearcam: {} };
-    let calendarTimeZone = context.app.branding.timeZone;
-
-    // Source colors for calendar
-    const SRC_COLORS = {
-        'Apple': 'var(--src-apple)',
-        'Google': 'var(--src-google)',
-        'Outlook': 'var(--src-outlook)',
-    };
+    const REFRESH = {"STATUS": 60000};
 
     // ===== UTILITY: Fetch with Retry =====
 
@@ -36,87 +17,6 @@ export async function mount({element,context,config}) {
         });
     }
 
-    // ===== UTILITY: Markdown Renderer =====
-
-    function markdownToHtml(md) {
-        if (!md) return '';
-
-        // Handle fenced code blocks first
-        let html = md.replace(/```[\s\S]*?```/g, match => {
-            const code = match.replace(/```\w*\n?/, '').replace(/```$/, '');
-            return '<pre style="background:#222;padding:8px;border-radius:4px;font-size: 14px;color:#7fff00;overflow-x:auto;margin:6px 0;white-space:pre-wrap;">' + code + '</pre>';
-        });
-
-        // Strip markdown tables (keep text)
-        html = html.split('\n').map(line => {
-            if (line.match(/^\|[\s\-\|:]+\|$/)) return '';
-            if (line.match(/^\|/)) return line.replace(/\|/g, ' ').trim();
-            return line;
-        }).join('\n');
-
-        html = html
-            .replace(/^### (.*?)$/gm, '<h3 style="color:var(--accent);margin:10px 0 6px;font-size: 17px;font-weight:700;border-bottom:1px solid #333;padding-bottom:4px;">$1</h3>')
-            .replace(/^## (.*?)$/gm, '<h2 style="color:var(--accent);margin:12px 0 8px;font-size: 18px;font-weight:700;border-bottom:1px solid #444;padding-bottom:4px;">$1</h2>')
-            .replace(/^# (.*?)$/gm, '<h1 style="color:var(--accent);margin:14px 0 10px;font-size: 21px;font-weight:700;">$1</h1>')
-            .replace(/^([^\w\s<]) (.*?)$/gm, (match, emoji, text) => {
-                if (/[\u{1F300}-\u{1FAD6}]/u.test(emoji)) {
-                    return '<h3 style="color:var(--accent);margin:10px 0 6px;font-size: 17px;font-weight:700;border-bottom:1px solid #333;padding-bottom:4px;">' + emoji + ' ' + text + '</h3>';
-                }
-                return match;
-            })
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff;font-weight:600;">$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em style="color:#aaa;">$1</em>')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" style="color:#7fff00;text-decoration:none;">$1</a>')
-            .replace(/^(\d+)\. (.*?)$/gm, '<div style="margin:4px 0 4px 20px;font-size: 16px;">$1. $2</div>')
-            .replace(/^[\-\*] (.*?)$/gm, '<div style="margin:4px 0 4px 20px;font-size: 16px;">&bull; $1</div>')
-            .replace(/`([^`]+)`/g, '<code style="background:#222;padding:2px 4px;color:#7fff00;font-size: 15px;border-radius:2px;">$1</code>')
-            .replace(/^---+$/gm, '<div style="border-top:1px solid #444;margin:8px 0;"></div>')
-            .replace(/\n\n+/g, '</div><div style="margin:6px 0;font-size: 16px;line-height:1.5;">')
-            .replace(/\n/g, '<br>');
-
-        return '<div style="font-size: 16px;line-height:1.5;color:#d0d0d0;">' + html + '</div>';
-    }
-
-    // ===== UTILITY: Currency symbol =====
-
-    function currencySymbol(code) {
-        if (code === 'USD') return '$';
-        if (code === 'GBP') return '\u00a3';
-        return '\u20ac';
-    }
-
-    // ===== UTILITY: Time formatting =====
-
-    function to24Hour(timeStr) {
-        if (!timeStr || timeStr === '?' || timeStr === 'all-day') return timeStr;
-        const match = timeStr.match(/(\d{1,2}):(\d{2})\s?(AM|PM)?/i);
-        if (!match) return timeStr;
-        let hours = parseInt(match[1]);
-        const mins = match[2];
-        const period = match[3] ? match[3].toUpperCase() : null;
-        if (period) {
-            if (period === 'PM' && hours !== 12) hours += 12;
-            if (period === 'AM' && hours === 12) hours = 0;
-        }
-        return String(hours).padStart(2, '0') + ':' + mins;
-    }
-
-    function dashboardTimeParts(date) {
-        var parts = new Intl.DateTimeFormat('en-GB', {
-            timeZone: calendarTimeZone,
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-            hourCycle: 'h23'
-        }).formatToParts(date || new Date());
-        var out = {};
-        parts.forEach(function(part) {
-            if (part.type !== 'literal') out[part.type] = parseInt(part.value, 10);
-        });
-        return out;
-    }
-
-
- dashConfig = await context.source('config').data();
     // ===== STATUS =====
 
     function statusDotClass(status) {
@@ -196,7 +96,7 @@ export async function mount({element,context,config}) {
             var data = await fetchJSON(SONOS_API_BASE + '/api/sonos/groups');
             var groups = data.groups || [];
             if (!groups.length) {
-                groupList.innerHTML = '<div class="sonos-group-empty">No Sonos groups discovered on the LAN right now. The local Sonos service is running, but this Mac cannot currently see any Sonos speakers.</div>';
+                groupList.innerHTML = '<div class="sonos-group-empty">No speakers found. Check that your media service can reach the speakers on your network.</div>';
                 return;
             }
             groupList.innerHTML = groups.map(function(group) {
@@ -675,6 +575,5 @@ export async function mount({element,context,config}) {
 
     loadPlayer();
     setInterval(loadPlayer, config.refreshSeconds ? config.refreshSeconds*1000 : REFRESH.STATUS);
-
 
 }

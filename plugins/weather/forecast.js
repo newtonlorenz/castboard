@@ -57,3 +57,8 @@ export function forecastPages(data, options = {}, height = 200, now = Date.now()
   if(mode==='daily' || mode==='forecast')add('daily',data.daily,Math.max(1,Math.min(7,options.days || 7)),'Days');
   return pages;
 }
+
+export function displayForecast(data,options={}) {
+ const convert=value=>finite(value)===null?null:options.temperatureUnit==='fahrenheit'?Number(value)*9/5+32:Number(value);
+ return {...data,temperatureC:convert(data.temperatureC),hourly:(Array.isArray(data.hourly)?data.hourly:[]).map(hour=>({...hour,temperatureC:convert(hour.temperatureC)})),daily:(Array.isArray(data.daily)?data.daily:[]).map(day=>({...day,highC:convert(day.highC),lowC:convert(day.lowC)}))};
+}

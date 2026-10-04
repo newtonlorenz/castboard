@@ -1,27 +1,39 @@
 {
-  "name": "Ambient Media",
-  "description": "Playback, speaker selection, volume, playlists and radio controls.",
-  "version": "1.0.0",
+  "name": "Speaker Controls",
+  "description": "Show speaker playback and optional controls using the connected speaker source.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "showControls": {
         "type": "boolean",
         "title": "Show playback controls",
-        "default": true
+        "default": true,
+        "group": "Display"
       }
     }
   },
@@ -30,18 +42,23 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "showControls": {
         "type": "boolean",
         "title": "Show playback controls",
-        "default": true
+        "default": true,
+        "group": "Display"
       }
     }
   },

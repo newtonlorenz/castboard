@@ -1,13 +1,54 @@
-# Recovery
+# Recovery & Wellbeing
 
-Recovery score and status from your own health data.
+Show a wellbeing score from a JSON source. Adjust score thresholds, detail visibility and update timing.
 
-Install from **Plugins → Library**, then configure the installed copy in admin. Use **Add to a screen** to place a panel; its options are also available in Studio.
+Package ID: `recovery`. Category: Display plugins. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
-Admin settings: Data provider, Default title, Response cache · milliseconds, Request timeout · milliseconds, JSON endpoint, JSON file path, Request headers.
+## Set up
 
-Panel options: Title.
+Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-See [provider payloads](../../docs/PLUGIN-CONTRACTS.md). For package metadata, lifecycle and privacy, see [plugin authoring](../../docs/PLUGINS.md).
+Available sources: **Sample data** (`demo`), **Web endpoint (JSON)** (`http-json`), **Local file (JSON)** (`file-json`).
 
-Code is covered by the project’s [MIT licence](../../LICENSE). Share code and assets; keep deployment settings and credentials private.
+Start with **Sample data** to try the layout without an external service. HTTP and file JSON must match the [canonical contracts](../../docs/PLUGIN-CONTRACTS.md). File paths are relative to the Castboard configuration. JSON files and HTTP responses are limited to 1 MiB. See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
+
+Add the installed copy to a screen with **Add to a screen**. Screen Studio can override the display settings below for each panel. Browser rendering supports phones, tablets, kiosks and Cast displays; image mode renders the same view for an embedded receiver. Native mode is supported only by packages with a native view; use image mode for camera/video and rich companion panels.
+
+A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
+
+## Connection settings
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
+| Data source | `provider` | Sample data, Web endpoint (JSON), Local file (JSON) | demo | Choose where this copy gets its data. Sample data lets you try the display before connecting a service. |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Response cache · milliseconds | `cacheMs` | integer; min 0; max 3600000 | — | How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval. |
+| Request timeout · milliseconds | `timeoutMs` | integer; min 500; max 120000 | — | Maximum wait for an upstream response before showing an unavailable state. |
+| JSON endpoint | `url` | string | — | Endpoint returning the documented JSON data format for this plugin. |
+| JSON file path | `path` | string | — | Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path. |
+| Request headers | `headers` | object | — | Optional request headers as a JSON object. Saved values are hidden and never sent to displays. |
+| Show supporting detail | `showDetail` | boolean | true |  |
+| Good score starts at | `goodThreshold` | integer; min 1; max 100 | 67 |  |
+| Medium score starts at | `warningThreshold` | integer; min 0; max 99 | 34 |  |
+| Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 600 | How often the display requests data. The response cache can reduce upstream requests. |
+
+## Panel overrides
+
+Panel overrides affect only that panel. Source credentials and content settings remain on the installed plugin.
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Show supporting detail | `showDetail` | boolean | true |  |
+| Good score starts at | `goodThreshold` | integer; min 1; max 100 | 67 |  |
+| Medium score starts at | `warningThreshold` | integer; min 0; max 99 | 34 |  |
+| Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 600 | How often the display requests data. The response cache can reduce upstream requests. |
+
+## Privacy and maintenance
+
+Private headers and tokens stay on the server; source connections are separate from display options. Use environment references for credentials; keep local configuration and personal data out of Git. Installing an external plugin loads trusted server code.
+
+See [the catalog](../../docs/PLUGIN-CATALOG.md), [source contracts](../../docs/PLUGIN-CONTRACTS.md), [panel bridge contracts](../../docs/AMBIENT-PLUGINS.md) and [authoring guide](../../docs/PLUGINS.md). Report reproducible issues with the package ID, provider type and redacted data shape.
+
+<!-- Generated by scripts/plugin-docs.mjs; update plugin.json and regenerate. -->

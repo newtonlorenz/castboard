@@ -26,7 +26,7 @@ export async function scope(element, context, markup, skin) {
   if(displayTitle && !title){title=globalThis.document.createElement('div');title.className='card-label';shell.prepend(title);}
   if(title && displayTitle)title.textContent=displayTitle;
   const demoLabel=globalThis.document.createElement('span');demoLabel.textContent='Demo data';demoLabel.hidden=true;demoLabel.style.cssText='position:absolute;right:8px;top:8px;font:11px sans-serif;padding:3px 6px;background:#222;color:#eee;z-index:3;pointer-events:none';shell.append(demoLabel);
-  const markData=data=>{if(data?.demo===true)demoLabel.hidden=false;return data;};
+  const markData=data=>{demoLabel.hidden=data?.demo!==true;return data;};
   const document = {
     getElementById: id => root.querySelector(`#${CSS.escape(id)}`),
     querySelector: selector => root.querySelector(selector),

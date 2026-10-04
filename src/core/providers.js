@@ -8,14 +8,27 @@ export const MAX_PROVIDER_BYTES = 1024 * 1024;
 export function validateProviderConfig(pluginId, config, providers) {
   if (!config.provider || !providers.includes(config.provider)) throw new Error(`Plugin ${pluginId} requires provider: ${providers.join(', ')}`);
   if (config.timeoutMs !== undefined && (!Number.isFinite(Number(config.timeoutMs)) || Number(config.timeoutMs) < 1)) throw new Error(`Plugin ${pluginId} timeoutMs must be positive`);
-  if (config.provider === 'http-json' && !config.url) throw new Error(`Plugin ${pluginId} http-json provider requires url`);
+  if (config.provider === 'http-json') {
+    if (!config.url) throw new Error(`Plugin ${pluginId} http-json provider requires url`);
+    validateHttpUrl(config.url);
+  }
   if (config.provider === 'file-json' && !config.path) throw new Error(`Plugin ${pluginId} file-json provider requires path`);
 }
 
 export async function readTextFile(filePath, maxBytes = MAX_PROVIDER_BYTES) {
-  const data = await fs.readFile(filePath);
-  if (data.length > maxBytes) throw new Error(`Provider file exceeds ${maxBytes} bytes`);
-  return data.toString('utf8');
+  const file = await fs.open(filePath, 'r').catch(() => { throw new Error('Provider file cannot be opened. Check its path and permissions.'); });
+  try {
+    // Bound allocation even when a file grows after the stat or is a special file.
+    const data = Buffer.alloc(maxBytes + 1);
+    let length = 0;
+    while (length < data.length) {
+      const { bytesRead } = await file.read(data, length, data.length - length, null);
+      if (!bytesRead) break;
+      length += bytesRead;
+    }
+    if (length > maxBytes) throw new Error(`Provider file exceeds ${maxBytes} bytes`);
+    return data.subarray(0, length).toString('utf8');
+  } finally { await file.close(); }
 }
 
 async function withTimeout(timeoutMs, externalSignal, operation) {
@@ -149,4 +162,14 @@ export async function proxyStream(url, req, res, { headers = {}, timeoutMs = 120
 
 export function demoTimestamp() {
   return new Date().toISOString();
+}
+
+// Configured sources may use a local network. Credentials belong in headers,
+// and bridge prefixes must not contain a query or fragment.
+export function validateHttpUrl(value, { base = false } = {}) {
+  let url;
+  try { url = new URL(value); } catch { throw new Error('Enter a valid HTTP or HTTPS source URL'); }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Use HTTP or HTTPS and put authentication in headers');
+  if (base && (url.search || url.hash)) throw new Error('Service URL must not include a query or fragment');
+  return url.href.replace(/\/$/, '');
 }

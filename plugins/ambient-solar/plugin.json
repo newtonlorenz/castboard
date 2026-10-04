@@ -1,28 +1,51 @@
 {
-  "name": "Ambient Solar",
-  "description": "Solar generation, local usage and grid import.",
-  "version": "1.0.0",
+  "name": "Energy Panel",
+  "description": "Show generation, use and grid flow supplied by an energy adapter. Choose a title and numeric precision.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "precision": {
         "type": "integer",
         "title": "Decimal places",
         "minimum": 0,
-        "maximum": 3
+        "maximum": 3,
+        "description": "Decimal places shown for power values.",
+        "group": "Display"
+      },
+      "powerUnit": {
+        "type": "string",
+        "title": "Power unit",
+        "enum": [
+          "kw",
+          "w"
+        ],
+        "default": "kw",
+        "group": "Display"
       }
     }
   },
@@ -31,19 +54,35 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "precision": {
         "type": "integer",
         "title": "Decimal places",
         "minimum": 0,
-        "maximum": 3
+        "maximum": 3,
+        "description": "Decimal places shown for power values.",
+        "group": "Display"
+      },
+      "powerUnit": {
+        "type": "string",
+        "title": "Power unit",
+        "enum": [
+          "kw",
+          "w"
+        ],
+        "default": "kw",
+        "group": "Display"
       }
     }
   },

@@ -1,9 +1,9 @@
 {
-  "name": "Vehicle",
-  "description": "Battery, charging power and range from Home Assistant or your own JSON source.",
-  "version": "1.0.1",
+  "name": "Vehicle Status",
+  "description": "Show battery, charging and range from Home Assistant or JSON. Choose entities, units, labels and visible measurements.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Display",
+  "category": "Display plugins",
   "defaultConfig": {
     "provider": "demo",
     "showPower": true,
@@ -13,6 +13,13 @@
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -27,25 +34,33 @@
           "home-assistant": "Home Assistant",
           "http-json": "Web endpoint (JSON)",
           "file-json": "Local file (JSON)"
-        }
+        },
+        "description": "Choose where this copy gets its data. Sample data lets you try the display before connecting a service.",
+        "group": "Data source"
       },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "cacheMs": {
         "type": "integer",
         "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
-        "advanced": true
+        "advanced": true,
+        "description": "How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval.",
+        "group": "Updates"
       },
       "timeoutMs": {
         "type": "integer",
         "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
-        "advanced": true
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
       },
       "url": {
         "type": "string",
@@ -54,7 +69,9 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "description": "Endpoint returning the documented JSON data format for this plugin.",
+        "group": "Data source"
       },
       "path": {
         "type": "string",
@@ -63,7 +80,9 @@
           "provider": [
             "file-json"
           ]
-        }
+        },
+        "description": "Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path.",
+        "group": "Data source"
       },
       "headers": {
         "type": "object",
@@ -74,7 +93,9 @@
             "http-json"
           ]
         },
-        "advanced": true
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
       },
       "baseUrl": {
         "type": "string",
@@ -83,7 +104,9 @@
           "provider": [
             "home-assistant"
           ]
-        }
+        },
+        "description": "Base address of the compatible service, reachable from the Castboard server.",
+        "group": "Data source"
       },
       "token": {
         "type": "string",
@@ -93,7 +116,9 @@
             "home-assistant"
           ]
         },
-        "sensitive": true
+        "sensitive": true,
+        "description": "Authentication token kept on the server. Leave empty when editing to keep the saved value.",
+        "group": "Data source"
       },
       "batteryEntity": {
         "type": "string",
@@ -102,7 +127,8 @@
           "provider": [
             "home-assistant"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "powerEntity": {
         "type": "string",
@@ -111,7 +137,8 @@
           "provider": [
             "home-assistant"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "chargingEntity": {
         "type": "string",
@@ -120,7 +147,8 @@
           "provider": [
             "home-assistant"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "rangeEntity": {
         "type": "string",
@@ -129,7 +157,8 @@
           "provider": [
             "home-assistant"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "powerUnit": {
         "type": "string",
@@ -148,19 +177,23 @@
           "provider": [
             "home-assistant"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "label": {
         "type": "string",
-        "title": "Vehicle label"
+        "title": "Vehicle label",
+        "group": "Display"
       },
       "showPower": {
         "type": "boolean",
-        "title": "Show charging power"
+        "title": "Show charging power",
+        "group": "Display"
       },
       "showRange": {
         "type": "boolean",
-        "title": "Show range"
+        "title": "Show range",
+        "group": "Display"
       },
       "distanceUnit": {
         "type": "string",
@@ -168,18 +201,29 @@
         "enum": [
           "km",
           "mi"
-        ]
+        ],
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 15,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "showStatus": {
+        "type": "boolean",
+        "title": "Show charging status",
+        "default": true,
+        "group": "Display"
       }
     }
   },
@@ -188,19 +232,24 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "label": {
         "type": "string",
-        "title": "Vehicle label"
+        "title": "Vehicle label",
+        "group": "Display"
       },
       "showPower": {
         "type": "boolean",
-        "title": "Show charging power"
+        "title": "Show charging power",
+        "group": "Display"
       },
       "showRange": {
         "type": "boolean",
-        "title": "Show range"
+        "title": "Show range",
+        "group": "Display"
       },
       "distanceUnit": {
         "type": "string",
@@ -208,18 +257,29 @@
         "enum": [
           "km",
           "mi"
-        ]
+        ],
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 15,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "showStatus": {
+        "type": "boolean",
+        "title": "Show charging status",
+        "default": true,
+        "group": "Display"
       }
     }
   }

@@ -7,7 +7,7 @@ export function recordInputValue(field, value, checked) {
   if (field.type === 'boolean' && !field.enum) return checked;
   if (value === '') return undefined;
   if (field.enum) return field.enum.find(option => String(option) === value);
-  return ['number', 'integer'].includes(field.type) ? Number(value) : value;
+  return ['number', 'integer'].includes(field.type) ? Number(value) : field.format === 'date-time' ? new Date(value).toISOString() : value;
 }
 
 // Repeated schema-defined records use ordinary controls while retaining unknown fields.
@@ -27,15 +27,16 @@ export function recordListField(key, schema, initial, changed) {
       const fields=document.createElement('div');fields.className='record-fields';group.append(fields);
       for(const [property,field]of Object.entries(schema.items.properties)){
         const label=document.createElement('label');label.className='field';const name=document.createElement('span');name.textContent=field.title||property;
-        const input=document.createElement(field.enum?'select':'input');
+        const input=document.createElement(field.enum?'select':field.multiline?'textarea':'input');
         if(field.enum){
           const empty=document.createElement('option');empty.value='';empty.textContent='Choose…';input.append(empty);
           for(const value of field.enum){const option=document.createElement('option');option.value=value;option.textContent=field.enumLabels?.[value]||value;input.append(option);}
         }
-        else input.type=field.type==='boolean'?'checkbox':['integer','number'].includes(field.type)?'number':field.format==='uri'?'url':'text';
+        else if(!field.multiline)input.type=field.type==='boolean'?'checkbox':['integer','number'].includes(field.type)?'number':field.format==='uri'?'url':field.format==='date-time'?'datetime-local':'text';
         input.id=`record-${key}-${index}-${property}`;input.required=(field.type!=='boolean'||Boolean(field.enum))&&Boolean(schema.items.required?.includes(property));
+        if(field.multiline)input.rows=4;if(field.maxLength!==undefined)input.maxLength=field.maxLength;if(field.minLength!==undefined)input.minLength=field.minLength;
         if(field.minimum!==undefined)input.min=field.minimum;if(field.maximum!==undefined)input.max=field.maximum;if(field.type==='number')input.step='any';
-        if(field.type==='boolean'&&!field.enum)input.checked=Boolean(record[property]);else input.value=record[property]??'';
+        if(field.type==='boolean'&&!field.enum)input.checked=Boolean(record[property]);else input.value=field.format==='date-time'&&record[property]?new Date(Date.parse(record[property])-new Date(record[property]).getTimezoneOffset()*60000).toISOString().slice(0,16):record[property]??'';
         input.addEventListener(field.enum||field.type==='boolean'?'change':'input',()=>{
           records[index]={...records[index]};
           const value=recordInputValue(field,input.value,input.checked);

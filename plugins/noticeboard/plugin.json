@@ -1,0 +1,217 @@
+{
+  "name": "Noticeboard",
+  "description": "Display announcements, instructions and welcome messages. Enter notices here or connect JSON; optionally schedule each notice.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display plugins",
+  "contract": "noticeboard/1",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General"
+      },
+      "provider": {
+        "type": "string",
+        "title": "Content source",
+        "enum": [
+          "demo",
+          "inline",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "inline": "Enter here",
+          "http-json": "HTTP JSON",
+          "file-json": "JSON file"
+        },
+        "default": "demo",
+        "group": "Data source"
+      },
+      "url": {
+        "type": "string",
+        "format": "uri",
+        "title": "JSON source URL",
+        "group": "Data source",
+        "description": "HTTP or HTTPS endpoint matching this plugin\u2019s documented data format.",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "group": "Data source",
+        "description": "Resolved relative to the Castboard configuration file.",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Private request headers",
+        "private": true,
+        "advanced": true,
+        "group": "Advanced"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Source timeout \u00b7 milliseconds",
+        "minimum": 100,
+        "maximum": 60000,
+        "default": 8000,
+        "advanced": true,
+        "group": "Advanced"
+      },
+      "notices": {
+        "type": "array",
+        "title": "Notices",
+        "group": "Content",
+        "maxItems": 100,
+        "items": {
+          "type": "object",
+          "required": [
+            "body"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "title": "Heading",
+              "maxLength": 160
+            },
+            "body": {
+              "type": "string",
+              "title": "Message",
+              "multiline": true,
+              "maxLength": 12000,
+              "minLength": 1
+            },
+            "enabled": {
+              "type": "boolean",
+              "title": "Show this notice",
+              "default": true
+            },
+            "startsAt": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Show from",
+              "description": "Optional start time."
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Hide after",
+              "description": "Optional expiry time."
+            }
+          }
+        },
+        "itemLabel": "Notice",
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        },
+        "addLabel": "Add notice",
+        "emptyLabel": "Add a notice to write your first announcement."
+      },
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per notice \u00b7 seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Rotate notices automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show previous and next controls",
+        "default": true,
+        "group": "Display"
+      },
+      "emptyText": {
+        "type": "string",
+        "title": "Message when no notices are active",
+        "default": "No current notices",
+        "maxLength": 240,
+        "group": "Display"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per notice \u00b7 seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Rotate notices automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show previous and next controls",
+        "default": true,
+        "group": "Display"
+      },
+      "emptyText": {
+        "type": "string",
+        "title": "Message when no notices are active",
+        "default": "No current notices",
+        "maxLength": 240,
+        "group": "Display"
+      }
+    }
+  }
+}

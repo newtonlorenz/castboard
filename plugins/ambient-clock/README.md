@@ -1,15 +1,63 @@
-# Ambient Clock
+# Clock Panel
 
-Time, date and location with optional seconds and a 12-hour clock.
+Show time and date using shared display settings, with optional time zone and location overrides.
 
-Install from **Plugins → Library**, then configure the installed copy in admin. Use **Add to a screen** to place a panel; its options are also available in Studio.
+Package ID: `ambient-clock`. Category: Dashboard panels. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
-Admin settings: Title, Show seconds, 12-hour clock, Time zone, Location label, Show date.
+## Set up
 
-Panel options: Title, Show seconds, 12-hour clock, Time zone, Location label, Show date.
+Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-Required packages: ambient-runtime, ambient-theme, ambient-config-source, ambient-services. Admin connects these automatically when installing.
+This package uses source connections listed below. Admin installs the required packages and connects them automatically. The [dashboard panel guide](../../docs/AMBIENT-PLUGINS.md) explains bridge routes and canonical source adapters.
 
-See [Ambient setup and contracts](../../docs/AMBIENT-PLUGINS.md). For package metadata, lifecycle and privacy, see [plugin authoring](../../docs/PLUGINS.md).
+Add the installed copy to a screen with **Add to a screen**. Screen Studio can override the display settings below for each panel. Browser rendering supports phones, tablets, kiosks and Cast displays; image mode renders the same view for an embedded receiver. Native mode is supported only by packages with a native view; use image mode for camera/video and rich companion panels.
 
-Code is covered by the project’s [MIT licence](../../LICENSE). Share code and assets; keep deployment settings and credentials private.
+A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
+
+## Connection settings
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Show seconds | `showSeconds` | boolean | true |  |
+| 12-hour clock | `hour12` | boolean | false |  |
+| Time zone | `timeZone` | string | — | IANA time zone, for example Europe/Madrid or America/New_York. Empty uses the shared display time zone. |
+| Location label | `location` | string | — |  |
+| Show date | `showDate` | boolean | true |  |
+| Language and region | `locale` | string | — | Leave empty for the browser’s language, or use a locale such as en-GB or fr-FR. |
+| Date style | `dateStyle` | long, short, numeric | long |  |
+
+## Source connections
+
+| Connection | Default package |
+| --- | --- |
+| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
+| `theme` | [ambient-theme](../ambient-theme/README.md) |
+| `config` | [ambient-config-source](../ambient-config-source/README.md) |
+| `services` | [ambient-services](../ambient-services/README.md) |
+
+Compatible copies can replace these connections in admin.
+
+## Panel overrides
+
+Panel overrides affect only that panel. Source credentials and content settings remain on the installed plugin.
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Show seconds | `showSeconds` | boolean | true |  |
+| 12-hour clock | `hour12` | boolean | false |  |
+| Time zone | `timeZone` | string | — | IANA time zone, for example Europe/Madrid or America/New_York. Empty uses the shared display time zone. |
+| Location label | `location` | string | — |  |
+| Show date | `showDate` | boolean | true |  |
+| Language and region | `locale` | string | — | Leave empty for the browser’s language, or use a locale such as en-GB or fr-FR. |
+| Date style | `dateStyle` | long, short, numeric | long |  |
+
+## Privacy and maintenance
+
+Private headers and tokens stay on the server; source connections are separate from display options. Use environment references for credentials; keep local configuration and personal data out of Git. Installing an external plugin loads trusted server code.
+
+See [the catalog](../../docs/PLUGIN-CATALOG.md), [source contracts](../../docs/PLUGIN-CONTRACTS.md), [panel bridge contracts](../../docs/AMBIENT-PLUGINS.md) and [authoring guide](../../docs/PLUGINS.md). Report reproducible issues with the package ID, provider type and redacted data shape.
+
+<!-- Generated by scripts/plugin-docs.mjs; update plugin.json and regenerate. -->

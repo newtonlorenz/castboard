@@ -1,0 +1,135 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787
+  },
+  "branding": {
+    "name": "Shared space",
+    "timeZone": "UTC"
+  },
+  "defaultScreen": "home",
+  "plugins": {
+    "clock": {
+      "enabled": true
+    },
+    "weather": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "noticeboard": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "countdown": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "ambient-news": {
+      "enabled": true,
+      "provider": "demo",
+      "bindings": {
+        "runtime": "ambient-runtime",
+        "theme": "ambient-theme",
+        "config": "ambient-config-source",
+        "services": "ambient-services"
+      }
+    },
+    "ambient-runtime": {
+      "enabled": true
+    },
+    "ambient-theme": {
+      "enabled": true
+    },
+    "ambient-config-source": {
+      "enabled": true,
+      "bindings": {
+        "services": "ambient-services"
+      }
+    },
+    "ambient-services": {
+      "enabled": true,
+      "provider": "demo"
+    }
+  },
+  "screens": {
+    "home": {
+      "path": "/",
+      "title": "Shared space",
+      "type": "grid",
+      "layout": {
+        "columns": 2,
+        "rows": 2,
+        "gap": 12,
+        "padding": 12
+      },
+      "panels": [
+        {
+          "id": "clock",
+          "plugin": "clock",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        },
+        {
+          "id": "weather",
+          "plugin": "weather",
+          "position": {
+            "column": 2,
+            "row": 1,
+            "width": 1,
+            "height": 1
+          }
+        },
+        {
+          "id": "noticeboard",
+          "plugin": "noticeboard",
+          "position": {
+            "column": 1,
+            "row": 2,
+            "width": 1,
+            "height": 1
+          }
+        },
+        {
+          "id": "countdown",
+          "plugin": "countdown",
+          "position": {
+            "column": 2,
+            "row": 2,
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "news": {
+      "path": "/news",
+      "title": "News",
+      "type": "single",
+      "panels": [
+        {
+          "id": "news",
+          "plugin": "ambient-news"
+        }
+      ]
+    },
+    "forecast": {
+      "path": "/forecast",
+      "title": "Forecast",
+      "type": "single",
+      "panels": [
+        {
+          "id": "forecast",
+          "plugin": "weather",
+          "options": {
+            "view": "forecast",
+            "forecastLayout": "overview"
+          }
+        }
+      ]
+    }
+  }
+}

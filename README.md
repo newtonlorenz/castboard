@@ -331,3 +331,9 @@ Use **Displays** to register a receiver and choose image or native mode. Configu
 reusable modals and navigation under **On tap** in Studio. See the
 [embedded display guide](docs/embedded-displays.md) for the optional Docker image
 renderer, receiver library, protocol and hardware requirements.
+
+## Reusable plugins
+
+The [plugin catalog](docs/PLUGIN-CATALOG.md) describes all 37 bundled display plugins, dashboard panels, source connectors and support packages. Rename installed copies, choose data sources and content filters, and reuse the same source with different panel settings. News Reader replaces the old Office Wire naming while retaining package IDs for existing configurations. Noticeboard and Countdown cover announcements, welcome screens and event timing.
+
+Try [sample layouts for households and shared spaces](examples/community/README.md). Each package guide is generated from its settings so names, accepted values and defaults stay current.

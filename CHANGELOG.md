@@ -2,6 +2,19 @@
 
 Notable changes are documented here. Castboard follows semantic versioning once releases are published.
 
+## 0.13.0 - 2026-10-04
+
+- Clarify names, purposes, categories, settings and per-copy labels across all bundled plugins. News Reader replaces the Office Wire presentation; existing package and instance IDs remain compatible.
+- Add configurable RSS feeds, feed pauses, keyword/category/source filters, duplicate removal, story age and ordering, source refresh and display controls. News Reader also supports canonical JSON and Markdown sources alongside briefing services.
+- Add Noticeboard and Countdown with sample, inline, HTTP and file content, scheduled announcements, local date/time controls, completion/elapsed modes and browser/native views. The library now includes 37 packages.
+- Expand clock, calendar, camera, weather, energy, wellbeing, portfolio, vehicle and media display controls. Weather forecast overview fits the next 24 hours on one page and seven days on a second page.
+- Preserve configured companion sources when adding panels. Fix Fahrenheit feels-like readings, missing and zero values, uncertain currency conversion, empty/error states, optional shared settings, news list actions and reader stability during updates.
+- Bound local provider reads, validate source URLs and string/date settings, escape external calendar labels and keep authentication out of display defaults.
+- Generate package guides and a catalog from manifests, check documentation drift, and add reusable sample layouts for households and shared spaces. Remove unused copied widget helpers.
+- Add regression coverage for every display at 320×240, phone and desktop sizes, plugin configuration, source privacy, notices and countdowns.
+
+Names and configuration keys remain backward compatible. New options inherit sensible defaults; panel overrides affect only that panel. Source credentials remain server-side. Image mode is required for rich companion views and live video; native views are intentionally smaller. This release adds software checks, not physical verification of additional boards.
+
 ## 0.12.0 - 2026-10-04
 
 This release brings together the admin and plugin updates since v0.6.1 with the

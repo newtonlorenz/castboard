@@ -1,9 +1,9 @@
 {
-  "name": "Ambient portfolio source",
-  "description": "Connects a typed display data contract to the configured services source.",
-  "version": "1.0.0",
+  "name": "Portfolio Adapter",
+  "description": "Provide portfolio data to dashboard panels from a compatible upstream plugin or shared service.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Sources",
+  "category": "Data connectors",
   "defaultConfig": {
     "route": "/api/dashboard/portfolio",
     "provider": "services"
@@ -19,6 +19,13 @@
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -29,7 +36,9 @@
         "enumLabels": {
           "services": "Shared data service",
           "plugin": "Connected plugin"
-        }
+        },
+        "description": "Choose the compatible data service or connected plugin that supplies this copy.",
+        "group": "Data source"
       },
       "route": {
         "type": "string",
@@ -38,7 +47,9 @@
           "provider": [
             "services"
           ]
-        }
+        },
+        "description": "Route exposed by the shared service, such as /api/weather. Only supported routes can be used.",
+        "group": "Data source"
       }
     }
   }

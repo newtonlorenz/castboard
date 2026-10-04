@@ -1,3 +1,4 @@
+import {validateHttpUrl} from '../../src/core/providers.js';
 import {fetchJson} from '../../src/core/providers.js';
 const reads=new Set(['/api/config','/api/calendar','/api/weather','/api/solar','/api/whoop','/api/dashboard/portfolio','/api/dashboard/signals','/api/dashboard/status','/api/live-prices','/api/dashboard/theses','/api/camera-alerts','/api/apple-reminders']);
 function route(value,method='GET'){
@@ -11,7 +12,7 @@ function route(value,method='GET'){
 export function demoData(value){
  const pathname=new URL(value,'http://local').pathname,now=new Date().toISOString(),base={demo:true,updatedAt:now,timestamp:now};
  if(pathname==='/api/config')return {...base,weather:{label:'Demo location'},calendar:{timeZone:'UTC'},camera:{},clearcam:{},briefings:[{key:'top-stories',name:"Top stories",emoji:'TS'}]};
- if(pathname==='/api/calendar')return {...base,events:[]};
+ if(pathname==='/api/calendar'){const start=new Date();start.setMinutes(start.getMinutes()+30);const end=new Date(start.getTime()+3600000);return {...base,events:[{id:'sample-event',title:'Planning session · Sample',start:start.toISOString().slice(11,16),end:end.toISOString().slice(11,16),source:'Sample calendar'}]};}
  if(pathname==='/api/weather')return {...base,temp:22,apparentTemp:21,code:1,humidity:56,windspeed:12,uvIndex:2};
  if(pathname==='/api/solar')return {...base,ok:true,generatedKw:2.1,usedSolarKw:1.2,usedGridKw:0.3,gridExportKw:0.9};
  if(pathname==='/api/whoop')return {...base,recovery:{score:82},sleep:{hours:7.8},strain:{score:4.2}};
@@ -24,6 +25,7 @@ export function demoData(value){
  return {...base,items:[],tasks:[],projects:[],tags:[],signals:[]};
 }
 export function createPlugin({config}){
+ if(config.provider==='http-json')validateHttpUrl(config.baseUrl,{base:true});
  if(!['demo','http-json'].includes(config.provider||'demo'))throw new Error('Choose Demo or HTTP JSON');
  if(config.provider==='http-json'){
   let base;try{base=new URL(config.baseUrl);}catch{throw new Error('Enter the service URL');}if(!['http:','https:'].includes(base.protocol))throw new Error('Use an HTTP or HTTPS service URL');

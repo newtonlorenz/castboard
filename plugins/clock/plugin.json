@@ -1,33 +1,82 @@
 {
   "name": "Clock",
-  "description": "Time and date with a configurable time zone.",
-  "version": "1.3.0",
+  "description": "Show local time, a different time zone, or a clock for any location. Choose date style, language and 12- or 24-hour time.",
+  "version": "1.4.0",
   "license": "MIT",
-  "category": "Display",
+  "category": "Display plugins",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Default title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "showSeconds": {
         "type": "boolean",
-        "title": "Show seconds"
+        "title": "Show seconds",
+        "group": "Display"
       },
       "timeZone": {
         "type": "string",
-        "title": "Time zone"
+        "title": "Time zone",
+        "description": "IANA time zone, for example Europe/Madrid or America/New_York. Empty uses the shared display time zone.",
+        "group": "Display"
       },
       "hour12": {
         "type": "boolean",
-        "title": "12-hour clock"
+        "title": "12-hour clock",
+        "group": "Display"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "showDate": {
+        "type": "boolean",
+        "title": "Show date",
+        "default": true,
+        "group": "Display"
+      },
+      "dateStyle": {
+        "type": "string",
+        "title": "Date format",
+        "enum": [
+          "long",
+          "short",
+          "numeric"
+        ],
+        "enumLabels": {
+          "long": "Full weekday and month",
+          "short": "Short weekday and month",
+          "numeric": "Numeric date"
+        },
+        "default": "long",
+        "group": "Display"
+      },
+      "locale": {
+        "type": "string",
+        "title": "Language and date locale",
+        "description": "For example en-GB, en-US, es-ES or de-DE. Empty uses the display language.",
+        "group": "Display"
+      },
+      "location": {
+        "type": "string",
+        "title": "Location label",
+        "description": "Optional label for this clock. Empty uses the screen\u2019s location.",
+        "group": "Display"
       }
     }
   },
@@ -36,24 +85,66 @@
     "properties": {
       "showSeconds": {
         "type": "boolean",
-        "title": "Show seconds"
+        "title": "Show seconds",
+        "group": "Display"
       },
       "timeZone": {
         "type": "string",
-        "title": "Time zone"
+        "title": "Time zone",
+        "description": "IANA time zone, for example Europe/Madrid or America/New_York. Empty uses the shared display time zone.",
+        "group": "Display"
       },
       "hour12": {
         "type": "boolean",
-        "title": "12-hour clock"
+        "title": "12-hour clock",
+        "group": "Display"
       },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "showDate": {
+        "type": "boolean",
+        "title": "Show date",
+        "default": true,
+        "group": "Display"
+      },
+      "dateStyle": {
+        "type": "string",
+        "title": "Date format",
+        "enum": [
+          "long",
+          "short",
+          "numeric"
+        ],
+        "enumLabels": {
+          "long": "Full weekday and month",
+          "short": "Short weekday and month",
+          "numeric": "Numeric date"
+        },
+        "default": "long",
+        "group": "Display"
+      },
+      "locale": {
+        "type": "string",
+        "title": "Language and date locale",
+        "description": "For example en-GB, en-US, es-ES or de-DE. Empty uses the display language.",
+        "group": "Display"
+      },
+      "location": {
+        "type": "string",
+        "title": "Location label",
+        "description": "Optional label for this clock. Empty uses the screen\u2019s location.",
+        "group": "Display"
       }
     }
   }

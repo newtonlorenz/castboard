@@ -1,0 +1,237 @@
+{
+  "name": "Countdown",
+  "description": "Count down to an event, deadline or opening time. Choose a target date and show a completion message or time elapsed.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display plugins",
+  "contract": "countdown/1",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General"
+      },
+      "provider": {
+        "type": "string",
+        "title": "Content source",
+        "enum": [
+          "demo",
+          "inline",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "inline": "Enter here",
+          "http-json": "HTTP JSON",
+          "file-json": "JSON file"
+        },
+        "default": "demo",
+        "group": "Data source"
+      },
+      "url": {
+        "type": "string",
+        "format": "uri",
+        "title": "JSON source URL",
+        "group": "Data source",
+        "description": "HTTP or HTTPS endpoint matching this plugin\u2019s documented data format.",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "group": "Data source",
+        "description": "Resolved relative to the Castboard configuration file.",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Private request headers",
+        "private": true,
+        "advanced": true,
+        "group": "Advanced"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Source timeout \u00b7 milliseconds",
+        "minimum": 100,
+        "maximum": 60000,
+        "default": 8000,
+        "advanced": true,
+        "group": "Advanced"
+      },
+      "target": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Event date and time",
+        "group": "Content",
+        "description": "Choose a local date and time. It is saved with its time zone.",
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        }
+      },
+      "eventTitle": {
+        "type": "string",
+        "title": "Event name",
+        "maxLength": 160,
+        "group": "Content",
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        }
+      },
+      "description": {
+        "type": "string",
+        "title": "Event description",
+        "multiline": true,
+        "maxLength": 2000,
+        "group": "Content",
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        }
+      },
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds",
+        "default": false,
+        "group": "Display"
+      },
+      "showDate": {
+        "type": "boolean",
+        "title": "Show target date",
+        "default": true,
+        "group": "Display"
+      },
+      "afterTarget": {
+        "type": "string",
+        "title": "When the target time is reached",
+        "enum": [
+          "message",
+          "elapsed"
+        ],
+        "enumLabels": {
+          "message": "Show completion message",
+          "elapsed": "Count time elapsed"
+        },
+        "default": "message",
+        "group": "Display"
+      },
+      "completionText": {
+        "type": "string",
+        "title": "Completion message",
+        "default": "The time has arrived",
+        "maxLength": 240,
+        "group": "Display"
+      },
+      "locale": {
+        "type": "string",
+        "title": "Language and region",
+        "description": "Leave empty for the display\u2019s language.",
+        "group": "Display"
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Display time zone",
+        "description": "Leave empty for the screen\u2019s time zone.",
+        "group": "Display"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds",
+        "default": false,
+        "group": "Display"
+      },
+      "showDate": {
+        "type": "boolean",
+        "title": "Show target date",
+        "default": true,
+        "group": "Display"
+      },
+      "afterTarget": {
+        "type": "string",
+        "title": "When the target time is reached",
+        "enum": [
+          "message",
+          "elapsed"
+        ],
+        "enumLabels": {
+          "message": "Show completion message",
+          "elapsed": "Count time elapsed"
+        },
+        "default": "message",
+        "group": "Display"
+      },
+      "completionText": {
+        "type": "string",
+        "title": "Completion message",
+        "default": "The time has arrived",
+        "maxLength": 240,
+        "group": "Display"
+      },
+      "locale": {
+        "type": "string",
+        "title": "Language and region",
+        "description": "Leave empty for the display\u2019s language.",
+        "group": "Display"
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Display time zone",
+        "description": "Leave empty for the screen\u2019s time zone.",
+        "group": "Display"
+      }
+    }
+  }
+}

@@ -1,15 +1,22 @@
 {
-  "name": "Ambient camera resources",
-  "description": "Demo data or a compatible HTTP service for the Ambient display collection.",
-  "version": "1.0.0",
+  "name": "Camera Resources",
+  "description": "Provide camera lists, snapshots and detections to camera panels from sample data or a compatible service.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Sources",
+  "category": "Data connectors",
   "defaultConfig": {
     "provider": "demo"
   },
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -20,7 +27,9 @@
         "enumLabels": {
           "demo": "Sample data",
           "http-json": "Web endpoint (JSON)"
-        }
+        },
+        "description": "Choose where this copy gets its data. Sample data lets you try the display before connecting a service.",
+        "group": "Data source"
       },
       "baseUrl": {
         "type": "string",
@@ -29,7 +38,9 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "description": "Base address of the compatible service, reachable from the Castboard server.",
+        "group": "Data source"
       },
       "headers": {
         "type": "object",
@@ -40,14 +51,18 @@
             "http-json"
           ]
         },
-        "advanced": true
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Timeout · milliseconds",
+        "title": "Timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
-        "advanced": true
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
       }
     }
   }

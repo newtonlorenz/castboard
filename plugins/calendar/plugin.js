@@ -8,7 +8,7 @@ export function createPlugin({ config, context }) {
   return {
     id: 'calendar',
     nativeView: nativeViews.calendar,
-    assets: ['style.css'],
+    assets: ['style.css', 'events.js'],
     styles: ['style.css'],
     name: 'Calendar',
     publicConfig: () => ({compact:config.compact===true,  demo: config.provider==='demo', title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),

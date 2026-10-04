@@ -1,16 +1,8 @@
-import { escapeHtml, formatNumber, title, unavailable } from '/widget-kit.js';
-import { forecastPages } from './assets/forecast.js';
+import { escapeHtml, formatNumber, title, unavailable, weatherSymbol } from '/widget-kit.js?v=0.13.0';
+import { forecastPages, displayForecast } from './assets/forecast.js';
+import { forecastOverview } from './assets/overview.js';
 
-function weatherIcon(code) {
-  const sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>';
-  const cloud='<path d="M5 17h13a4 4 0 0 0 .3-8 6.5 6.5 0 0 0-12-1A4.5 4.5 0 0 0 5 17Z"/>';
-  let shape=code===0?sun:cloud;
-  if(code===null || code===undefined)shape='<path d="M7 12h10"/>';
-  else if(code>=95)shape=cloud+'<path d="m13 15-3 5h4l-2 3"/>';
-  else if(code>=71 && code<=77 || code>=85 && code<=86)shape=cloud+'<path d="M8 20h.01M12 22h.01M17 20h.01"/>';
-  else if(code>=51)shape=cloud+'<path d="m8 20-1 2m6-2-1 2m6-2-1 2"/>';
-  return `<svg class="weather-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shape}</svg>`;
-}
+
 const number=value=>value===null || value===undefined || value===''?'—':formatNumber(value,0);
 const temperature=value=>`${number(value)}°`;
 
@@ -21,11 +13,20 @@ export function mount({ element, config, context }) {
     const date=new Date(value);if(!value || Number.isNaN(date.getTime()))return '—';
     try{return new Intl.DateTimeFormat(undefined,options).format(date);}catch{return new Intl.DateTimeFormat(undefined,{...options,timeZone:'UTC'}).format(date);}
   };
-  const current=()=>`<div class="weather-main"><span class="weather-icon">${weatherIcon(data.code)}</span><strong class="weather-temp">${temperature(data.temperatureC)}</strong><span class="weather-condition">${escapeHtml((data.condition || 'Conditions unavailable')+(config.compact && config.demo?' · Sample':''))}</span></div><div class="weather-detail">Wind ${number(data.windKph)} km/h · UV ${number(data.uvIndex)}</div>`;
-  const rows=(kind,items,zone)=>items.length?`<div class="weather-rows">${items.map(item=>`<div class="weather-row" data-forecast-time="${escapeHtml(kind==='hourly'?item.time:item.date)}"><time>${escapeHtml(kind==='hourly'?dateLabel(item.time,{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:zone}):dateLabel(`${item.date}T12:00:00Z`,{weekday:'short',timeZone:'UTC'}))}</time><span class="weather-row-icon" title="${escapeHtml(item.condition || '')}">${weatherIcon(item.code)}</span><strong>${kind==='hourly'?temperature(item.temperatureC):`${temperature(item.highC)} <span class="weather-low">${temperature(item.lowC)}</span>`}</strong><small aria-label="Chance of rain">${number(item.precipitationProbability)}%</small></div>`).join('')}</div>`:'<p class="weather-empty">Forecast unavailable</p>';
+  const unit=config.temperatureUnit==='fahrenheit'?'F':'C';
+  const current=()=>`<div class="weather-main"><span class="weather-icon">${weatherSymbol(data.code)}</span><strong class="weather-temp">${temperature(data.temperatureC)}${unit}</strong><span class="weather-condition">${escapeHtml((data.condition || 'Conditions unavailable')+(config.compact && config.demo?' · Sample':''))}</span></div><div class="weather-detail">Wind ${number(data.windKph===null || data.windKph===undefined?null:config.windUnit==='mph'?data.windKph/1.609344:config.windUnit==='ms'?data.windKph/3.6:data.windKph)} ${config.windUnit==='mph'?'mph':config.windUnit==='ms'?'m/s':'km/h'} · UV ${number(data.uvIndex)}</div>`;
+  const rows=(kind,items,zone)=>items.length?`<div class="weather-rows">${items.map(item=>`<div class="weather-row" data-forecast-time="${escapeHtml(kind==='hourly'?item.time:item.date)}"><time>${escapeHtml(kind==='hourly'?dateLabel(item.time,{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:zone}):dateLabel(`${item.date}T12:00:00Z`,{weekday:'short',timeZone:'UTC'}))}</time><span class="weather-row-icon" title="${escapeHtml(item.condition || '')}">${weatherSymbol(item.code)}</span><strong>${kind==='hourly'?temperature(item.temperatureC):`${temperature(item.highC)} <span class="weather-low">${temperature(item.lowC)}</span>`}</strong><small aria-label="Chance of rain">${number(item.precipitationProbability)}%</small></div>`).join('')}</div>`:'<p class="weather-empty">Forecast unavailable</p>';
   const render=(forcePaged=false)=>{
     if(!data)return;
     const mode=config.view || 'current',zone=data.timeZone || context.app.branding.timeZone || 'UTC';
+    const overview=mode!=='current' && config.forecastLayout==='overview';
+    element.dataset.weatherOverview=String(overview);
+    if(overview){
+      pageIndex=Math.min(pageIndex,1);
+      element.dataset.weatherView=mode;element.dataset.weatherPaged='true';
+      element.innerHTML=`${title(pageIndex===0?'Next 24 hours':'Next 7 days',config.demo?'Sample':[config.label || data.label,`°${unit}`].filter(Boolean).join(' · '))}<div class="weather-content">${forecastOverview(data,{page:pageIndex,zone,dateLabel,weatherIcon:weatherSymbol,number,temperature})}</div><nav class="weather-overview-pages" aria-label="Forecast pages"><button type="button" data-castboard-ui="local" data-weather-page="0" aria-pressed="${pageIndex===0}">24 hours</button><button type="button" data-castboard-ui="local" data-weather-page="1" aria-pressed="${pageIndex===1}">7 days</button></nav>`;
+      return;
+    }
     const paged=mode!=='current' && (forcePaged || config.forecastLayout==='paged' || config.forecastLayout!=='full' && element.clientHeight<420);
     element.dataset.weatherView=mode;element.dataset.weatherPaged=String(paged);
     let body='',meta=config.label ? config.label+(config.demo?' · Sample':'') : data.label,pager='';
@@ -43,9 +44,10 @@ export function mount({ element, config, context }) {
     if(!paged && mode!=='current' && config.forecastLayout!=='full' && content.scrollHeight>content.clientHeight+1)render(true);
   };
   context.listen(element,'click',event=>{
+    const tab=event.target.closest('[data-weather-page]');if(tab){pageIndex=Number(tab.dataset.weatherPage);render();element.querySelector(`[data-weather-page="${pageIndex}"]`)?.focus({preventScroll:true});return;}
     const button=event.target.closest('[data-weather-step]');if(!button || button.disabled)return;
     pageIndex+=Number(button.dataset.weatherStep);render();element.querySelector(`[data-weather-step="${button.dataset.weatherStep}"]`)?.focus({preventScroll:true});
   });
   const observer=new ResizeObserver(()=>{const size=`${element.clientWidth}:${element.clientHeight}`;if(size!==lastSize){lastSize=size;render();}});observer.observe(element);context.onDispose(()=>observer.disconnect());
-  context.schedule(async()=>{try{data=await context.data();element.classList.remove('widget-unavailable');render();}catch(error){data=null;unavailable(element,config.title || 'Weather',error);}},(config.refreshSeconds || 300)*1000);
+  context.schedule(async()=>{try{data=displayForecast(await context.data(),config);element.classList.remove('widget-unavailable');render();}catch(error){data=null;unavailable(element,config.title || 'Weather',error);}},(config.refreshSeconds || 300)*1000);
 }

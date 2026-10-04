@@ -55,7 +55,7 @@ export function schedule(load, milliseconds) {
 }
 
 export function formatNumber(value, digits = 1) {
-  const number = Number(value);
+  const number = value === null || value === undefined || typeof value === 'boolean' || String(value).trim() === '' ? NaN : Number(value);
   return Number.isFinite(number) ? number.toLocaleString(undefined, { maximumFractionDigits: digits }) : '—';
 }
 
@@ -67,7 +67,7 @@ export function createWidgetContext({ app, screen, plugin, panel, element, annou
   const controller = new AbortController();
   const cleanups = [];
   const bindings = { ...(plugin.bindings || {}), ...(panel.bindings || {}) };
-  const id = panel.source || plugin.id;
+  const id = panel.source || bindings[plugin.config?.sourceAlias] || plugin.defaultSource || plugin.id;
   const lastGood = new Map();
   const source = sourceId => {
     const resolved = bindings[sourceId] || sourceId || id;
@@ -125,4 +125,15 @@ export function createWidgetContext({ app, screen, plugin, panel, element, annou
       lastGood.clear();
     },
   };
+}
+
+export function weatherSymbol(code) {
+  const sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>';
+  const cloud='<path d="M5 17h13a4 4 0 0 0 .3-8 6.5 6.5 0 0 0-12-1A4.5 4.5 0 0 0 5 17Z"/>';
+  let shape=code===0?sun:cloud;
+  if(code===null || code===undefined)shape='<path d="M7 12h10"/>';
+  else if(code>=95)shape=cloud+'<path d="m13 15-3 5h4l-2 3"/>';
+  else if(code>=71 && code<=77 || code>=85 && code<=86)shape=cloud+'<path d="M8 20h.01M12 22h.01M17 20h.01"/>';
+  else if(code>=51)shape=cloud+'<path d="m8 20-1 2m6-2-1 2m6-2-1 2"/>';
+  return `<svg class="weather-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shape}</svg>`;
 }

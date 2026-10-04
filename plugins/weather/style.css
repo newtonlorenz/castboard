@@ -21,3 +21,27 @@
 
 .weather-compact[data-weather-view=current]{justify-content:center;gap:2px}
 .weather-compact[data-weather-view=current] .weather-main{margin:0;gap:6px}.weather-compact[data-weather-view=current] .weather-temp{font-size:1.25em}.weather-compact[data-weather-view=current] .weather-icon{width:20px}.weather-compact[data-weather-view=current] .weather-condition{font-size:.75em;line-height:1.1}.weather-compact[data-weather-view=current] .weather-detail{margin-top:3px;font-size:.6875em}.weather-compact[data-weather-view=current] .weather-content{flex:none;overflow:visible}
+
+/* Two glanceable pages for compact image receivers, without scrolling. */
+.weather-widget[data-weather-overview=true]>.widget-head{font-size:12px;white-space:nowrap}
+.weather-widget[data-weather-overview=true]>.widget-head small{min-width:0;overflow:hidden;text-overflow:ellipsis;max-width:50%}
+[data-weather-overview=true] .weather-content{overflow:hidden;display:flex;flex-direction:column}
+.weather-overview-pages{display:flex;flex:none;gap:6px}
+.weather-overview-pages button{flex:1;min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);font:inherit;font-size:14px;cursor:pointer}
+.weather-overview-pages button[aria-pressed=true]{border-color:var(--accent);color:var(--text);background:var(--panel-strong)}
+.weather-overview-pages button:hover{color:var(--text)}
+.weather-day-chart{display:flex;flex:1;flex-direction:column;gap:3px;min-height:0;max-height:24rem}
+.weather-chart-summary,.weather-hour-labels{display:flex;justify-content:space-between;gap:4px;flex:none;font-size:12px;line-height:14px;font-variant-numeric:tabular-nums}
+.weather-chart-summary>span:first-child{color:var(--accent)}
+.weather-chart-summary>span:last-child,.weather-day small{color:var(--text)}
+.weather-hour-chart{display:block;flex:1;min-height:0;width:100%;overflow:visible;color:var(--accent)}
+.weather-hour-chart circle{fill:currentColor}.weather-temperature-line{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke}
+.weather-chart-baseline{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}.weather-rain-bar{fill:var(--text);opacity:.65}
+.weather-hour-labels{color:var(--muted)}
+.weather-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex:1;min-height:0;max-height:24rem;font-variant-numeric:tabular-nums}
+.weather-day{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:0;min-width:0;font-size:12px;line-height:14px}
+.weather-day+.weather-day{border-left:1px solid var(--line)}
+.weather-day time{font-weight:600}.weather-day-icon{height:18px;width:20px;flex:none;color:var(--accent)}
+.weather-day strong{font-size:14px;line-height:16px}.weather-day .weather-low{margin:0}.weather-day small{font-size:12px;line-height:14px}
+
+@container(min-height:280px){.weather-day{justify-content:center;gap:12px;font-size:18px;line-height:22px}.weather-day-icon{height:36px;width:36px}.weather-day strong{font-size:24px;line-height:28px}.weather-day small{font-size:16px;line-height:20px}}

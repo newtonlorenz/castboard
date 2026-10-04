@@ -1,11 +1,19 @@
 {
-  "name": "Ambient Theme",
-  "description": "Shared colours, typography and frame styles for Ambient displays.",
-  "version": "1.0.0",
+  "name": "Dashboard Theme",
+  "description": "Shared visual styles required by companion dashboard panels. It has no user-facing panel.",
+  "version": "1.1.0",
   "category": "Support",
   "settingsSchema": {
     "type": "object",
-    "properties": {}
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      }
+    }
   },
   "license": "MIT",
   "defaultConfig": {}

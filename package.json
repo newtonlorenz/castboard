@@ -1,6 +1,6 @@
 {
   "name": "castboard",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "An open-source visual dashboard builder for Google Cast, smart displays, ESP32 screens, wall tablets, and kiosks.",
   "type": "module",
   "private": true,
@@ -15,7 +15,8 @@
     "doctor": "node scripts/doctor.mjs",
     "mcp": "node src/mcp.js",
     "test": "node --test",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs && node scripts/plugin-docs.mjs --check",
+    "docs:plugins": "node scripts/plugin-docs.mjs"
   },
   "keywords": [
     "dashboard",

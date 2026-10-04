@@ -1,32 +1,61 @@
 {
-  "name": "Ambient Recovery",
-  "description": "Recovery percentage with optional sleep and strain.",
-  "version": "1.0.0",
+  "name": "Wellbeing Panel",
+  "description": "Show recovery, sleep and strain supplied by a wellbeing adapter. Choose which measurements appear.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "showSleep": {
         "type": "boolean",
         "title": "Show sleep",
-        "default": true
+        "default": true,
+        "group": "Display"
       },
       "showStrain": {
         "type": "boolean",
         "title": "Show strain",
-        "default": true
+        "default": true,
+        "group": "Display"
+      },
+      "goodThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100,
+        "title": "Positive score from",
+        "default": 67,
+        "group": "Display"
+      },
+      "warningThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100,
+        "title": "Caution score from",
+        "default": 34,
+        "group": "Display"
       }
     }
   },
@@ -35,23 +64,45 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "showSleep": {
         "type": "boolean",
         "title": "Show sleep",
-        "default": true
+        "default": true,
+        "group": "Display"
       },
       "showStrain": {
         "type": "boolean",
         "title": "Show strain",
-        "default": true
+        "default": true,
+        "group": "Display"
+      },
+      "goodThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100,
+        "title": "Positive score from",
+        "default": 67,
+        "group": "Display"
+      },
+      "warningThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100,
+        "title": "Caution score from",
+        "default": 34,
+        "group": "Display"
       }
     }
   },
