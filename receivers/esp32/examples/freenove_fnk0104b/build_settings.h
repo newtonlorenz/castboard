@@ -24,5 +24,8 @@
 #define TFT_RST -1
 #define TFT_BL 45
 #define TFT_BACKLIGHT_ON 1
+// Match the Freenove board setup; the default FSPI register mapping can
+// crash TFT_eSPI on ESP32-S3 with Arduino core 3.x.
+#define USE_HSPI_PORT
 #define SPI_FREQUENCY 40000000
 #define SPI_READ_FREQUENCY 20000000

@@ -38,9 +38,9 @@ test('compact overview retains data, whole-panel taps and keyboard controls at 3
  await page.setViewportSize({width:1440,height:960});await page.goto(origin+'/admin');
  await page.locator('#panel-list .panel-row').filter({hasText:'Weather'}).click();
  const checkbox=page.locator('#interaction-show-button');assert.equal(await checkbox.isChecked(),false);
- await checkbox.check();await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-design').disabled);
+ await checkbox.check();await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-design').disabled && document.querySelector('#save-status').textContent==='All changes saved');
  assert.equal(JSON.parse(await fs.readFile(file)).screens.home.panels.find(p=>p.id==='weather').interaction.showButton,undefined);
- await checkbox.uncheck();await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-design').disabled);
+ await checkbox.uncheck();await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-design').disabled && document.querySelector('#save-status').textContent==='All changes saved');
  await page.reload();await page.locator('#panel-list .panel-row').filter({hasText:'Weather'}).click();assert.equal(await checkbox.isChecked(),false);
  await page.waitForFunction(()=>document.querySelector('#live-preview').style.width==='320px' && parseInt(document.querySelector('#canvas-scale').textContent)>100);
  await checkbox.scrollIntoViewIfNeeded();await capture('overview-admin-desktop');

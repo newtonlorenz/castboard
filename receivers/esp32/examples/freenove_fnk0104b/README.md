@@ -44,3 +44,7 @@ Open the USB serial console at 115200 baud and send `status`. The example report
 Wi-Fi state, signal strength, free heap, free PSRAM and receiver errors. It also
 reports every 30 seconds. Credentials are never printed. These diagnostics do
 not confirm that physical pixels or touch alignment are correct.
+
+The board settings explicitly select HSPI, matching Freenove’s FNK0104B setup.
+Do not remove `USE_HSPI_PORT`: the default TFT_eSPI FSPI register mapping can
+crash at display initialization with Arduino ESP32 core 3.x.
