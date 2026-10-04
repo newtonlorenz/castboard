@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, fetchText, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 import { parseIcs } from '../../src/core/ics.js';
 
@@ -6,10 +7,11 @@ export function createPlugin({ config, context }) {
   if (config.provider === 'ics' && !config.url) throw new Error('Plugin calendar ics provider requires url');
   return {
     id: 'calendar',
+    nativeView: nativeViews.calendar,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Calendar',
-    publicConfig: () => ({ demo: config.provider==='demo', title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),
+    publicConfig: () => ({compact:config.compact===true,  demo: config.provider==='demo', title: config.title || 'Today', maxEvents: config.maxEvents || 5 }),
     async getData() {
       if (config.provider === 'demo') {
         const now = new Date();

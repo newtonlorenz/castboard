@@ -62,6 +62,7 @@ Now open:
 
 - [`localhost:8787/setup`](http://localhost:8787/setup) — first-run checks and connection tests
 - [`localhost:8787/admin`](http://localhost:8787/admin) — visual screen studio
+- [`localhost:8787/admin/devices`](http://localhost:8787/admin/devices) — register embedded displays and upload hardware plugins
 - [`localhost:8787/admin/plugins`](http://localhost:8787/admin/plugins) — install, configure and test plugins
 - [`localhost:8787`](http://localhost:8787) — 10-panel Home dashboard
 - [`localhost:8787/screens/office`](http://localhost:8787/screens/office) — full-screen news wire
@@ -73,11 +74,19 @@ In Studio, drag and resize panels, switch screen types, edit plugin options, and
 
 ## Plugins belong in admin
 
-Use **Plugins** to browse 34 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
+Prefer to configure it through an AI assistant? The local [Castboard MCP](docs/MCP.md)
+exposes configuration, layouts, plugin/provider settings, displays and diagnostics,
+with validation before saving and the project guides available directly to AI.
+Start Castboard, then connect `node /absolute/path/to/castboard/src/mcp.js` in your
+MCP client. See the guide for Codex setup, all tools and credential handling.
+
+Use **Plugins** to browse 35 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
 
 The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
 
 ![Plugin management with contextual settings](public/assets/castboard-plugins.png)
+
+Display hardware is extensible too. In **Displays → Display plugins**, upload a trusted ZIP package, then choose it for a display. Packages can supply device defaults, settings, image conversion, native scene encoding and input translation. A downloadable monochrome example demonstrates 128 × 64 OLED/e-paper pixel conversion. See [display plugin development](docs/display-adapters.md) and [embedded receivers](docs/embedded-displays.md). Firmware still needs a driver for the physical board.
 
 ## One canvas, any screen
 
@@ -284,6 +293,7 @@ Read the complete [security policy](SECURITY.md) before enabling cameras or cont
 ## Project map
 
 - [Configuration](docs/CONFIGURATION.md)
+- [AI configuration with MCP](docs/MCP.md)
 - [Visual Studio](docs/ADMIN-STUDIO.md)
 - First-run diagnostics: `npm run doctor` or `/setup`
 - [Plugin authoring](docs/PLUGINS.md)
@@ -314,3 +324,10 @@ If Castboard gives an old screen a new job, **star the project and show people w
 Castboard can load external source, view, layout and delivery packages. Multiple configured instances can use one plugin definition, and several views can share one source. Modules own their CSS, schemas, data semantics and actions; the dashboard frame is independent of any particular design.
 
 See [extension contracts and lifecycle](docs/extensions.md) and [the flexible deployment example](examples/flexible/README.md). Private integrations and presets can live outside this repository.
+
+### ESP32 and small displays
+
+Use **Displays** to register a receiver and choose image or native mode. Configure
+reusable modals and navigation under **On tap** in Studio. See the
+[embedded display guide](docs/embedded-displays.md) for the optional Docker image
+renderer, receiver library, protocol and hardware requirements.

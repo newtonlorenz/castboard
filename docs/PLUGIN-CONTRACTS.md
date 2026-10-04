@@ -7,8 +7,31 @@ All timestamps should be ISO 8601 strings.
 ## Weather
 
 ```json
-{ "temperatureC": 22.4, "condition": "Partly cloudy", "code": 2, "windKph": 14, "label": "Coast", "updatedAt": "2026-01-01T10:00:00Z" }
+{
+  "temperatureC": 22.4, "condition": "Partly cloudy", "code": 2,
+  "windKph": 14, "uvIndex": 3, "label": "Coast", "timeZone": "UTC",
+  "updatedAt": "2026-01-01T10:00:00Z",
+  "hourly": [{ "time": "2026-01-01T11:00:00Z", "temperatureC": 23,
+    "code": 2, "condition": "Partly cloudy", "precipitationProbability": 10 }],
+  "daily": [{ "date": "2026-01-01", "highC": 24, "lowC": 16,
+    "code": 2, "condition": "Partly cloudy", "precipitationProbability": 20 }]
+}
 ```
+
+Forecast arrays are optional. Hourly times must include an offset; daily dates
+are local `YYYY-MM-DD` values. Use null for unavailable measurements.
+
+## Vehicle
+
+```json
+{ "batteryPercent": 72, "chargingKw": 4.8, "charging": true, "rangeKm": 286,
+  "label": "Vehicle", "updatedAt": "2026-01-01T10:00:00Z" }
+```
+
+Measurements may be null. Battery must be 0–100; power and range non-negative.
+When charging state is absent or null, a known charging power supplies the state.
+Only this canonical payload reaches a display; connection settings and entity IDs
+stay on the server.
 
 ## Solar
 

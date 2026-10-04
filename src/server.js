@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { requestNativeImage } from './core/embedded-images.js';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -14,11 +15,17 @@ import { publicAsset, extensionMetadata, validateSchema } from './core/extension
 import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
 import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
 import { discoverCastProtocols } from './core/cast-protocol-registry.js';
+import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
+import { createNativeScenes } from './core/native-scene.js';
+import { adapterCatalog, adapterFor, adapterOptions, discoverDisplayAdapters, encodeAdapterResult, safeAdapterContext, validateAdapterDevices } from './core/display-adapters.js';
+import { installDisplayPackage, MAX_PACKAGE_BYTES, removeDisplayPackage, unpackDisplayPackage, zipFiles } from './core/display-packages.js';
+import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const PLUGINS_DIR = path.join(ROOT, 'plugins');
 const SCREEN_TYPES_DIR = path.join(ROOT, 'screen-types');
+const DISPLAY_ADAPTERS_DIR = path.join(ROOT, 'display-adapters');
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -51,6 +58,12 @@ async function sendFile(res, filePath, cache = false) {
   res.end(data);
 }
 
+async function readBytes(req, limit) {
+  const chunks=[];let size=0;
+  for await(const chunk of req){size+=chunk.length;if(size>limit)throw Object.assign(new Error('Upload exceeds its size limit'),{statusCode:413});chunks.push(chunk);}
+  return Buffer.concat(chunks,size);
+}
+
 async function readBody(req) {
   let raw = '';
   let bytes = 0;
@@ -79,12 +92,18 @@ export async function createApp(options = {}) {
   let runtimeConfig = loaded.config;
   let rawConfig = loaded.rawConfig || JSON.parse(JSON.stringify(loaded.config));
   let configPath = loaded.configPath;
+  let displayAdapters = await discoverDisplayAdapters({builtin:DISPLAY_ADAPTERS_DIR,config:runtimeConfig,configDir:context.configDir});
+  validateAdapterDevices(runtimeConfig,displayAdapters);
+  const removedAdapterIds=new Set();
+  let adapterInstallInProgress=false;
   let screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: runtimeConfig, configDir: loaded.configDir });
   let screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
   let byId = new Map();
   const reads = new Map();
   const screenRequests = Object.create(null);
   const clients = new Map();
+  const deviceDiagnostics = new Map();
+  const deviceRequests = new Map();
   function clientAddress(req) {
     const socket=req.socket.remoteAddress?.replace(/^::ffff:/,'');
     const forwarded=req.headers['x-castboard-receiver'];
@@ -113,9 +132,23 @@ export async function createApp(options = {}) {
   let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
-  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
+  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); nativeScenes.dispose(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
 
   let publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
+
+  async function runAction(id, body, request = {}) {
+    const plugin = byId.get(id);
+    if (!plugin?.action) throw Object.assign(new Error('This plugin does not support actions'), {statusCode:422});
+    if (plugin.actionSchemas) {
+      if (!body || typeof body.action !== 'string' || !Object.hasOwn(plugin.actionSchemas, body.action)) throw Object.assign(new Error('Unsupported action'), {statusCode:422});
+      try { validateSchema(body, plugin.actionSchemas[body.action], `Action ${body.action}`); }
+      catch (error) { error.statusCode=422; throw error; }
+    }
+    const result = await plugin.action(body, request);
+    for (const key of reads.keys()) if (key.startsWith(`${id}:`)) reads.delete(key);
+    return result;
+  }
+  const nativeScenes = createNativeScenes({getConfig:()=>runtimeConfig,getPlugin:id=>byId.get(id),getScreenType:id=>screenTypesById.get(id),read:id=>context.read(id),action:runAction});
 
   function adminPayload() {
     return {
@@ -145,6 +178,142 @@ export async function createApp(options = {}) {
       if (!isAllowedApplicationHost(req.headers.host, allowedHosts)) {
         return jsonResponse(res, 421, { error: { code: 'HOST_NOT_ALLOWED', message: 'Request host is not allowed' } });
       }
+      if(url.pathname==='/api/admin/display-adapters/example' && req.method==='GET') {
+        if(!authorizeAdmin(req,runtimeConfig))return jsonResponse(res,403,{error:{message:'Display plugins require admin access'}});
+        const dir=path.join(DISPLAY_ADAPTERS_DIR,'.examples/monochrome'),files=new Map();
+        for(const name of ['adapter.json','adapter.mjs','README.md','LICENSE'])files.set(name,await fs.readFile(path.join(dir,name)));
+        const zip=zipFiles(files);res.writeHead(200,{'Content-Type':'application/zip','Content-Length':zip.length,'Content-Disposition':'attachment; filename="castboard-monochrome-example.zip"'});res.end(zip);return;
+      }
+      if (url.pathname === '/api/admin/display-adapters') {
+        if(!authorizeAdmin(req,runtimeConfig))return jsonResponse(res,403,{error:{message:'Display plugin management requires admin access'}});
+        const payload=()=>({ok:true,adapters:adapterCatalog(displayAdapters,runtimeConfig)});
+        if(req.method==='GET')return jsonResponse(res,200,payload());
+        if(req.method!=='POST')return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
+        const adminOrigin=runtimeConfig.server.publicUrl?new URL(runtimeConfig.server.publicUrl).origin:url.origin;
+        if(req.headers['sec-fetch-site']==='cross-site' || req.headers.origin && ![url.origin,adminOrigin].includes(req.headers.origin))return jsonResponse(res,403,{error:{message:'Open display plugins from your Castboard admin page before making changes'}});
+        if(adapterInstallInProgress || pluginSaveInProgress)return jsonResponse(res,409,{error:{message:'Another change is being saved. Try again shortly.'}});
+        adapterInstallInProgress=true;
+        try {
+          let installed;
+          if(String(req.headers['content-type'] || '').split(';')[0]==='application/zip') {
+            if(req.headers['x-castboard-trust-package']!=='yes')return jsonResponse(res,422,{error:{message:'Confirm that you trust this package before installing it'}});
+            const zip=await readBytes(req,MAX_PACKAGE_BYTES),{manifest}=unpackDisplayPackage(zip);
+            if(removedAdapterIds.has(manifest.id))return jsonResponse(res,409,{error:{message:'Restart Castboard before reinstalling a removed plugin so its previous code is unloaded'}});
+            try{installed=await installDisplayPackage({zip,configDir:context.configDir,existing:displayAdapters});}
+            catch(error){if(error.requiresRestart)removedAdapterIds.add(manifest.id);throw error;}
+          } else if(acceptsJson(req)) {
+            const body=await readBody(req);
+            if(body.action!=='remove')return jsonResponse(res,422,{error:{message:'Unknown display plugin operation'}});
+            await removeDisplayPackage({id:body.id,adapters:displayAdapters,config:runtimeConfig,configDir:context.configDir});
+            removedAdapterIds.add(body.id);
+          } else return jsonResponse(res,415,{error:{message:'Upload a ZIP display plugin'}});
+          displayAdapters=await discoverDisplayAdapters({builtin:DISPLAY_ADAPTERS_DIR,config:runtimeConfig,configDir:context.configDir});
+          return jsonResponse(res,200,{...payload(),...(installed?{installed}:{})});
+        } finally {adapterInstallInProgress=false;}
+      }
+      if (url.pathname === '/api/admin/devices') {
+        if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Display management requires admin access'}});
+        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),adapters:adapterCatalog(displayAdapters,runtimeConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.server.publicUrl || ''});
+        if (req.method === 'GET') return jsonResponse(res,200,payload());
+        if (req.method !== 'POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
+        if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Display changes require JSON'}});
+        const body = await readBody(req);
+        if (pluginSaveInProgress || adapterInstallInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res,409,{error:{message:'Settings changed. Refresh displays before saving.'}});
+        pluginSaveInProgress=true;
+        try {
+          const requestedAdapter=adapterFor(displayAdapters,body.device || rawConfig.devices?.[body.id] || {});
+          const adapterChanged=body.action==='create' || body.device?.adapter && body.device.adapter!==(rawConfig.devices?.[body.id]?.adapter || 'standard');
+          const defaults=adapterChanged?{...requestedAdapter.defaults,options:requestedAdapter.defaultOptions || {}}:{};
+          const changed=changeDeviceConfig(rawConfig,body,defaults);
+          const nextConfig=validateConfig(expandEnvironment(changed.config,runtimeEnv));
+          validateAdapterDevices(nextConfig,displayAdapters);
+          const nextPath=writableConfigPath(configPath,path.dirname(configPath));
+          await writeConfigAtomic(nextPath,changed.config);
+          rawConfig=changed.config;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);
+          nativeScenes.reset(body.id);deviceDiagnostics.delete(body.id);
+          return jsonResponse(res,200,{...payload(),...(changed.token?{connectionKey:changed.token}:{}),applied:true});
+        } finally { pluginSaveInProgress=false; }
+      }
+      const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|images\/[0-9]{1,2}|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
+      if (deviceMatch) {
+        const [,id,operation,pluginId]=deviceMatch;
+        const device=authenticateDevice(runtimeConfig,id,req.headers.authorization);
+        const adapter=adapterFor(displayAdapters,device),adapterContext=safeAdapterContext(adapter,device,id);
+        const input=async()=>{
+          if(!device.touch)throw Object.assign(new Error('Touch is disabled for this display'),{statusCode:403});
+          if(!adapter.hooks.decodeInput){if(!acceptsJson(req))throw Object.assign(new Error('Touch events require JSON'),{statusCode:415});return readBody(req);}
+          const bytes=await readBytes(req,512*1024);
+          try {
+            const event=await adapter.hooks.decodeInput(bytes,{...adapterContext,contentType:String(req.headers['content-type'] || '')});
+            if(!event || typeof event!=='object' || Array.isArray(event) || Object.getPrototypeOf(event)!==Object.prototype || Buffer.byteLength(JSON.stringify(event))>16384)throw new Error('Invalid event');
+            return event;
+          }
+          catch{throw Object.assign(new Error('The display plugin could not read this input event'),{statusCode:422});}
+        };
+        const sendScene=async scene=>{
+          const encoded=await encodeAdapterResult(adapter,'encodeScene',scene,adapterContext,{data:Buffer.from(JSON.stringify(scene)),contentType:'application/json; charset=utf-8'});
+          res.writeHead(200,{'Content-Type':encoded.contentType,'Content-Length':encoded.data.length,'Cache-Control':'no-store','X-Scene-Id':scene.sceneId});res.end(encoded.data);
+        };
+        const rate=deviceRequests.get(id) || {at:Date.now(),count:0};
+        if (Date.now()-rate.at>60000) {rate.at=Date.now();rate.count=0;}
+        deviceRequests.set(id,rate);
+        if (++rate.count>600) return jsonResponse(res,429,{error:{message:'Display request limit exceeded. Retry in a minute.'}});
+        deviceDiagnostics.set(id,{lastSeenAt:new Date().toISOString(),remoteAddress:clientAddress(req),operation:operation.startsWith('plugins/')?'data':operation});
+        if (req.method==='GET' && operation==='config') {
+          let configuration={};
+          if(adapter.hooks.configure){try{configuration=await adapter.hooks.configure(adapterContext);}catch{throw Object.assign(new Error('The display plugin could not prepare its settings'),{statusCode:502});}}
+          if(!configuration || typeof configuration!=='object' || Array.isArray(configuration) || Buffer.byteLength(JSON.stringify(configuration))>16384)throw Object.assign(new Error('The display plugin returned invalid settings'),{statusCode:502});
+          return jsonResponse(res,200,{protocol:'castboard-device/1',id,name:device.name,mode:device.mode,width:device.width,height:device.height,format:device.format,refreshMs:device.refreshMs,touch:device.touch,allowActions:device.allowActions,adapter:{id:adapter.id,version:adapter.version,options:adapterOptions(adapter,device),configuration}});
+        }
+        if (req.method==='GET' && operation==='bootstrap') return jsonResponse(res,200,devicePublicConfig(runtimeConfig,publicConfig,device));
+        if (operation==='scene' && req.method==='GET' && device.mode==='native') return sendScene(await nativeScenes.scene(id,device));
+        if(operation.startsWith('images/') && req.method==='GET' && device.mode==='native') {
+          const index=operation.slice(7),sceneId=url.searchParams.get('sceneId');
+          const image=nativeScenes.image(id,device,index,sceneId);
+          const result=await requestNativeImage(runtimeConfig.embedded,{id,token:req.headers.authorization.slice(7),...image});
+          authenticateDevice(runtimeConfig,id,req.headers.authorization);
+          nativeScenes.image(id,runtimeConfig.devices[id],index,sceneId);
+          res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':result.buffer.length,'X-Frame-Id':result.frameId,'X-Frame-Width':image.width,'X-Frame-Height':image.height,'X-Frame-Format':'rgb565','Cache-Control':'no-store'});res.end(result.buffer);return;
+        }
+        if (operation==='events' && req.method==='POST' && device.mode==='native') {
+          return sendScene(await nativeScenes.event(id,device,await input()));
+        }
+        if (device.mode==='frame' && ((operation==='frame' && req.method==='GET') || (operation==='touch' && req.method==='POST'))) {
+          if (!runtimeConfig.embedded?.rendererUrl) return jsonResponse(res,503,{error:{message:'Image mode needs the optional frame renderer. Set it up before connecting this display.'}});
+          let event;
+          if (operation==='touch') {
+            event=await input();
+          }
+          let frame;
+          try {
+            frame=await fetch(new URL('/render',runtimeConfig.embedded.rendererUrl),{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${runtimeConfig.embedded.rendererToken}`},body:JSON.stringify({id,token:req.headers.authorization.slice(7),width:device.width,height:device.height,format:adapter.hooks.encodeFrame?(adapter.sourceFormat || 'rgb565'):device.format,revision:configRevision(rawConfig),...(event?{event}: {})}),signal:AbortSignal.timeout(40000)});
+          } catch { return jsonResponse(res,503,{error:{message:'The image renderer is unavailable. The display can keep its last frame and retry.'}}); }
+          if (!frame.ok) {const error=await frame.json().catch(()=>({}));return jsonResponse(res,frame.status,{error:{message:error.error?.message || 'The image renderer could not update this display'}});}
+          const length=Number(frame.headers.get('content-length'));
+          if (!length || length>8*1024*1024) {await frame.body?.cancel();return jsonResponse(res,502,{error:{message:'Invalid frame size'}});}
+          const buffer=Buffer.from(await frame.arrayBuffer());
+          if (buffer.length!==length) return jsonResponse(res,502,{error:{message:'Incomplete frame'}});
+          const frameId=frame.headers.get('x-frame-id');
+          const etag=adapter.hooks.encodeFrame?configRevision({frameId,adapter:adapter.id,version:adapter.version,device}):frameId;
+          res.setHeader('ETag',`"${etag}"`);
+          res.setHeader('Cache-Control','private, no-cache');
+          for(const field of ['id','width','height','format']) res.setHeader(`X-Frame-${field}`,frame.headers.get(`x-frame-${field}`)||'');
+          res.setHeader('X-Frame-Format',device.format);
+          if (!event && req.headers['if-none-match']===`"${etag}"`) {res.writeHead(304);res.end();return;}
+          const encoded=await encodeAdapterResult(adapter,'encodeFrame',{data:buffer,format:frame.headers.get('x-frame-format'),width:device.width,height:device.height,frameId},adapterContext,{data:buffer,contentType:device.format==='jpeg'?'image/jpeg':'application/octet-stream'});
+          res.writeHead(200,{'Content-Type':encoded.contentType,'Content-Length':encoded.data.length});res.end(encoded.data);return;
+        }
+        if (operation.startsWith('plugins/')) {
+          const actionDisabled = operation.endsWith('/action') && (!device.allowActions || !device.touch);
+          if (!deviceScope(runtimeConfig,device).plugins.has(pluginId) || actionDisabled) return jsonResponse(res,403,{error:{message:'This plugin operation is not assigned to this display'}});
+          url.pathname=`/api/${operation}`;
+        } else return jsonResponse(res,405,{error:{message:'Operation is unavailable in this display mode'}});
+      }
+      const deviceView=url.pathname.match(/^\/device-view\/([a-z][a-z0-9-]{0,63})$/);
+      if (deviceView && req.method==='GET') {
+        authenticateDevice(runtimeConfig,deviceView[1],req.headers.authorization);
+        return sendFile(res,path.join(PUBLIC_DIR,'index.html'));
+      }
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
       }
@@ -163,6 +332,50 @@ export async function createApp(options = {}) {
         return jsonResponse(res,200,{ok:true});
       }
       if (req.method === 'GET' && ['/api/config','/api/runtime-config'].includes(url.pathname)) return jsonResponse(res, 200, publicConfig);
+      if (url.pathname === '/api/admin/configuration') {
+        if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Configuration requires admin access' } });
+        const packages = await pluginLibrary({ pluginsDir: PLUGINS_DIR, config: runtimeConfig, configDir: context.configDir });
+        if (req.method === 'GET') return jsonResponse(res, 200, { ok: true, revision: configRevision(rawConfig), ...configurationView(rawConfig, packages) });
+        if (req.method !== 'PATCH') return jsonResponse(res, 405, { error: { message: 'Use GET or PATCH' } });
+        if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { message: 'Configuration changes require JSON' } });
+        const body = await readBody(req);
+        if (pluginSaveInProgress || adapterInstallInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Configuration changed. Read it again before saving.' } });
+        pluginSaveInProgress = true;
+        let staged, nextRaw, nextConfig, applied = false;
+        try {
+          if (body.dryRun !== undefined && typeof body.dryRun !== 'boolean') throw new Error('dryRun must be a boolean');
+          nextRaw = patchConfiguration(rawConfig, body.operations);
+          nextConfig = expandEnvironment(nextRaw, runtimeEnv);
+          if (runtimeEnv.CASTBOARD_ADMIN_TOKEN) nextConfig.admin = { ...(nextConfig.admin || {}), enabled: true, allowLan: true, token: runtimeEnv.CASTBOARD_ADMIN_TOKEN };
+          validateConfig(nextConfig);
+          const nextAdapters = await discoverDisplayAdapters({ builtin: DISPLAY_ADAPTERS_DIR, config: nextConfig, configDir: context.configDir });
+          validateAdapterDevices(nextConfig, nextAdapters);
+          const nextTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
+          staged = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: nextConfig, context, reuse: plugins });
+          await discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config: nextConfig, context });
+          const nextPublic = publicAppConfig(nextConfig, staged, nextTypes);
+          const restartRequired = ['host', 'port'].some(key => nextConfig.server[key] !== runtimeConfig.server[key]);
+          const result = { ok: true, valid: true, applied: false, revision: configRevision(rawConfig), changedPaths: body.operations.map(item => item.path), restartRequired };
+          if (body.dryRun !== false) return jsonResponse(res, 200, result);
+          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
+          await writeConfigAtomic(nextPath, nextRaw);
+          const previous = plugins;
+          plugins = staged; byId = pluginMap(plugins); reads.clear();
+          rawConfig = nextRaw; runtimeConfig = nextConfig; configPath = nextPath;
+          context.configDir = path.dirname(nextPath);
+          screenTypes = nextTypes; screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
+          displayAdapters = nextAdapters;
+          nativeScenes.dispose(); deviceDiagnostics.clear();
+          publicConfig = nextPublic; applied = true;
+          await Promise.allSettled(previous.filter(plugin => !plugins.includes(plugin)).map(plugin => plugin.dispose?.()));
+          return jsonResponse(res, 200, { ...result, applied: true, revision: configRevision(rawConfig) });
+        } catch (error) {
+          return jsonResponse(res, 422, { error: { code: 'INVALID_CONFIGURATION', message: safeConfigurationError(error, [rawConfig, runtimeConfig, nextRaw, nextConfig], packages) } });
+        } finally {
+          if (staged && !applied) await Promise.allSettled(staged.filter(plugin => !plugins.includes(plugin)).map(plugin => plugin.dispose?.()));
+          pluginSaveInProgress = false;
+        }
+      }
       if (url.pathname === '/api/admin/plugins') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{code:'ADMIN_FORBIDDEN',message:'Plugin management requires admin access'}});
         const packages=await pluginLibrary({pluginsDir:PLUGINS_DIR,config:runtimeConfig,configDir:context.configDir});
@@ -284,14 +497,7 @@ export async function createApp(options = {}) {
           if (operation === 'action' && req.method === 'POST' && plugin.action) {
             if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Plugin actions require application/json' } });
             const body = await readBody(req);
-            if (plugin.actionSchemas) {
-              // Inherited object properties are not declared action names.
-              if (!body || typeof body.action !== 'string' || !Object.hasOwn(plugin.actionSchemas, body.action)) throw Object.assign(new Error('Unsupported action'), { statusCode: 422 });
-              const schema = plugin.actionSchemas[body.action];
-              try { validateSchema(body, schema, `Action ${body.action}`); } catch (error) { error.statusCode = 422; throw error; }
-            }
-            const result = await plugin.action(body, { url, req });
-            for (const key of reads.keys()) if (key.startsWith(`${id}:`)) reads.delete(key);
+            const result = await runAction(id,body,{url,req});
             return jsonResponse(res, 200, { ok: true, data: result });
           }
           if (operation === 'stream' && req.method === 'GET' && plugin.stream) return await plugin.stream(req, res, { url });
@@ -333,9 +539,12 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/record-list-field.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'record-list-field.js'));
       if (req.method === 'GET' && url.pathname === '/screen-path.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(ROOT, 'src/core/screen-path.js'));
       if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
+      if (req.method === 'GET' && url.pathname === '/display-guide.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'display-guide.js'));
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
+      if(req.method==='GET'&&url.pathname==='/admin/devices'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'devices.html'));
+      if(req.method==='GET'&&/^\/devices\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
       if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
@@ -345,7 +554,7 @@ export async function createApp(options = {}) {
         const entry=screenRequests[screen] ||= {count:0}; entry.count += 1; entry.lastRequestAt=new Date().toISOString(); entry.remoteAddress=clientAddress(req);
         return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       }
-      if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
+      if (req.method === 'GET' && /^\/(app|widget-kit|interaction-model|interaction-runtime)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
       if (req.method === 'GET' && url.pathname === '/schema-fields.js') return sendFile(res, path.join(PUBLIC_DIR, 'schema-fields.js'), true);
       if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
       if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.png') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.png'), true);

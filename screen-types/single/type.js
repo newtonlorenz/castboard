@@ -1,6 +1,8 @@
+import { singleLayout } from '../../src/core/native-layout.js';
 export function createScreenType() {
   return {
     id: 'single',
+    nativeLayout: singleLayout,
     name: 'Single panel',
     version: '1.0.0',
     validateScreen(screen, screenId) {

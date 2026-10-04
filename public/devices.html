@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><title>Castboard · Displays</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
+  <link rel="stylesheet" href="/admin.css?v=0.11.0"><link rel="stylesheet" href="/setup.css?v=0.11.0"><link rel="stylesheet" href="/devices.css">
+</head>
+<body class="admin-app connections-page devices-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Screen workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Screens</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/setup"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3h-3"/></svg><span>Connections</span></a><a href="/admin/devices" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 17h6"/></svg><span>Displays</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>screen workspace</span></div></aside>
+  <header class="topbar"><div class="workspace-title">Displays</div><div class="topbar-actions"><button id="refresh-devices" class="button secondary" type="button">Refresh</button><button id="add-device" class="button primary" type="button">Add display</button></div></header>
+  <main id="main-content" class="connections">
+    <div class="page-heading"><h1>Displays</h1><p>Connect a screen using a built-in receiver or a display plugin for your hardware.</p></div>
+    <div id="device-status" class="overall" role="status">Loading displays…</div>
+    <section class="connection-section" aria-labelledby="devices-heading"><div class="section-head"><div><h2 id="devices-heading">Your displays</h2><p>Each display has its own connection key and screen assignment.</p></div><a href="/setup">Set up browser &amp; Cast displays</a></div><div id="device-list"></div></section>
+    <section id="display-plugins" class="connection-section" aria-labelledby="adapters-heading">
+      <div class="section-head"><div><h2 id="adapters-heading">Display plugins</h2><p>Add support for another screen or receiver without changing Castboard.</p></div><div class="adapter-heading-actions"><button id="show-adapter-upload" class="button secondary" type="button">Upload plugin</button><button id="download-adapter-example" class="button secondary" type="button">Download example</button></div></div>
+      <div id="adapter-list"></div>
+      <p id="adapter-status" class="adapter-status" role="status" aria-live="polite"></p>
+      <details id="adapter-upload" class="adapter-upload"><summary>Upload a display plugin</summary>
+        <form id="adapter-upload-form"><label class="field"><span>Plugin ZIP file</span><input id="adapter-file" type="file" accept=".zip,application/zip" required><small>Up to 8 MB. Include adapter.json, the adapter code and any supporting files.</small></label>
+        <p>Display plugins run code on your Castboard server. Install packages from people you trust.</p>
+        <label class="check-field"><input id="adapter-trust" type="checkbox" required><span>I trust this package and want to install it</span></label>
+        <p id="adapter-upload-error" class="field-error" role="alert"></p><button id="install-adapter" class="button primary" type="submit">Install display plugin</button></form>
+      </details>
+    </section>
+    <section class="device-modes" aria-labelledby="modes-heading"><h2 id="modes-heading">Choose how the screen is drawn</h2><div><article><h3>Image mode</h3><p>Castboard draws the screen on the server. The display receives an image and sends taps back. Use this for the full design and browser plugin controls.</p><p>Requires the optional image renderer. Photos and artwork must be served by Castboard.</p></article><article><h3>Native mode</h3><p>The display draws a lightweight view of each plugin. It uses less bandwidth and can keep the last view when Wi-Fi drops.</p><p>Plugins and layouts need a native view. Compatibility is listed for each display.</p></article></div></section>
+  </main>
+  <dialog id="device-dialog" aria-labelledby="device-dialog-title"><form id="device-form"><header><h2 id="device-dialog-title">Add display</h2><button type="button" class="dialog-close" data-close aria-label="Close display settings">×</button></header><div class="device-fields">
+    <label class="field"><span>Name</span><input id="device-name" required maxlength="80" placeholder="Kitchen screen"></label>
+    <label class="field"><span>Display ID</span><input id="device-id" required pattern="[a-z][a-z0-9-]{0,63}" maxlength="64" placeholder="kitchen-screen"><small>Used by the display to connect. Set once when adding it.</small></label>
+    <label class="field"><span>Screen</span><select id="device-screen" required></select></label>
+    <label class="field"><span>Display plugin</span><select id="device-adapter" required></select><small id="device-adapter-description"></small></label>
+    <div id="device-adapter-options" class="adapter-options"></div>
+    <label class="field"><span>Drawing mode</span><select id="device-mode"><option value="frame">Image — full browser design</option><option value="native">Native — lightweight plugin views</option></select></label>
+    <div class="field-pair"><label class="field"><span>Width, pixels</span><input id="device-width" type="number" min="16" max="1920" step="1" required value="800"></label><label class="field"><span>Height, pixels</span><input id="device-height" type="number" min="16" max="1920" step="1" required value="480"></label></div>
+    <div class="field-pair device-refresh-fields"><label class="field"><span>Refresh, seconds</span><input id="device-refresh" type="number" min="1" max="3600" step="1" required value="5"></label><label class="field"><span>Image format</span><select id="device-format"><option value="rgb565">RGB565 — ready to draw</option><option value="jpeg">JPEG — smaller download</option></select></label></div>
+    <label class="check-field"><input id="device-touch" type="checkbox" checked><span>Enable touch and navigation</span></label>
+    <label class="check-field"><input id="device-actions" type="checkbox"><span>Allow plugin actions, such as playback controls</span></label>
+    <label class="check-field"><input id="device-enabled" type="checkbox" checked><span>Allow this display to connect</span></label>
+    <p id="device-form-error" class="field-error" role="alert"></p></div><footer><button type="button" class="button secondary" data-close>Cancel</button><button class="button primary" type="submit">Save display</button></footer></form></dialog>
+  <dialog id="key-dialog" aria-labelledby="key-title"><header><h2 id="key-title">Connect your display</h2><button type="button" class="dialog-close" data-close aria-label="Close connection details">×</button></header><p class="dialog-note">Save these details in your receiver firmware. The connection key is shown once; generate a new one if you lose it.</p><label class="field"><span>Connection details</span><textarea id="device-connection" readonly rows="9" spellcheck="false"></textarea></label><p id="key-note" class="dialog-note"></p><footer><button type="button" id="copy-connection" class="button secondary">Copy details</button><button type="button" data-close class="button primary">Done</button></footer></dialog>
+  <dialog id="device-confirm" aria-labelledby="device-confirm-title"><header><h2 id="device-confirm-title">Remove display?</h2></header><p id="device-confirm-copy" class="dialog-note"></p><footer><button id="device-confirm-cancel" class="button secondary" type="button">Cancel</button><button id="device-confirm-ok" type="button" class="button primary">Continue</button></footer></dialog>
+  <dialog id="token-dialog" aria-labelledby="token-title"><form id="token-form"><header><h2 id="token-title">Admin access</h2></header><p class="dialog-note">Enter your admin token to manage displays. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" aria-describedby="token-error" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/devices.js"></script>
+</body>
+</html>

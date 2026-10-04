@@ -38,3 +38,15 @@ body.admin-app{padding-left:176px}::selection{background:#c6dfcd;color:#163b2b}i
 @media(max-width:800px){:is(#draft-conflict-dialog,#plugin-conflict-dialog) button{min-height:44px}}
 .topbar-center{font-size:11px}
 @media(max-width:800px){.admin-app button,.admin-app .topbar .button,.studio-page .topbar-actions .button,.studio-page .color-field button{min-height:44px}.admin-app .field :is(input:not([type=checkbox]),select),.studio-page .toolbar-meta select{min-height:44px}.studio-page summary{min-height:44px;padding-block:12px}.studio-page .field:has(input[type=checkbox]){min-height:44px}}
+.canvas-frame.preview #design-surface{display:none!important}
+
+/* Device setup keeps the dashboard link secondary to the user's hardware. */
+#screen-dialog{max-width:520px;max-height:90dvh;overflow:auto}
+#screen-dialog .field>span:first-child{font-size:12px}
+.device-guidance{font-size:13px;line-height:1.6;color:var(--muted);max-width:70ch;margin:8px 0 20px}
+#screen-dialog .device-guidance{padding:12px 14px;background:var(--wash);border-radius:6px}
+#screen-dialog select{max-width:100%}
+.screen-address-settings{margin:16px 0}
+.screen-address-settings .field-help{margin-bottom:12px}
+#screen-dialog footer{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+@media(max-width:800px){#screen-dialog button,#screen-dialog input,#screen-dialog select{min-height:44px}}

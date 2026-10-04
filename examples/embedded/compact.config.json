@@ -1,0 +1,273 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8787
+  },
+  "admin": {
+    "enabled": true,
+    "allowLan": false
+  },
+  "branding": {
+    "name": "Home",
+    "location": "",
+    "timeZone": "Europe/Madrid"
+  },
+  "defaultScreen": "home",
+  "plugins": {
+    "clock": {
+      "enabled": true,
+      "hour12": false
+    },
+    "solar": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "weather": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "calendar": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "vehicle": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "camera": {
+      "enabled": true,
+      "provider": "demo"
+    }
+  },
+  "screens": {
+    "home": {
+      "path": "/",
+      "title": "Compact overview",
+      "type": "grid",
+      "viewport": {
+        "width": 320,
+        "height": 240
+      },
+      "layout": {
+        "columns": 12,
+        "rows": 12,
+        "gap": 2,
+        "padding": 4
+      },
+      "appearance": {
+        "background": "#0e1116",
+        "panelBackground": "#171b22",
+        "textColor": "#f3f6fa",
+        "mutedColor": "#aeb8c5",
+        "borderColor": "#303743",
+        "accent": "#7dd3fc",
+        "fontScale": 100,
+        "radius": 6,
+        "panelPadding": 4
+      },
+      "panels": [
+        {
+          "id": "clock",
+          "plugin": "clock",
+          "position": {
+            "column": 1,
+            "row": 1,
+            "width": 5,
+            "height": 3
+          },
+          "options": {
+            "compact": true
+          },
+          "appearance": {
+            "padding": 4
+          }
+        },
+        {
+          "id": "weather",
+          "plugin": "weather",
+          "position": {
+            "column": 6,
+            "row": 1,
+            "width": 7,
+            "height": 3
+          },
+          "options": {
+            "compact": true
+          },
+          "appearance": {
+            "padding": 4
+          },
+          "interaction": {
+            "type": "modal",
+            "screenId": "weather",
+            "label": "Open forecast",
+            "showButton": false
+          }
+        },
+        {
+          "id": "solar",
+          "plugin": "solar",
+          "position": {
+            "column": 1,
+            "row": 4,
+            "width": 5,
+            "height": 6
+          },
+          "options": {
+            "compact": true
+          },
+          "appearance": {
+            "padding": 4
+          }
+        },
+        {
+          "id": "calendar",
+          "plugin": "calendar",
+          "position": {
+            "column": 6,
+            "row": 4,
+            "width": 7,
+            "height": 6
+          },
+          "options": {
+            "compact": true,
+            "maxEvents": 2,
+            "title": "Calendar"
+          },
+          "appearance": {
+            "padding": 4
+          },
+          "interaction": {
+            "type": "modal",
+            "screenId": "calendar",
+            "label": "Open calendar",
+            "showButton": false
+          }
+        },
+        {
+          "id": "vehicle",
+          "plugin": "vehicle",
+          "position": {
+            "column": 1,
+            "row": 10,
+            "width": 5,
+            "height": 3
+          },
+          "options": {
+            "compact": true
+          },
+          "appearance": {
+            "padding": 4
+          }
+        },
+        {
+          "id": "camera",
+          "plugin": "camera",
+          "position": {
+            "column": 6,
+            "row": 10,
+            "width": 7,
+            "height": 3
+          },
+          "options": {
+            "compact": true,
+            "displayMode": "shortcut"
+          },
+          "appearance": {
+            "padding": 4
+          },
+          "interaction": {
+            "type": "modal",
+            "screenId": "camera",
+            "label": "View camera"
+          }
+        }
+      ]
+    },
+    "weather": {
+      "path": "/weather",
+      "title": "Forecast",
+      "type": "single",
+      "presentation": "modal",
+      "viewport": {
+        "width": 320,
+        "height": 240
+      },
+      "layout": {
+        "padding": 4
+      },
+      "appearance": {
+        "panelPadding": 4,
+        "radius": 6
+      },
+      "panels": [
+        {
+          "id": "weather-detail",
+          "plugin": "weather",
+          "options": {
+            "view": "forecast",
+            "forecastLayout": "paged",
+            "hours": 12,
+            "days": 7
+          }
+        }
+      ]
+    },
+    "calendar": {
+      "path": "/calendar",
+      "title": "Calendar",
+      "type": "single",
+      "presentation": "modal",
+      "viewport": {
+        "width": 320,
+        "height": 240
+      },
+      "layout": {
+        "padding": 4
+      },
+      "appearance": {
+        "panelPadding": 4,
+        "radius": 6
+      },
+      "panels": [
+        {
+          "id": "calendar-detail",
+          "plugin": "calendar",
+          "options": {
+            "compact": true,
+            "maxEvents": 3
+          }
+        }
+      ]
+    },
+    "camera": {
+      "path": "/camera",
+      "title": "Camera",
+      "type": "single",
+      "presentation": "modal",
+      "viewport": {
+        "width": 320,
+        "height": 240
+      },
+      "layout": {
+        "padding": 4
+      },
+      "appearance": {
+        "panelPadding": 4,
+        "radius": 6
+      },
+      "panels": [
+        {
+          "id": "camera-detail",
+          "plugin": "camera",
+          "options": {
+            "showTitle": false,
+            "fit": "contain",
+            "displayMode": "snapshot",
+            "showRefresh": true
+          }
+        }
+      ]
+    }
+  }
+}

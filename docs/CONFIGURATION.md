@@ -1,5 +1,9 @@
 # Configuration
 
+To configure any of these settings through an AI assistant, see the
+[Castboard MCP setup and tool reference](MCP.md). It supports targeted changes,
+validation before saving, protected credentials and live application.
+
 Copy `castboard.config.example.json` to the ignored `castboard.config.json`. Set `CASTBOARD_CONFIG` to load a different path.
 
 ## Environment values
@@ -171,6 +175,10 @@ Free Global Quote data is generally end-of-day rather than realtime. The HTTP/fi
 ```json
 "solar": { "enabled": true, "provider": "fronius", "baseUrl": "http://192.168.1.20" }
 ```
+
+Fronius also accepts optional `headers` for an authenticated proxy. Header values
+remain server-side; use environment references for credentials. Missing power
+readings remain unavailable, while a measured zero stays zero.
 
 ### ICS calendar
 

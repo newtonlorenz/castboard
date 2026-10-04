@@ -5,7 +5,7 @@ import { extensionDirectories, validateSchema } from './extensions.js';
 import { readPluginManifest } from './plugin-admin.js';
 
 const VALID_ID = /^[a-z][a-z0-9-]*$/;
-const OPTIONAL_HOOKS = ['publicConfig', 'getData', 'action', 'stream', 'handleRequest', 'dispose'];
+const OPTIONAL_HOOKS = ['publicConfig', 'getData', 'action', 'stream', 'handleRequest', 'dispose', 'nativeView'];
 
 function validateDescriptor(plugin, id) {
   if (!plugin || plugin.id !== id || !VALID_ID.test(plugin.id)) throw new Error(`Plugin ID mismatch in ${id}`);
@@ -70,6 +70,14 @@ export function validatePanels(config, plugins) {
       const view = instances.get(panel.plugin);
       const source = instances.get(panel.source || panel.plugin);
       if (view.inputContract && view.inputContract !== source?.contract) throw new Error(`Panel ${panel.id} requires ${view.inputContract}, received ${source?.contract || 'untyped source'}`);
+      if (panel.interaction?.type === 'action') {
+        const source = instances.get(panel.interaction.source || panel.source || panel.plugin);
+        if (!source?.action) throw new Error(`Panel ${panel.id} action requires a plugin that supports actions`);
+        if (source.actionSchemas) {
+          if (!Object.hasOwn(source.actionSchemas,panel.interaction.action)) throw new Error(`Panel ${panel.id} action is not supported`);
+          validateSchema({...panel.interaction.payload,action:panel.interaction.action},source.actionSchemas[panel.interaction.action],`Panel ${panel.id} action`);
+        }
+      }
       validateSchema(panel.options || {}, instances.get(panel.plugin).optionSchema, `Panel ${panel.id} options`);
     }
   }

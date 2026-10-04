@@ -94,3 +94,11 @@ In **Connections → Your displays**, choose **Set up display** beside a screen.
 - **Remove** asks inline before removing a connection and leaves the receiver's currently displayed screen alone.
 
 Custom protocol targets remain usable. Their endpoints, headers and executable settings stay in server configuration. Disabled protocols must be enabled there before sending. Display changes share the same revision safeguards as screen and plugin saves; refresh after a conflict. Names entered in an unfinished display form survive a refresh within the page.
+
+## Choosing a device
+
+New screens start with a name and a device choice: Google Nest Hub / Google Cast, browser, Echo Show, ESP32 / embedded display, or decide later. The device choice selects setup guidance and is remembered in that browser; it does not pair hardware or change the renderer. Layout, screen ID and the automatically generated link ending remain under Layout and link settings. A path such as `/screens/kitchen` identifies the dashboard on the Castboard server, not the physical device.
+
+Create the screen, add panels and save, then use Connect a device. Connections shows Cast discovery for Google Cast receivers, a link for browser displays, and conditional Silk instructions for Echo Show. Echo Show has no direct Alexa delivery in this installation. ESP32 setup links to Displays, where you add a receiver, select its adapter, assign a screen and obtain its one-time connection key. Install compatible firmware and board drivers separately. Existing custom delivery targets remain available under Saved connections.
+
+Device guidance references: [Amazon Silk guide](https://docs.aws.amazon.com/pdfs/silk/latest/developerguide/silk-dg.pdf), [ESPHome display components](https://esphome.io/components/display/). Hardware acceptance still requires checking the actual device.

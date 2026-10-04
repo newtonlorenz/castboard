@@ -104,3 +104,11 @@ The original eleven plugins provide small, straightforward displays and built-in
 Ambient Weather, Calendar, Solar, Recovery and Portfolio sources can use **Connected plugin** to adapt the standard providers, or **Ambient services** to read a compatible external JSON service. Only configured sources run; Castboard does not ship a broker login, health collector, camera server or music service. Demo sources ship sample data and empty camera/task states, clearly labelled; connect your service before expecting live feeds or actions. The camera and media bridges validate supported paths/actions. Launching a link requires an explicitly configured Cast device and `catt`.
 
 For a complete reusable example, see [Ambient demo configuration](../examples/ambient/castboard.config.json). It contains no private addresses, accounts or credentials. See [Ambient contracts](AMBIENT-PLUGINS.md) for bridge payloads and per-display controls.
+
+
+## Display hardware plugins
+
+Content plugins supply widgets and data. Display plugins adapt Castboard's output
+and input for receiver hardware. Upload and manage them in **Displays → Display
+plugins**, also linked from Plugins. See [the display plugin contract](display-adapters.md)
+for ZIP packaging, generated settings, encoding hooks and a working monochrome example.

@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {once} from 'node:events';
+import {createApp} from '../../../src/server.js';
+import {deviceTokenHash} from '../../../src/core/devices.js';
+const enabled=process.env.CASTBOARD_BROWSER_TESTS==='1';
+test('compact overview retains data, whole-panel taps and keyboard controls at 320 by 240',{skip:!enabled,timeout:60000},async t=>{
+ const {chromium}=await import('playwright');
+ const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});t.after(()=>browser.close());
+ const config=JSON.parse(await fs.readFile(new URL('../../../examples/embedded/compact.config.json',import.meta.url)));
+ const key='test-compact-overview-only-connection-key';
+ config.devices={small:{name:'Small',screenId:'home',mode:'native',format:'rgb565',width:320,height:240,refreshMs:3000,enabled:true,touch:true,allowActions:false,tokenHash:deviceTokenHash(key)}};
+ // A panel's keyboard/tap target must not intercept its nested pager buttons.
+ config.screens.weather.panels[0].interaction={type:'modal',screenId:'calendar',showButton:false};
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-overview-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+ const file=path.join(dir,'config.json');await fs.writeFile(file,JSON.stringify(config));
+ const app=await createApp({configPath:file});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();return app.dispose();});
+ const origin=`http://127.0.0.1:${app.server.address().port}`,page=await browser.newPage({viewport:{width:320,height:240}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const capture=async name=>{if(!process.env.CASTBOARD_CAPTURE_DIR)return;await fs.mkdir(process.env.CASTBOARD_CAPTURE_DIR,{recursive:true});await page.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});await page.screenshot({path:path.join(process.env.CASTBOARD_CAPTURE_DIR,name+'.png'),animations:'disabled'});};
+ await page.goto(origin);await page.waitForSelector('.calendar-event');await page.waitForSelector('.vehicle-summary');await capture('overview-320');
+ const overflows=await page.locator('#dashboard>.widget').evaluateAll(items=>items.map(el=>({id:el.dataset.panelId||el.id,height:el.clientHeight,content:el.scrollHeight})).filter(item=>item.content>item.height+1));
+ assert.deepEqual(overflows,[],'compact content should fit without clipping');
+ assert.match(await page.locator('.weather-widget').innerText(),/UV/);assert.match(await page.locator('.solar-compact').innerText(),/Generated/);assert.match(await page.locator('.vehicle-summary').innerText(),/%/);
+ await page.locator('.weather-temp').click();await page.locator('dialog[open]').waitFor();await capture('overview-forecast-320');
+ await page.locator('[data-weather-step="1"]').click();assert.equal(await page.locator('dialog[open]').count(),1);assert.equal(await page.locator('dialog h2').innerText(),'Forecast');
+ await page.locator('.screen-modal-header button').click();
+ const target=page.locator('.calendar-compact .panel-tap-target');await target.focus();await page.keyboard.press('Enter');await page.locator('dialog[open]').waitFor();await capture('overview-calendar-320');await page.locator('.screen-modal-header button').click();
+ await page.locator('.camera-shortcut .panel-interaction').click();await page.waitForFunction(()=>document.querySelector('dialog .camera-status')?.textContent==='Sample');await capture('overview-camera-320');await page.locator('.screen-modal-header button').click();
+ for(const width of [390,1440]){await page.setViewportSize({width,height:width===390?844:960});await capture('overview-'+width);}
+ const headers={Authorization:`Bearer ${key}`,'Content-Type':'application/json'};
+ const scene=await(await fetch(origin+'/api/devices/small/scene',{headers})).json();assert.equal(scene.panels.length,6);
+ assert.equal(scene.panels.find(p=>p.id==='weather').eventTarget,'panel');assert.equal(scene.panels.find(p=>p.id==='camera').eventTarget,undefined);assert.equal(scene.panels.find(p=>p.id==='camera').image,undefined);assert.match(scene.panels.find(p=>p.id==='vehicle').title,/Sample/);
+ assert.ok(scene.panels.find(p=>p.id==='solar').lines.every(line=>line.kind==='small'));
+ const response=await fetch(origin+'/api/devices/small/events',{method:'POST',headers,body:JSON.stringify({sceneId:scene.sceneId,event:'panel:weather',eventId:'weather-open-1'})});assert.equal(response.status,200);assert.equal((await response.json()).screenId,'weather');
+ await page.setViewportSize({width:1440,height:960});await page.goto(origin+'/admin');
+ await page.locator('#panel-list .panel-row').filter({hasText:'Weather'}).click();
+ const checkbox=page.locator('#interaction-show-button');assert.equal(await checkbox.isChecked(),false);
+ await checkbox.check();await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-design').disabled && document.querySelector('#save-status').textContent==='All changes saved');
+ assert.equal(JSON.parse(await fs.readFile(file)).screens.home.panels.find(p=>p.id==='weather').interaction.showButton,undefined);
+ await checkbox.uncheck();await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-design').disabled && document.querySelector('#save-status').textContent==='All changes saved');
+ await page.reload();await page.locator('#panel-list .panel-row').filter({hasText:'Weather'}).click();assert.equal(await checkbox.isChecked(),false);
+ await page.waitForFunction(()=>document.querySelector('#live-preview').style.width==='320px' && parseInt(document.querySelector('#canvas-scale').textContent)>100);
+ await checkbox.scrollIntoViewIfNeeded();await capture('overview-admin-desktop');
+ await page.setViewportSize({width:390,height:844});await page.locator('[data-tool="settings"]').click();await checkbox.scrollIntoViewIfNeeded();await capture('overview-admin-mobile');
+ // A shortcut still needs visible identity when its action button is hidden.
+ await page.route('**/api/runtime-config',async route=>{const response=await route.fetch();const data=await response.json();data.screens.home.panels.find(p=>p.id==='camera').interaction.showButton=false;await route.fulfill({response,json:data});});
+ await page.setViewportSize({width:320,height:240});await page.goto(origin);await page.waitForSelector('.vehicle-summary');
+ assert.equal(await page.locator('.camera-shortcut').evaluate(el=>el.firstChild.textContent),'View camera');await capture('overview-camera-whole-panel-320');
+ await page.locator('.camera-shortcut').click();await page.locator('dialog[open]').waitFor();assert.equal(await page.locator('dialog h2').innerText(),'Camera');
+ assert.deepEqual(errors,[]);
+});

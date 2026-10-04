@@ -1,0 +1,23 @@
+{
+  "id": "freenove-fnk0104b",
+  "name": "Freenove FNK0104B",
+  "version": "1.0.0",
+  "description": "2.8-inch ESP32-S3 touchscreen with ILI9341 and FT6336U.",
+  "modes": [
+    "frame",
+    "native"
+  ],
+  "formats": [
+    "rgb565"
+  ],
+  "sourceFormat": "rgb565",
+  "defaults": {
+    "width": 320,
+    "height": 240,
+    "refreshMs": 5000,
+    "mode": "frame",
+    "format": "rgb565",
+    "touch": true
+  },
+  "instructions": "Use receivers/esp32/examples/freenove_fnk0104b from the Castboard source. The board port uses LVGL 8.4, landscape rotation 1, 16 MB flash and OPI PSRAM. Back up the existing firmware before installing."
+}

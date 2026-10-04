@@ -1,7 +1,7 @@
 {
   "name": "Camera",
-  "description": "HTTP images and browser-compatible camera streams.",
-  "version": "1.2.0",
+  "description": "Camera streams and refreshable snapshots, including Home Assistant and native displays.",
+  "version": "1.3.2",
   "license": "MIT",
   "category": "Display",
   "defaultConfig": {
@@ -16,12 +16,14 @@
         "enum": [
           "demo",
           "stream",
-          "camera-service"
+          "camera-service",
+          "home-assistant"
         ],
         "enumLabels": {
           "demo": "Sample data",
           "stream": "Direct camera stream",
-          "camera-service": "Camera service"
+          "camera-service": "Camera service",
+          "home-assistant": "Home Assistant"
         }
       },
       "title": {
@@ -30,24 +32,25 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache · milliseconds",
+        "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout · milliseconds",
+        "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true
       },
       "baseUrl": {
         "type": "string",
-        "title": "Camera service URL",
+        "title": "Service URL",
         "showWhen": {
           "provider": [
-            "camera-service"
+            "camera-service",
+            "home-assistant"
           ]
         }
       },
@@ -105,6 +108,80 @@
             "camera-service"
           ]
         }
+      },
+      "snapshotUrl": {
+        "type": "string",
+        "title": "Snapshot URL (optional)",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "stream"
+          ]
+        }
+      },
+      "token": {
+        "type": "string",
+        "title": "Home Assistant token",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "entity": {
+        "type": "string",
+        "title": "Camera entity",
+        "showWhen": {
+          "provider": [
+            "home-assistant"
+          ]
+        }
+      },
+      "displayMode": {
+        "type": "string",
+        "title": "Show",
+        "enum": [
+          "stream",
+          "snapshot",
+          "shortcut"
+        ],
+        "enumLabels": {
+          "stream": "Live stream",
+          "snapshot": "Snapshots",
+          "shortcut": "Camera shortcut"
+        }
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Snapshot refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 300
+      },
+      "showRefresh": {
+        "type": "boolean",
+        "title": "Show Refresh image button"
+      },
+      "fit": {
+        "type": "string",
+        "title": "Image fit",
+        "enum": [
+          "cover",
+          "contain"
+        ],
+        "enumLabels": {
+          "cover": "Fill panel",
+          "contain": "Show whole image"
+        }
+      },
+      "showTitle": {
+        "type": "boolean",
+        "title": "Show camera title"
+      },
+      "overlayTimestamp": {
+        "type": "boolean",
+        "title": "Show update time over image",
+        "description": "Place the update time at the top of the image. Hide the Refresh image button to give the image more room."
       }
     }
   },
@@ -118,6 +195,51 @@
       "name": {
         "type": "string",
         "title": "Camera label"
+      },
+      "displayMode": {
+        "type": "string",
+        "title": "Show",
+        "enum": [
+          "stream",
+          "snapshot",
+          "shortcut"
+        ],
+        "enumLabels": {
+          "stream": "Live stream",
+          "snapshot": "Snapshots",
+          "shortcut": "Camera shortcut"
+        }
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Snapshot refresh \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 300
+      },
+      "showRefresh": {
+        "type": "boolean",
+        "title": "Show Refresh image button"
+      },
+      "fit": {
+        "type": "string",
+        "title": "Image fit",
+        "enum": [
+          "cover",
+          "contain"
+        ],
+        "enumLabels": {
+          "cover": "Fill panel",
+          "contain": "Show whole image"
+        }
+      },
+      "showTitle": {
+        "type": "boolean",
+        "title": "Show camera title"
+      },
+      "overlayTimestamp": {
+        "type": "boolean",
+        "title": "Show update time over image",
+        "description": "Place the update time at the top of the image. Hide the Refresh image button to give the image more room."
       }
     }
   }

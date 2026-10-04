@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { demoTimestamp, fetchText, readJsonSource, readTextFile, validateProviderConfig } from '../../src/core/providers.js';
@@ -57,6 +58,7 @@ export function createPlugin({ config, context }) {
   }
   return {
     id: 'news',
+    nativeView: nativeViews.news,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'News and briefings',

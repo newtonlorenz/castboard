@@ -1,6 +1,8 @@
+import { flowLayout } from '../../src/core/native-layout.js';
 export function createScreenType() {
   return {
     id: 'flow',
+    nativeLayout: flowLayout,
     name: 'Responsive flow',
     version: '1.0.2',
     validateScreen(screen, screenId) {

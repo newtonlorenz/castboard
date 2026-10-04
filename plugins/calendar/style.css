@@ -7,3 +7,5 @@
 .calendar-event strong { font-size: .6875em; }
 .calendar-event span { margin-top: 2px; color: var(--muted); font-size: .5em; }
 
+
+.calendar-compact .widget-head{font-size:.75em;letter-spacing:0;text-transform:none}.calendar-compact .calendar-list{gap:4px;margin-top:5px}.calendar-compact .calendar-event{grid-template-columns:1fr;gap:2px;padding:3px 0}.calendar-compact .calendar-event time{font-size:.6875em}.calendar-compact .calendar-event strong{font-size:.8125em;line-height:1.15;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.calendar-compact .calendar-event span{display:none}

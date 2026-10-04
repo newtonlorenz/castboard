@@ -3,3 +3,5 @@
 .clock-time { font-size: clamp(2.5em, 5.4vw, 3.875em); line-height: .86; font-weight: 400; letter-spacing: -.07em; }
 .clock-date { color: var(--muted); font-size: .75em; }
 
+
+.clock-compact{justify-content:center;gap:3px}.clock-compact .clock-time{font-size:1.5em;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}.clock-compact .clock-date{font-size:.75em;line-height:1.1}

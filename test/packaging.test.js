@@ -32,3 +32,12 @@ test('public flexible example starts from its publishable configuration',async t
  assert.equal(app.publicConfig.screens.home.panels.length,4);
  assert.equal(app.screenTypes.some(type=>type.id==='area-grid'),true);
 });
+
+test('renderer Docker image includes every local runtime import',async()=>{
+ const dir=path.join(ROOT,'services/frame-renderer'),dockerfile=await fs.readFile(path.join(dir,'Dockerfile'),'utf8');
+ for(const entry of ['server.js','renderer.js','images.js']){
+  assert.ok(dockerfile.includes(entry),`Renderer image is missing ${entry}`);
+  const source=await fs.readFile(path.join(dir,entry),'utf8');
+  for(const match of source.matchAll(/from ['"]\.\/([^'"]+)['"]/g))assert.ok(dockerfile.includes(match[1]),`Renderer image is missing imported ${match[1]}`);
+ }
+});

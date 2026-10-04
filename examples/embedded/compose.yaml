@@ -1,0 +1,21 @@
+# Run from this directory. Supply a private .env with CASTBOARD_RENDERER_TOKEN
+# and a private Castboard config in ./data/castboard.config.json.
+services:
+  castboard:
+    build: ../..
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./data:/data
+    environment:
+      CASTBOARD_RENDERER_TOKEN: ${CASTBOARD_RENDERER_TOKEN:?Set a random private renderer token}
+  frame-renderer:
+    build: ../../services/frame-renderer
+    restart: unless-stopped
+    init: true
+    shm_size: 256mb
+    environment:
+      CASTBOARD_APP_ORIGIN: http://castboard:8787
+      CASTBOARD_RENDERER_TOKEN: ${CASTBOARD_RENDERER_TOKEN:?Set a random private renderer token}
+    # No published port. Only Castboard calls this service.
