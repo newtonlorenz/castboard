@@ -1,0 +1,24 @@
+{
+  "id": "standard",
+  "name": "Standard receiver",
+  "version": "1.0.0",
+  "description": "Image and native receivers using the Castboard device protocol.",
+  "modes": [
+    "frame",
+    "native"
+  ],
+  "formats": [
+    "rgb565",
+    "jpeg"
+  ],
+  "sourceFormat": "rgb565",
+  "defaults": {
+    "width": 800,
+    "height": 480,
+    "refreshMs": 5000,
+    "mode": "frame",
+    "format": "rgb565",
+    "touch": true
+  },
+  "instructions": "Use the Castboard device API with your board\u2019s display and input drivers. The ESP32 reference receiver supports RGB565 images and native LVGL scenes."
+}

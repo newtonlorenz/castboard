@@ -18,7 +18,7 @@ export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleM
 
   async function render(input) {
     const { id, token, width, height, format, revision } = input;
-    if (!/^[a-z][a-z0-9-]{0,63}$/.test(id || '') || !/^[A-Za-z0-9_-]{32,128}$/.test(token || '') || !Number.isInteger(width) || !Number.isInteger(height) || width < 160 || height < 160 || width > 1920 || height > 1920 || width * height > 1920 * 1080 || !['jpeg', 'rgb565'].includes(format) || typeof revision !== 'string' || revision.length > 128) throw fail('Invalid renderer request');
+    if (!/^[a-z][a-z0-9-]{0,63}$/.test(id || '') || !/^[A-Za-z0-9_-]{32,128}$/.test(token || '') || !Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 1920 || height > 1920 || width * height > 1920 * 1080 || !['jpeg', 'rgb565'].includes(format) || typeof revision !== 'string' || revision.length > 128) throw fail('Invalid renderer request');
     const signature = hash(JSON.stringify([token, width, height, revision]));
     let session = sessions.get(id);
     if (session?.busy) throw fail('Renderer is busy; retry shortly', 409);

@@ -62,6 +62,7 @@ Now open:
 
 - [`localhost:8787/setup`](http://localhost:8787/setup) — first-run checks and connection tests
 - [`localhost:8787/admin`](http://localhost:8787/admin) — visual screen studio
+- [`localhost:8787/admin/devices`](http://localhost:8787/admin/devices) — register embedded displays and upload hardware plugins
 - [`localhost:8787/admin/plugins`](http://localhost:8787/admin/plugins) — install, configure and test plugins
 - [`localhost:8787`](http://localhost:8787) — 10-panel Home dashboard
 - [`localhost:8787/screens/office`](http://localhost:8787/screens/office) — full-screen news wire
@@ -78,6 +79,8 @@ Use **Plugins** to browse 34 bundled packages, install independent copies, confi
 The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
 
 ![Plugin management with contextual settings](public/assets/castboard-plugins.png)
+
+Display hardware is extensible too. In **Displays → Display plugins**, upload a trusted ZIP package, then choose it for a display. Packages can supply device defaults, settings, image conversion, native scene encoding and input translation. A downloadable monochrome example demonstrates 128 × 64 OLED/e-paper pixel conversion. See [display plugin development](docs/display-adapters.md) and [embedded receivers](docs/embedded-displays.md). Firmware still needs a driver for the physical board.
 
 ## One canvas, any screen
 

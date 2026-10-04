@@ -92,7 +92,7 @@ void CastboardReceiver::network() {
         free(config.bytes);connected_=false;frameId="";xQueueReset(events_);auto* result=new Result();result->error=code==401?"Connection key rejected":"Server unavailable - keeping last view";deliver(result);vTaskDelay(pdMS_TO_TICKS(5000));continue;
       }
       mode=doc["mode"].as<String>();width=doc["width"]|0;height=doc["height"]|0;interval=doc["refreshMs"]|5000;lastConfig=millis();
-      const bool supported=(mode=="native" || (mode=="frame" && String(doc["format"]|"")=="rgb565")) && width>=160 && height>=160 && width<=1920 && height<=1920 && width*height<=1920*1080;
+      const bool supported=(mode=="native" || (mode=="frame" && String(doc["format"]|"")=="rgb565")) && width>=16 && height>=16 && width<=1920 && height<=1920 && width*height<=1920*1080;
       free(config.bytes);
       if(!supported){mode="";auto* result=new Result();result->error="Choose native mode or RGB565 images in Displays";deliver(result);vTaskDelay(pdMS_TO_TICKS(5000));continue;}
       frameId="";nextPoll=0;

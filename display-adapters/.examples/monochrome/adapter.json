@@ -1,0 +1,45 @@
+{
+  "id": "example-monochrome",
+  "name": "Monochrome display",
+  "version": "1.0.0",
+  "description": "An example adapter for one-bit OLED and e-paper receiver firmware.",
+  "entry": "adapter.mjs",
+  "modes": [
+    "frame"
+  ],
+  "formats": [
+    "mono1"
+  ],
+  "sourceFormat": "rgb565",
+  "defaults": {
+    "width": 128,
+    "height": 64,
+    "refreshMs": 30000,
+    "mode": "frame",
+    "format": "mono1",
+    "touch": false
+  },
+  "defaultOptions": {
+    "threshold": 128,
+    "invert": false
+  },
+  "optionSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "threshold": {
+        "type": "integer",
+        "title": "Black/white threshold",
+        "minimum": 0,
+        "maximum": 255,
+        "default": 128
+      },
+      "invert": {
+        "type": "boolean",
+        "title": "Invert black and white",
+        "default": false
+      }
+    }
+  },
+  "instructions": "Use receiver firmware that reads mono1 frames: rows from top to bottom, most significant bit first, one bit per pixel, 1 = white. Each row is padded to a whole byte. This adapter prepares pixels; your firmware still needs the correct panel driver. It does not flash hardware."
+}

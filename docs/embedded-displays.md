@@ -14,6 +14,12 @@ HTML, external artwork and animations are not automatically translated. Use imag
 mode for those designs. Image mode is limited to assets served from the configured
 Castboard origin; remote assets should be proxied by a trusted plugin.
 
+Different hardware can use a [display plugin](display-adapters.md): upload it from
+**Displays → Display plugins**, then select it when adding or editing a display.
+Plugins can convert images or scenes and translate device input without changing
+Castboard's core. The bundled Standard receiver and Freenove defaults work with
+the reference protocols; other formats require matching receiver firmware.
+
 ## 1. Build screens and details
 
 In **Screens**, select a panel and open **On tap**. Choose a modal, another screen,

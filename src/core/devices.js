@@ -13,10 +13,12 @@ export function validateDevices(config) {
     if (typeof device.name !== 'string' || !device.name.trim() || device.name.length > 80) throw deviceError(`Display ${id} needs a name of at most 80 characters`);
     if (!Object.hasOwn(config.screens, device.screenId)) throw deviceError(`Display ${id} references a missing screen`);
     if (!['frame', 'native'].includes(device.mode)) throw deviceError(`Display ${id} mode must be frame or native`);
-    for (const field of ['width', 'height']) if (!Number.isInteger(device[field]) || device[field] < 160 || device[field] > 1920) throw deviceError(`Display ${id} ${field} must be from 160 to 1920 pixels`);
+    for (const field of ['width', 'height']) if (!Number.isInteger(device[field]) || device[field] < 16 || device[field] > 1920) throw deviceError(`Display ${id} ${field} must be from 16 to 1920 pixels`);
     if (device.width * device.height > 1920 * 1080) throw deviceError(`Display ${id} exceeds the two megapixel limit`);
     if (!Number.isInteger(device.refreshMs) || device.refreshMs < 1000 || device.refreshMs > 3600000) throw deviceError(`Display ${id} refresh must be from 1 second to 1 hour`);
-    if (!['rgb565', 'jpeg'].includes(device.format)) throw deviceError(`Display ${id} format must be rgb565 or jpeg`);
+    if (!ID.test(device.format || '')) throw deviceError(`Display ${id} needs a valid image format`);
+    if (device.adapter !== undefined && !ID.test(device.adapter)) throw deviceError(`Display ${id} needs a valid display plugin`);
+    if (device.options !== undefined && (!device.options || typeof device.options !== 'object' || Array.isArray(device.options) || Buffer.byteLength(JSON.stringify(device.options)) > 16384)) throw deviceError(`Display ${id} settings must be an object of at most 16 KiB`);
     if (!/^[a-f0-9]{64}$/.test(device.tokenHash)) throw deviceError(`Display ${id} needs a connection key`);
     for (const field of ['enabled', 'touch', 'allowActions']) if (typeof device[field] !== 'boolean') throw deviceError(`Display ${id} ${field} must be true or false`);
   }
@@ -58,7 +60,7 @@ export function devicePublicConfig(config, publicConfig, device) {
   };
 }
 
-export function changeDeviceConfig(raw, body) {
+export function changeDeviceConfig(raw, body, defaults = {}) {
   const next = structuredClone(raw);
   next.devices ||= {};
   if (!ID.test(body.id || '')) throw deviceError('Use a display ID beginning with a letter, followed by letters, numbers or hyphens');
@@ -73,12 +75,12 @@ export function changeDeviceConfig(raw, body) {
     next.devices[body.id].tokenHash = deviceTokenHash(token);
   } else if (['create', 'update'].includes(body.action)) {
     if ((body.action === 'create') === exists) throw deviceError(exists ? 'This display ID already exists' : 'Display no longer exists', 409);
-    const fields = ['name', 'screenId', 'mode', 'width', 'height', 'refreshMs', 'format', 'enabled', 'touch', 'allowActions'];
+    const fields = ['name', 'screenId', 'mode', 'width', 'height', 'refreshMs', 'format', 'enabled', 'touch', 'allowActions', 'adapter', 'options'];
     const input = body.device;
     if (!input || typeof input !== 'object' || Object.keys(input).some(key => !fields.includes(key))) throw deviceError('Invalid display settings');
     const settings = Object.fromEntries(fields.filter(key => input[key] !== undefined).map(key => [key, input[key]]));
     if (!exists) token = randomBytes(32).toString('base64url');
-    next.devices[body.id] = { width: 800, height: 480, refreshMs: 5000, mode: 'frame', format: 'rgb565', touch: true, allowActions: false, enabled: true, ...next.devices[body.id], ...settings,
+    next.devices[body.id] = { width: 800, height: 480, refreshMs: 5000, mode: 'frame', format: 'rgb565', touch: true, allowActions: false, enabled: true, ...next.devices[body.id], ...defaults, ...settings,
       ...(token ? { tokenHash: deviceTokenHash(token) } : {}),
     };
   } else throw deviceError('Unknown display operation');

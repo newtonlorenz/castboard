@@ -74,7 +74,7 @@ export function validateConfig(config) {
   assertObject(config.plugins, 'plugins');
   if (config.extensions !== undefined) {
     assertObject(config.extensions, 'extensions');
-    for (const kind of ['plugins', 'screenTypes', 'protocols']) if (config.extensions[kind] !== undefined && (!Array.isArray(config.extensions[kind]) || config.extensions[kind].some(root => typeof root !== 'string' || !root))) throw new Error(`extensions.${kind} must be an array of directories`);
+    for (const kind of ['plugins', 'screenTypes', 'protocols', 'displayAdapters']) if (config.extensions[kind] !== undefined && (!Array.isArray(config.extensions[kind]) || config.extensions[kind].some(root => typeof root !== 'string' || !root))) throw new Error(`extensions.${kind} must be an array of directories`);
   }
   for (const [id, plugin] of Object.entries(config.plugins)) {
     assertObject(plugin, `plugins.${id}`);

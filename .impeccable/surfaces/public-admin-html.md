@@ -6,7 +6,7 @@ related_targets: ["public/plugins.html","public/setup.html","public/devices.html
 ---
 
 # Admin redesign
-Mode: Operate. Scope: Screens, Plugins, Connections and shared controls. User requests a dramatic working-interface redesign and has already chosen direct implementation over mockups; continue code-led without another approval round. Preserve every editor, plugin and connection operation.
+Mode: Operate. Scope: Screens, Plugins, Connections, Displays and shared controls. User requests a dramatic working-interface redesign and has already chosen direct implementation over mockups; continue code-led without another approval round. Preserve every editor, plugin and connection operation.
 
 ## Direction contract
 THESIS: A drawing studio for real screens: the composition stays central, tools stay orderly, and the same navigation anchors every admin task.
@@ -36,3 +36,21 @@ Checked the finished `public/devices.html`, `public/devices.css`, `public/device
 Rendered review evidence is kept in `.impeccable/review/`: `devices-desktop.png`, `devices-mobile.png`, `device-settings-desktop.png`, `device-settings-mobile.png`, `studio-desktop.png`, `studio-mobile.png` and `modal-800.png`. The finish reviewer identified a clipped mobile image-format choice; the finished form stacks that field at narrow widths and retains the sticky Save footer. The reviewer disposition after the fix was ship. These screenshots establish interface appearance, not physical ESP32 validation.
 
 The one-pass detector also reported incumbent color/type/radius drift, native system-font and small-text warnings, plus local Displays type sizes outside the recorded ramp. Several runtime findings belong to independently styled dashboard output. This extension does not repair those findings or promote them into the design system; no approved system change was requested. No new shipping raster was introduced.
+
+## Display plugin management extension
+
+Display plugin management extends the incumbent Drawing Studio in Displays. It uses the same deep green navigation, mineral page background, evergreen actions, fine row seams, labeled controls and viewport-bounded dialogs. The Plugins task header links directly to the Display plugins section. This is an ordinary surface extension: `DESIGN.md` and `.impeccable/design.json` remain unchanged, and no new visual world, composition study or shipping raster is introduced.
+
+The package list sits below registered displays as continuous rows. Each row presents its name, version, description, origin, supported drawing modes and display usage, with expandable connection instructions. Upload plugin and Download example sit beside the section heading. Uploaded packages have a labeled Remove action; assigned packages disable it and show In use. The removal confirmation explains file retention and the restart required before reinstalling. Bundled and local packages have no removal control in this list.
+
+Upload plugin expands the inline upload form and focuses the ZIP field. The form states the archive limit and required package contents, discloses that code runs on the Castboard server, and requires an explicit trust checkbox. Installation shows a pending label, keeps failures beside the form, and reports success at the package list with focus on the installed row. Download example supplies the monochrome encoder package described in `docs/display-adapters.md`; this is a receiver-format example, not automatic hardware setup.
+
+Display settings adds a Display plugin selector and description above schema-generated labeled controls. Selecting a package applies its offered defaults, drawing modes, formats and option fields; saved options remain specific to each display. The reviewed example exposes a black/white threshold and inversion control. These use the existing fields and checkbox patterns inside the scrolling dialog, with Cancel and Save display in the sticky footer. Admin appearance follows the existing system while encoded screen content remains governed by the Output Boundary Rule.
+
+On desktop, package metadata stays with its identity and Remove sits alongside it. On phones, rows stack, heading actions wrap, instructions and file controls stay within the page width, and upload copy and trust acknowledgement remain readable. Package removal and installation controls are at least 44px tall, and disclosure targets reach that height at the narrow breakpoint. Generated settings remain full width; Width and Height stay paired, while Refresh and Image format stack. The dialog scrolls within the viewport and retains its action footer, including at the bottom of the mobile form.
+
+## Display plugin finish evidence
+
+Checked `public/devices.html`, `public/devices.js`, `public/devices.css` and the link in `public/plugins.html` against `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json` and the contract in `docs/display-adapters.md`. The fresh finish review returned ship with no material fixes. Rendered evidence in `.impeccable/review/` was checked for the installed list, upload disclosure and form, generated settings and bottom-of-dialog actions: `display-plugins-desktop.png`, `display-plugins-mobile.png`, `display-upload-desktop.png`, `display-upload-mobile.png`, `display-plugin-settings-desktop.png`, `display-plugin-settings-mobile.png` and `display-plugin-settings-mobile-bottom.png`. This evidence records the Admin interface and does not establish physical receiver validation.
+
+The detector report at `/private/tmp/castboard-display-plugin-design-findings.json` identifies inherited 11px labels, Displays type sizes outside the recorded ramp (15px, 16px and 28px), and the Plugins collection control's border color outside the recorded palette. These findings are recorded as drift, not repaired or promoted into new system tokens: this work extends the existing surface without an approved design-system change.

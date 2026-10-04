@@ -16,11 +16,14 @@ import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.
 import { discoverCastProtocols } from './core/cast-protocol-registry.js';
 import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
 import { createNativeScenes } from './core/native-scene.js';
+import { adapterCatalog, adapterFor, adapterOptions, discoverDisplayAdapters, encodeAdapterResult, safeAdapterContext, validateAdapterDevices } from './core/display-adapters.js';
+import { installDisplayPackage, MAX_PACKAGE_BYTES, removeDisplayPackage, unpackDisplayPackage, zipFiles } from './core/display-packages.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const PLUGINS_DIR = path.join(ROOT, 'plugins');
 const SCREEN_TYPES_DIR = path.join(ROOT, 'screen-types');
+const DISPLAY_ADAPTERS_DIR = path.join(ROOT, 'display-adapters');
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -53,6 +56,12 @@ async function sendFile(res, filePath, cache = false) {
   res.end(data);
 }
 
+async function readBytes(req, limit) {
+  const chunks=[];let size=0;
+  for await(const chunk of req){size+=chunk.length;if(size>limit)throw Object.assign(new Error('Upload exceeds its size limit'),{statusCode:413});chunks.push(chunk);}
+  return Buffer.concat(chunks,size);
+}
+
 async function readBody(req) {
   let raw = '';
   let bytes = 0;
@@ -81,6 +90,10 @@ export async function createApp(options = {}) {
   let runtimeConfig = loaded.config;
   let rawConfig = loaded.rawConfig || JSON.parse(JSON.stringify(loaded.config));
   let configPath = loaded.configPath;
+  let displayAdapters = await discoverDisplayAdapters({builtin:DISPLAY_ADAPTERS_DIR,config:runtimeConfig,configDir:context.configDir});
+  validateAdapterDevices(runtimeConfig,displayAdapters);
+  const removedAdapterIds=new Set();
+  let adapterInstallInProgress=false;
   let screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: runtimeConfig, configDir: loaded.configDir });
   let screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
   let byId = new Map();
@@ -163,18 +176,55 @@ export async function createApp(options = {}) {
       if (!isAllowedApplicationHost(req.headers.host, allowedHosts)) {
         return jsonResponse(res, 421, { error: { code: 'HOST_NOT_ALLOWED', message: 'Request host is not allowed' } });
       }
+      if(url.pathname==='/api/admin/display-adapters/example' && req.method==='GET') {
+        if(!authorizeAdmin(req,runtimeConfig))return jsonResponse(res,403,{error:{message:'Display plugins require admin access'}});
+        const dir=path.join(DISPLAY_ADAPTERS_DIR,'.examples/monochrome'),files=new Map();
+        for(const name of ['adapter.json','adapter.mjs','README.md','LICENSE'])files.set(name,await fs.readFile(path.join(dir,name)));
+        const zip=zipFiles(files);res.writeHead(200,{'Content-Type':'application/zip','Content-Length':zip.length,'Content-Disposition':'attachment; filename="castboard-monochrome-example.zip"'});res.end(zip);return;
+      }
+      if (url.pathname === '/api/admin/display-adapters') {
+        if(!authorizeAdmin(req,runtimeConfig))return jsonResponse(res,403,{error:{message:'Display plugin management requires admin access'}});
+        const payload=()=>({ok:true,adapters:adapterCatalog(displayAdapters,runtimeConfig)});
+        if(req.method==='GET')return jsonResponse(res,200,payload());
+        if(req.method!=='POST')return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
+        const adminOrigin=runtimeConfig.server.publicUrl?new URL(runtimeConfig.server.publicUrl).origin:url.origin;
+        if(req.headers['sec-fetch-site']==='cross-site' || req.headers.origin && ![url.origin,adminOrigin].includes(req.headers.origin))return jsonResponse(res,403,{error:{message:'Open display plugins from your Castboard admin page before making changes'}});
+        if(adapterInstallInProgress || pluginSaveInProgress)return jsonResponse(res,409,{error:{message:'Another change is being saved. Try again shortly.'}});
+        adapterInstallInProgress=true;
+        try {
+          let installed;
+          if(String(req.headers['content-type'] || '').split(';')[0]==='application/zip') {
+            if(req.headers['x-castboard-trust-package']!=='yes')return jsonResponse(res,422,{error:{message:'Confirm that you trust this package before installing it'}});
+            const zip=await readBytes(req,MAX_PACKAGE_BYTES),{manifest}=unpackDisplayPackage(zip);
+            if(removedAdapterIds.has(manifest.id))return jsonResponse(res,409,{error:{message:'Restart Castboard before reinstalling a removed plugin so its previous code is unloaded'}});
+            try{installed=await installDisplayPackage({zip,configDir:context.configDir,existing:displayAdapters});}
+            catch(error){if(error.requiresRestart)removedAdapterIds.add(manifest.id);throw error;}
+          } else if(acceptsJson(req)) {
+            const body=await readBody(req);
+            if(body.action!=='remove')return jsonResponse(res,422,{error:{message:'Unknown display plugin operation'}});
+            await removeDisplayPackage({id:body.id,adapters:displayAdapters,config:runtimeConfig,configDir:context.configDir});
+            removedAdapterIds.add(body.id);
+          } else return jsonResponse(res,415,{error:{message:'Upload a ZIP display plugin'}});
+          displayAdapters=await discoverDisplayAdapters({builtin:DISPLAY_ADAPTERS_DIR,config:runtimeConfig,configDir:context.configDir});
+          return jsonResponse(res,200,{...payload(),...(installed?{installed}:{})});
+        } finally {adapterInstallInProgress=false;}
+      }
       if (url.pathname === '/api/admin/devices') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Display management requires admin access'}});
-        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.server.publicUrl || ''});
+        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),adapters:adapterCatalog(displayAdapters,runtimeConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.server.publicUrl || ''});
         if (req.method === 'GET') return jsonResponse(res,200,payload());
         if (req.method !== 'POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
         if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Display changes require JSON'}});
         const body = await readBody(req);
-        if (pluginSaveInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res,409,{error:{message:'Settings changed. Refresh displays before saving.'}});
+        if (pluginSaveInProgress || adapterInstallInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res,409,{error:{message:'Settings changed. Refresh displays before saving.'}});
         pluginSaveInProgress=true;
         try {
-          const changed=changeDeviceConfig(rawConfig,body);
+          const requestedAdapter=adapterFor(displayAdapters,body.device || rawConfig.devices?.[body.id] || {});
+          const adapterChanged=body.action==='create' || body.device?.adapter && body.device.adapter!==(rawConfig.devices?.[body.id]?.adapter || 'standard');
+          const defaults=adapterChanged?{...requestedAdapter.defaults,options:requestedAdapter.defaultOptions || {}}:{};
+          const changed=changeDeviceConfig(rawConfig,body,defaults);
           const nextConfig=validateConfig(expandEnvironment(changed.config,runtimeEnv));
+          validateAdapterDevices(nextConfig,displayAdapters);
           const nextPath=writableConfigPath(configPath,path.dirname(configPath));
           await writeConfigAtomic(nextPath,changed.config);
           rawConfig=changed.config;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);
@@ -186,29 +236,47 @@ export async function createApp(options = {}) {
       if (deviceMatch) {
         const [,id,operation,pluginId]=deviceMatch;
         const device=authenticateDevice(runtimeConfig,id,req.headers.authorization);
+        const adapter=adapterFor(displayAdapters,device),adapterContext=safeAdapterContext(adapter,device,id);
+        const input=async()=>{
+          if(!device.touch)throw Object.assign(new Error('Touch is disabled for this display'),{statusCode:403});
+          if(!adapter.hooks.decodeInput){if(!acceptsJson(req))throw Object.assign(new Error('Touch events require JSON'),{statusCode:415});return readBody(req);}
+          const bytes=await readBytes(req,512*1024);
+          try {
+            const event=await adapter.hooks.decodeInput(bytes,{...adapterContext,contentType:String(req.headers['content-type'] || '')});
+            if(!event || typeof event!=='object' || Array.isArray(event) || Object.getPrototypeOf(event)!==Object.prototype || Buffer.byteLength(JSON.stringify(event))>16384)throw new Error('Invalid event');
+            return event;
+          }
+          catch{throw Object.assign(new Error('The display plugin could not read this input event'),{statusCode:422});}
+        };
+        const sendScene=async scene=>{
+          const encoded=await encodeAdapterResult(adapter,'encodeScene',scene,adapterContext,{data:Buffer.from(JSON.stringify(scene)),contentType:'application/json; charset=utf-8'});
+          res.writeHead(200,{'Content-Type':encoded.contentType,'Content-Length':encoded.data.length,'Cache-Control':'no-store','X-Scene-Id':scene.sceneId});res.end(encoded.data);
+        };
         const rate=deviceRequests.get(id) || {at:Date.now(),count:0};
         if (Date.now()-rate.at>60000) {rate.at=Date.now();rate.count=0;}
         deviceRequests.set(id,rate);
         if (++rate.count>600) return jsonResponse(res,429,{error:{message:'Display request limit exceeded. Retry in a minute.'}});
         deviceDiagnostics.set(id,{lastSeenAt:new Date().toISOString(),remoteAddress:clientAddress(req),operation:operation.startsWith('plugins/')?'data':operation});
-        if (req.method==='GET' && operation==='config') return jsonResponse(res,200,{protocol:'castboard-device/1',id,name:device.name,mode:device.mode,width:device.width,height:device.height,format:device.format,refreshMs:device.refreshMs,touch:device.touch,allowActions:device.allowActions});
+        if (req.method==='GET' && operation==='config') {
+          let configuration={};
+          if(adapter.hooks.configure){try{configuration=await adapter.hooks.configure(adapterContext);}catch{throw Object.assign(new Error('The display plugin could not prepare its settings'),{statusCode:502});}}
+          if(!configuration || typeof configuration!=='object' || Array.isArray(configuration) || Buffer.byteLength(JSON.stringify(configuration))>16384)throw Object.assign(new Error('The display plugin returned invalid settings'),{statusCode:502});
+          return jsonResponse(res,200,{protocol:'castboard-device/1',id,name:device.name,mode:device.mode,width:device.width,height:device.height,format:device.format,refreshMs:device.refreshMs,touch:device.touch,allowActions:device.allowActions,adapter:{id:adapter.id,version:adapter.version,options:adapterOptions(adapter,device),configuration}});
+        }
         if (req.method==='GET' && operation==='bootstrap') return jsonResponse(res,200,devicePublicConfig(runtimeConfig,publicConfig,device));
-        if (operation==='scene' && req.method==='GET' && device.mode==='native') return jsonResponse(res,200,await nativeScenes.scene(id,device));
+        if (operation==='scene' && req.method==='GET' && device.mode==='native') return sendScene(await nativeScenes.scene(id,device));
         if (operation==='events' && req.method==='POST' && device.mode==='native') {
-          if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Touch events require JSON'}});
-          return jsonResponse(res,200,await nativeScenes.event(id,device,await readBody(req)));
+          return sendScene(await nativeScenes.event(id,device,await input()));
         }
         if (device.mode==='frame' && ((operation==='frame' && req.method==='GET') || (operation==='touch' && req.method==='POST'))) {
           if (!runtimeConfig.embedded?.rendererUrl) return jsonResponse(res,503,{error:{message:'Image mode needs the optional frame renderer. Set it up before connecting this display.'}});
           let event;
           if (operation==='touch') {
-            if (!device.touch) return jsonResponse(res,403,{error:{message:'Touch is disabled for this display'}});
-            if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Touch events require JSON'}});
-            event=await readBody(req);
+            event=await input();
           }
           let frame;
           try {
-            frame=await fetch(new URL('/render',runtimeConfig.embedded.rendererUrl),{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${runtimeConfig.embedded.rendererToken}`},body:JSON.stringify({id,token:req.headers.authorization.slice(7),width:device.width,height:device.height,format:device.format,revision:configRevision(rawConfig),...(event?{event}: {})}),signal:AbortSignal.timeout(40000)});
+            frame=await fetch(new URL('/render',runtimeConfig.embedded.rendererUrl),{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${runtimeConfig.embedded.rendererToken}`},body:JSON.stringify({id,token:req.headers.authorization.slice(7),width:device.width,height:device.height,format:adapter.hooks.encodeFrame?(adapter.sourceFormat || 'rgb565'):device.format,revision:configRevision(rawConfig),...(event?{event}: {})}),signal:AbortSignal.timeout(40000)});
           } catch { return jsonResponse(res,503,{error:{message:'The image renderer is unavailable. The display can keep its last frame and retry.'}}); }
           if (!frame.ok) {const error=await frame.json().catch(()=>({}));return jsonResponse(res,frame.status,{error:{message:error.error?.message || 'The image renderer could not update this display'}});}
           const length=Number(frame.headers.get('content-length'));
@@ -216,11 +284,14 @@ export async function createApp(options = {}) {
           const buffer=Buffer.from(await frame.arrayBuffer());
           if (buffer.length!==length) return jsonResponse(res,502,{error:{message:'Incomplete frame'}});
           const frameId=frame.headers.get('x-frame-id');
-          res.setHeader('ETag',`"${frameId}"`);
+          const etag=adapter.hooks.encodeFrame?configRevision({frameId,adapter:adapter.id,version:adapter.version,device}):frameId;
+          res.setHeader('ETag',`"${etag}"`);
           res.setHeader('Cache-Control','private, no-cache');
           for(const field of ['id','width','height','format']) res.setHeader(`X-Frame-${field}`,frame.headers.get(`x-frame-${field}`)||'');
-          if (!event && req.headers['if-none-match']===`"${frameId}"`) {res.writeHead(304);res.end();return;}
-          res.writeHead(200,{'Content-Type':device.format==='jpeg'?'image/jpeg':'application/octet-stream','Content-Length':buffer.length});res.end(buffer);return;
+          if (!event && req.headers['if-none-match']===`"${etag}"`) {res.writeHead(304);res.end();return;}
+          const encoded=await encodeAdapterResult(adapter,'encodeFrame',{data:buffer,format:frame.headers.get('x-frame-format'),width:device.width,height:device.height,frameId},adapterContext,{data:buffer,contentType:device.format==='jpeg'?'image/jpeg':'application/octet-stream'});
+          res.setHeader('X-Frame-Format',device.format);
+          res.writeHead(200,{'Content-Type':encoded.contentType,'Content-Length':encoded.data.length});res.end(encoded.data);return;
         }
         if (operation.startsWith('plugins/')) {
           const actionDisabled = operation.endsWith('/action') && (!device.allowActions || !device.touch);

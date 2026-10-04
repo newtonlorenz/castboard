@@ -7,6 +7,7 @@ COPY --chown=node:node public ./public
 COPY --chown=node:node plugins ./plugins
 COPY --chown=node:node screen-types ./screen-types
 COPY --chown=node:node cast-protocols ./cast-protocols
+COPY --chown=node:node display-adapters ./display-adapters
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node docs ./docs
 

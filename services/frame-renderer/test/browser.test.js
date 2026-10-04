@@ -17,7 +17,7 @@ test('image and native receivers open the same modal; images accept valid touche
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-browser-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
   const key='only-for-automated-test-device-connections';
   const baseDevice={name:'Test',screenId:'home',mode:'frame',width:480,height:320,format:'rgb565',refreshMs:5000,enabled:true,touch:true,allowActions:false,tokenHash:deviceTokenHash(key)};
-  const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},plugins:{clock:{enabled:true}},screens:{home:{title:'Home',path:'/',type:'single',panels:[{id:'clock',plugin:'clock',interaction:{type:'modal',screenId:'details'}}]},details:{title:'Clock details',path:'/details',type:'single',presentation:'modal',viewport:{width:400,height:230},appearance:{background:'#203d60',fontFamily:'mono'},panels:[{id:'detail-clock',plugin:'clock'}]}},devices:{image:baseDevice,native:{...baseDevice,name:'Native',mode:'native'}}};
+  const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},plugins:{clock:{enabled:true}},screens:{home:{title:'Home',path:'/',type:'single',panels:[{id:'clock',plugin:'clock',interaction:{type:'modal',screenId:'details'}}]},details:{title:'Clock details',path:'/details',type:'single',presentation:'modal',viewport:{width:400,height:230},appearance:{background:'#203d60',fontFamily:'mono'},panels:[{id:'detail-clock',plugin:'clock'}]}},devices:{image:baseDevice,native:{...baseDevice,name:'Native',mode:'native'},tiny:{...baseDevice,name:'Tiny',width:128,height:64}}};
   const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
   const app=await createApp({loadedConfig:{config,rawConfig:structuredClone(config),configPath,configDir:dir}});
   app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();});
@@ -37,6 +37,7 @@ test('image and native receivers open the same modal; images accept valid touche
   // Separate browser sessions must not leak navigation between devices.
   const second=await renderer.render({...input,id:'native'});assert.equal(second.buffer.length,before.buffer.length);
   assert.notEqual(second.frameId,touched.frameId);
+  const tiny=await renderer.render({...input,id:'tiny',width:128,height:64});assert.equal(tiny.buffer.length,128*64*2);
   const jpeg=await renderer.render({...input,format:'jpeg'});assert.equal(jpeg.buffer[0],0xff);assert.equal(jpeg.buffer[1],0xd8);
 });
 
@@ -66,5 +67,48 @@ test('Studio previews navigate modals but never send plugin actions; device form
   await page.locator('#key-dialog .primary').click();await page.waitForFunction(()=>document.querySelector('#device-connection').value==='');
   assert.equal(await page.locator('#device-connection').inputValue(),'');
   assert.equal((await fetch(origin+'/api/devices/small-screen/config',{headers:{Authorization:`Bearer ${connection.connectionKey}`}})).status,200);
+  assert.deepEqual(errors,[]);
+});
+
+
+test('display packages upload from Admin and keep their per-device settings on desktop and mobile', {skip:!enabled,timeout:60000},async t=>{
+  const {chromium}=await import('playwright');
+  const {zipFiles}=await import('../../../src/core/display-packages.js');
+  const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});t.after(()=>browser.close());
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-upload-ui-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},plugins:{clock:{enabled:true}},screens:{home:{title:'Demo screen',path:'/',type:'single',panels:[{id:'clock',plugin:'clock'}]}}};
+  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
+  const app=await createApp({configPath});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();return app.dispose();});
+  const origin=`http://127.0.0.1:${app.server.address().port}`,page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  const capture=async name=>{if(!process.env.CASTBOARD_CAPTURE_DIR)return;await fs.mkdir(process.env.CASTBOARD_CAPTURE_DIR,{recursive:true});await page.evaluate(async()=>{window.scrollTo(0,0);await document.fonts.ready;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});await page.screenshot({path:path.join(process.env.CASTBOARD_CAPTURE_DIR,name+'.png'),fullPage:!await page.locator('dialog[open]').count(),animations:'disabled'});};
+  await page.goto(origin+'/admin/devices');await page.locator('#adapter-standard').waitFor();
+  const downloadPromise=page.waitForEvent('download');await page.locator('#download-adapter-example').click();const download=await downloadPromise;const zip=await fs.readFile(await download.path());
+  await page.locator('#show-adapter-upload').click();
+  await page.locator('#adapter-file').setInputFiles({name:'monochrome.zip',mimeType:'application/zip',buffer:zip});
+  assert.equal(await page.locator('#adapter-trust').evaluate(input=>input.validity.valueMissing),true);
+  await capture('display-upload-desktop');
+  await page.setViewportSize({width:390,height:844});await capture('display-upload-mobile');
+  await page.locator('#adapter-trust').check();await page.locator('#install-adapter').click();await page.locator('#adapter-example-monochrome').waitFor();
+  await page.locator('#add-device').click();await page.locator('#device-name').fill('OLED demo');await page.locator('#device-adapter').selectOption('example-monochrome');
+  assert.equal(await page.locator('#device-width').inputValue(),'128');assert.equal(await page.locator('#device-height').inputValue(),'64');
+  assert.equal(await page.locator('#device-touch').isChecked(),false);
+  await page.locator('#device-adapter-options-threshold').fill('160');await page.locator('#device-adapter-options-invert').check();
+  await page.locator('#device-form button[type=submit]').click();await page.locator('#key-dialog[open]').waitFor();await page.locator('#key-dialog .primary').click();
+  await page.locator('[data-edit="oled-demo"]').waitFor();assert.equal(await page.locator('[data-remove-adapter="example-monochrome"]').isDisabled(),true);
+  await page.evaluate(()=>window.scrollTo(0,0));await capture('display-plugins-mobile');
+  await page.setViewportSize({width:1440,height:960});await page.evaluate(()=>window.scrollTo(0,0));await capture('display-plugins-desktop');
+  await page.locator('[data-edit="oled-demo"]').click();assert.equal(await page.locator('#device-adapter-options-threshold').inputValue(),'160');assert.equal(await page.locator('#device-adapter-options-invert').isChecked(),true);
+  await capture('display-plugin-settings-desktop');await page.setViewportSize({width:390,height:844});await capture('display-plugin-settings-mobile');await page.locator('#device-enabled').scrollIntoViewIfNeeded();await capture('display-plugin-settings-mobile-bottom');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
+  await page.locator('#device-form button[type=submit]').click();await page.locator('#device-dialog[open]').waitFor({state:'hidden'});
+  const saved=JSON.parse(await fs.readFile(configPath));assert.deepEqual(saved.devices['oled-demo'].options,{threshold:160,invert:true});
+  // A multi-format adapter must preserve its second format on subsequent edits.
+  const example=new URL('../../../display-adapters/.examples/monochrome/',import.meta.url),files=new Map(await Promise.all(['adapter.json','adapter.mjs'].map(async name=>[name,await fs.readFile(new URL(name,example))])));
+  const manifest=JSON.parse(files.get('adapter.json'));manifest.id='multi-format';manifest.formats=['mono1','mono-alt'];files.set('adapter.json',JSON.stringify(manifest));
+  assert.equal((await fetch(origin+'/api/admin/display-adapters',{method:'POST',headers:{'Content-Type':'application/zip','X-Castboard-Trust-Package':'yes'},body:zipFiles(files)})).status,200);
+  await page.reload();await page.locator('[data-edit="oled-demo"]').click();await page.locator('#device-adapter').selectOption('multi-format');await page.locator('#device-format').selectOption('mono-alt');await page.locator('#device-form button[type=submit]').click();await page.locator('#device-dialog[open]').waitFor({state:'hidden'});
+  await page.locator('[data-edit="oled-demo"]').click();assert.equal(await page.locator('#device-format').inputValue(),'mono-alt');await page.locator('#device-form button[type=submit]').click();await page.locator('#device-dialog[open]').waitFor({state:'hidden'});
+  await page.locator('[data-remove-adapter="example-monochrome"]').click();await page.locator('#device-confirm-ok').click();await page.locator('#adapter-example-monochrome').waitFor({state:'detached'});
   assert.deepEqual(errors,[]);
 });
