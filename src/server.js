@@ -19,6 +19,7 @@ import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceRepor
 import { createNativeScenes } from './core/native-scene.js';
 import { adapterCatalog, adapterFor, adapterOptions, discoverDisplayAdapters, encodeAdapterResult, safeAdapterContext, validateAdapterDevices } from './core/display-adapters.js';
 import { installDisplayPackage, MAX_PACKAGE_BYTES, removeDisplayPackage, unpackDisplayPackage, zipFiles } from './core/display-packages.js';
+import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -331,6 +332,50 @@ export async function createApp(options = {}) {
         return jsonResponse(res,200,{ok:true});
       }
       if (req.method === 'GET' && ['/api/config','/api/runtime-config'].includes(url.pathname)) return jsonResponse(res, 200, publicConfig);
+      if (url.pathname === '/api/admin/configuration') {
+        if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Configuration requires admin access' } });
+        const packages = await pluginLibrary({ pluginsDir: PLUGINS_DIR, config: runtimeConfig, configDir: context.configDir });
+        if (req.method === 'GET') return jsonResponse(res, 200, { ok: true, revision: configRevision(rawConfig), ...configurationView(rawConfig, packages) });
+        if (req.method !== 'PATCH') return jsonResponse(res, 405, { error: { message: 'Use GET or PATCH' } });
+        if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { message: 'Configuration changes require JSON' } });
+        const body = await readBody(req);
+        if (pluginSaveInProgress || adapterInstallInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Configuration changed. Read it again before saving.' } });
+        pluginSaveInProgress = true;
+        let staged, nextRaw, nextConfig, applied = false;
+        try {
+          if (body.dryRun !== undefined && typeof body.dryRun !== 'boolean') throw new Error('dryRun must be a boolean');
+          nextRaw = patchConfiguration(rawConfig, body.operations);
+          nextConfig = expandEnvironment(nextRaw, runtimeEnv);
+          if (runtimeEnv.CASTBOARD_ADMIN_TOKEN) nextConfig.admin = { ...(nextConfig.admin || {}), enabled: true, allowLan: true, token: runtimeEnv.CASTBOARD_ADMIN_TOKEN };
+          validateConfig(nextConfig);
+          const nextAdapters = await discoverDisplayAdapters({ builtin: DISPLAY_ADAPTERS_DIR, config: nextConfig, configDir: context.configDir });
+          validateAdapterDevices(nextConfig, nextAdapters);
+          const nextTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
+          staged = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: nextConfig, context, reuse: plugins });
+          await discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config: nextConfig, context });
+          const nextPublic = publicAppConfig(nextConfig, staged, nextTypes);
+          const restartRequired = ['host', 'port'].some(key => nextConfig.server[key] !== runtimeConfig.server[key]);
+          const result = { ok: true, valid: true, applied: false, revision: configRevision(rawConfig), changedPaths: body.operations.map(item => item.path), restartRequired };
+          if (body.dryRun !== false) return jsonResponse(res, 200, result);
+          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
+          await writeConfigAtomic(nextPath, nextRaw);
+          const previous = plugins;
+          plugins = staged; byId = pluginMap(plugins); reads.clear();
+          rawConfig = nextRaw; runtimeConfig = nextConfig; configPath = nextPath;
+          context.configDir = path.dirname(nextPath);
+          screenTypes = nextTypes; screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
+          displayAdapters = nextAdapters;
+          nativeScenes.dispose(); deviceDiagnostics.clear();
+          publicConfig = nextPublic; applied = true;
+          await Promise.allSettled(previous.filter(plugin => !plugins.includes(plugin)).map(plugin => plugin.dispose?.()));
+          return jsonResponse(res, 200, { ...result, applied: true, revision: configRevision(rawConfig) });
+        } catch (error) {
+          return jsonResponse(res, 422, { error: { code: 'INVALID_CONFIGURATION', message: safeConfigurationError(error, [rawConfig, runtimeConfig, nextRaw, nextConfig], packages) } });
+        } finally {
+          if (staged && !applied) await Promise.allSettled(staged.filter(plugin => !plugins.includes(plugin)).map(plugin => plugin.dispose?.()));
+          pluginSaveInProgress = false;
+        }
+      }
       if (url.pathname === '/api/admin/plugins') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{code:'ADMIN_FORBIDDEN',message:'Plugin management requires admin access'}});
         const packages=await pluginLibrary({pluginsDir:PLUGINS_DIR,config:runtimeConfig,configDir:context.configDir});
@@ -494,6 +539,7 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/record-list-field.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'record-list-field.js'));
       if (req.method === 'GET' && url.pathname === '/screen-path.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(ROOT, 'src/core/screen-path.js'));
       if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
+      if (req.method === 'GET' && url.pathname === '/display-guide.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'display-guide.js'));
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));

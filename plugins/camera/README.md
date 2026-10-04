@@ -26,6 +26,11 @@ Shared defaults are also available under Plugins. **Fill panel** crops the image
 **Show whole image** preserves its full aspect ratio. Refresh works in Preview
 without enabling provider actions.
 
+Enable **Show update time over image** to place the snapshot update time at the
+top of the image. With **Show Refresh image button** off, the footer disappears
+and the image fills the available panel height. Stream and connection status use
+the same overlay. This option applies to browsers and embedded image mode.
+
 A decoded replacement takes over only after it loads. A failed update keeps the
 previous image with an explicit status; an initial failure shows **Image
 unavailable**. Streams release their upstream connection when the panel closes.

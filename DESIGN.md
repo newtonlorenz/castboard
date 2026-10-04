@@ -309,7 +309,9 @@ Preview shows the unsaved draft at the chosen viewport with screen actions disab
 
 ### Display Setup
 
-Connections begins with a continuous list of screens. Each row has Open screen and Set up display; expanding it reveals the browser link, saved destinations and an Add a Cast display disclosure inline. A form separates the human-readable name from the receiver address. Discovery fills the form only when the user chooses a result. Adding and sending are separate actions.
+New screen creation asks for a name and the intended device, explains the next step for that device, and places layout and automatically generated addresses in a disclosure. Saving a new screen offers Connect a device. Device preference is browser-local guidance, not connection status.
+
+Connections begins with a continuous list of screens. Each row has Open screen and Set up display; expanding it reveals a device selector and relevant setup instructions. Browser and Echo Show choices expose the screen link; Google Cast exposes discovery and the receiver form; ESP32 explains the firmware and adapter prerequisite. Saved destinations remain visible for every device choice. A form separates the human-readable name from the receiver address. Discovery fills the form only when the user chooses a result. Adding and sending are separate actions.
 
 Destinations retain their names beside Send screen and Remove. Removal confirms inline, with Keep display focused first. Pending operations disable repeat actions, restore focus and announce a factual result. Failed sends retain the destination; unsuccessful saves preserve the form. Narrow layouts stack links and fields, keep actions at least 44px high and avoid horizontal scrolling.
 

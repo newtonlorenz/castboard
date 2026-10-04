@@ -74,6 +74,12 @@ In Studio, drag and resize panels, switch screen types, edit plugin options, and
 
 ## Plugins belong in admin
 
+Prefer to configure it through an AI assistant? The local [Castboard MCP](docs/MCP.md)
+exposes configuration, layouts, plugin/provider settings, displays and diagnostics,
+with validation before saving and the project guides available directly to AI.
+Start Castboard, then connect `node /absolute/path/to/castboard/src/mcp.js` in your
+MCP client. See the guide for Codex setup, all tools and credential handling.
+
 Use **Plugins** to browse 35 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
 
 The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
@@ -287,6 +293,7 @@ Read the complete [security policy](SECURITY.md) before enabling cameras or cont
 ## Project map
 
 - [Configuration](docs/CONFIGURATION.md)
+- [AI configuration with MCP](docs/MCP.md)
 - [Visual Studio](docs/ADMIN-STUDIO.md)
 - First-run diagnostics: `npm run doctor` or `/setup`
 - [Plugin authoring](docs/PLUGINS.md)

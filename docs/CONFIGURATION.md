@@ -1,5 +1,9 @@
 # Configuration
 
+To configure any of these settings through an AI assistant, see the
+[Castboard MCP setup and tool reference](MCP.md). It supports targeted changes,
+validation before saving, protected credentials and live application.
+
 Copy `castboard.config.example.json` to the ignored `castboard.config.json`. Set `CASTBOARD_CONFIG` to load a different path.
 
 ## Environment values

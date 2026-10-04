@@ -90,9 +90,9 @@
 
           <label class="field"><span>Title</span><input id="screen-title" data-screen="title" autocomplete="off"></label>
           <button id="set-up-display" class="button secondary full" type="button">Set up a display</button>
-          <p class="field-help">Display setup uses the saved version of this screen.</p>
-          <label class="field"><span>URL path</span><input id="screen-path" data-screen="path" autocomplete="off"></label>
-          <label class="field"><span>Screen type</span><select id="screen-type" data-screen="type"></select></label>
+          <p id="display-setup-help" class="field-help">Add panels, save your screen, then connect your device.</p>
+          <details class="screen-address-settings"><summary>Screen link settings</summary><p class="field-help">Castboard generates a link for each screen. Only change its ending if you need a different address; existing bookmarks will need updating.</p><label class="field"><span>Link ending</span><input id="screen-path" data-screen="path" autocomplete="off" aria-describedby="screen-path-help"></label><p id="screen-path-help" class="field-help">For example, /screens/kitchen is the part after your Castboard server address. It is not your device’s address.</p></details>
+          <label class="field"><span>Layout</span><select id="screen-type" data-screen="type"></select></label>
           <label class="field"><span>Use as</span><select id="screen-presentation"><option value="screen">Screen</option><option value="modal">Modal</option></select></label>
           <div id="screen-viewport-fields" class="field-grid">
             <label class="field"><span>Preferred width</span><input id="screen-width" type="number" min="160" max="4096" placeholder="Auto"></label>
@@ -285,17 +285,21 @@
     </aside>
   </main>
 
-  <dialog id="screen-dialog">
+  <dialog id="screen-dialog" aria-labelledby="new-screen-heading" aria-describedby="new-screen-intro">
     <form method="dialog" id="screen-form">
-      <header><div><h2>Add a screen</h2></div><button value="cancel" formnovalidate class="dialog-close" aria-label="Close">Close</button></header>
+      <header><div><h2 id="new-screen-heading">Add a screen</h2></div><button value="cancel" formnovalidate class="dialog-close" aria-label="Close">Close</button></header>
+      <p id="new-screen-intro">Create a dashboard, add your panels, then connect a device. One dashboard can appear on several displays.</p>
       <label class="field"><span>Screen name</span><input id="new-screen-title" required autocomplete="off" placeholder="Kitchen display"></label>
-      <label class="field"><span>Layout</span><select id="new-screen-type" aria-describedby="new-layout-help"></select><small id="new-layout-help"></small></label>
-      <details id="new-screen-advanced"><summary>Advanced: screen address</summary>
+      <label class="field"><span>Where will you show it?</span><select id="new-screen-device" aria-describedby="new-device-help"></select></label>
+      <p id="new-device-help" class="device-guidance" role="status"></p>
+      <details id="new-screen-advanced"><summary>Layout and link settings</summary>
+        <label class="field"><span>Layout</span><select id="new-screen-type" aria-describedby="new-layout-help"></select><small id="new-layout-help"></small></label>
+        <p>These are filled in for you. The link ending identifies this dashboard on your Castboard server; it is not a device address.</p>
         <label class="field"><span>Screen ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off"></label>
-        <label class="field"><span>Web address path</span><input id="new-screen-path" required pattern="/.*" autocomplete="off"></label>
+        <label class="field"><span>Link ending (generated automatically)</span><input id="new-screen-path" required pattern="/.*" autocomplete="off"></label>
       </details>
       <p id="new-screen-error" class="field-error" role="alert"></p>
-      <footer><button value="cancel" formnovalidate class="button secondary">Cancel</button><button id="create-screen" value="default" class="button primary">Create screen</button></footer>
+      <footer><button value="cancel" formnovalidate class="button secondary">Cancel</button><button id="create-screen" value="default" class="button primary">Create &amp; add panels</button></footer>
     </form>
   </dialog>
 

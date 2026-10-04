@@ -33,7 +33,7 @@ export function createPlugin({config,context}) {
   }
   return {
     id:'camera',assets:['style.css'],styles:['style.css'],name:'Camera',nativeImages:config.provider!=='demo',
-    publicConfig:()=>({demo:config.provider==='demo',title:config.title || '',name:config.name || 'Camera',displayMode:config.displayMode || 'stream',refreshSeconds:config.refreshSeconds || 3,showRefresh:config.showRefresh!==false,showTitle:config.showTitle!==false,fit:config.fit || 'cover'}),
+    publicConfig:()=>({demo:config.provider==='demo',title:config.title || '',name:config.name || 'Camera',displayMode:config.displayMode || 'stream',refreshSeconds:config.refreshSeconds || 3,showRefresh:config.showRefresh!==false,overlayTimestamp:config.overlayTimestamp===true,showTitle:config.showTitle!==false,fit:config.fit || 'cover'}),
     nativeView:({data,options,panel})=>options.displayMode==='shortcut'?{title:panel?.interaction && panel.interaction.showButton!==false?'':options.title || panel?.interaction?.label || options.name || 'Camera',lines:[]}:({title:options.showTitle===false?'':options.title || data.name || 'Camera',lines:config.provider==='demo'?[{text:'Sample camera — no live image',kind:'muted'}]:[],...(config.provider!=='demo'?{image:{key:String(selectedCamera?.id || config.provider),params:{mode:'snapshot'},fit:options.fit || 'cover'},controls:options.showRefresh===false?[]:[{type:'refresh',label:'Refresh image'}]}:{})}),
     async getData() {
       if(config.provider==='demo')return {name:config.name || 'Camera',status:'Sample',streamUrl:null,updatedAt:demoTimestamp()};

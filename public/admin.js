@@ -1,4 +1,5 @@
 import { validateInteraction } from '/interaction-model.js';
+import { displayKinds, displayKind, preferredDisplay, rememberDisplay } from '/display-guide.js';
 import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
 import { schemaFields } from '/schema-fields.js?v=0.11.0';
@@ -827,9 +828,16 @@ function rememberScreen() {
   url.searchParams.delete('panel');
   history.replaceState(null, '', url);
 }
+function openDisplaySetup(screenId = state.selectedScreenId) {
+  window.open(`/setup?screen=${encodeURIComponent(screenId)}&device=${encodeURIComponent(preferredDisplay(screenId))}`, '_blank', 'noopener');
+}
+
 function updateOpenScreen() {
   $('#open-screen').disabled = !state.savedDesign?.screens?.[state.selectedScreenId]?.path;
-  $('#set-up-display').disabled = $('#open-screen').disabled;
+  const saved = !$('#open-screen').disabled;
+  $('#set-up-display').disabled = !saved;
+  $('#set-up-display').textContent = saved ? 'Connect a device' : 'Save to connect a device';
+  $('#display-setup-help').textContent = saved ? 'Connect a device using the saved screen. Save any new edits first.' : 'Add your panels, then Save changes to get a link and connect your device.';
 }
 
 function resizeCanvasFrame() {
@@ -997,9 +1005,16 @@ function showNewScreenDialog() {
   $('#new-screen-id').value = address.id;
   $('#new-screen-path').value = address.path;
   $('#new-screen-type').value = state.catalog.screenTypes.some(type => type.id === 'grid') ? 'grid' : state.catalog.screenTypes[0]?.id;
+  $('#new-screen-device').replaceChildren(...displayKinds.map(kind => new Option(kind.name, kind.id)));
+  $('#new-screen-device').value = 'other';
+  describeNewDevice();
   describeNewLayout();
   $('#screen-dialog').showModal();
   $('#new-screen-title').select();
+}
+
+function describeNewDevice() {
+  $('#new-device-help').textContent = displayKind($('#new-screen-device').value).detail;
 }
 
 function describeNewLayout() {
@@ -1021,6 +1036,7 @@ function createScreenFromDialog() {
   if (pathError) return screenCreationError(pathError);
   if (Object.values(state.design.screens).some(screen => screen.path === path)) return screenCreationError(`Web address “${path}” is already in use. Choose another.`);
   state.design.screens[id] = { id, title: title || id, path, type, layout: defaultLayout(type), appearance: {}, panels: [] };
+  rememberDisplay(id, $('#new-screen-device').value);
   state.selectedScreenId = id;
   state.selectedPanelId = '';
   markDirty('Screen created · add a panel and save');
@@ -1108,6 +1124,8 @@ async function saveDesign() {
   $('#save-design').disabled = true;
   state.saving = true; updateHistory();
   const snapshot = clone(state.design);
+  const savedScreenId = state.selectedScreenId;
+  const firstSave = !state.savedDesign.screens[savedScreenId];
   setStatus('Saving…');
   try {
     const result = await requestDesign('PUT', { revision: state.revision, design: snapshot });
@@ -1120,6 +1138,7 @@ async function saveDesign() {
     if (!invalidField()) renderAll();
     else { renderScreens(); renderPanelList(); updateOpenScreen(); }
     markDirty(); refreshPreview();
+    if (firstSave && !state.dirty) showNotice('Your screen is saved. Next, connect the device that will show it.', [['Connect a device', () => openDisplaySetup(savedScreenId)], ['Keep editing', () => showNotice('')]]);
     toast(state.dirty ? 'Saved. Newer edits are still unsaved.' : 'Changes saved. Running screens will update.');
   } catch (error) {
     state.saving = false; $('#save-design').disabled = false; updateHistory();
@@ -1244,7 +1263,7 @@ function bindEvents() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) {event.preventDefault(); restoreHistory(event.shiftKey ? 'redo' : 'undo');}
   });
   $('#save-design').addEventListener('click', saveDesign);
-  $('#set-up-display').addEventListener('click', () => window.open(`/setup?screen=${encodeURIComponent(state.selectedScreenId)}`, '_blank', 'noopener'));
+  $('#set-up-display').addEventListener('click', () => openDisplaySetup());
   $('#open-screen').addEventListener('click', () => window.open(state.savedDesign.screens[state.selectedScreenId].path, '_blank', 'noopener'));
   $('#add-screen').addEventListener('click', showNewScreenDialog);
   $('#duplicate-screen').addEventListener('click', duplicateScreen);
@@ -1467,9 +1486,10 @@ function bindEvents() {
     resizeCanvasFrame();
   });
 
+  $('#new-screen-device').addEventListener('change', describeNewDevice);
   $('#new-screen-type').addEventListener('change', describeNewLayout);
   for (const selector of ['#new-screen-id','#new-screen-path']) $(selector).addEventListener('input', () => { state.generatedScreenFields = false; });
-  $('#screen-form').addEventListener('invalid',()=>{$('#new-screen-advanced').open=true;},true);
+  $('#screen-form').addEventListener('invalid', event => { if (event.target.closest('#new-screen-advanced')) $('#new-screen-advanced').open = true; }, true);
   $('#new-screen-title').addEventListener('input', () => {
     if (!state.generatedScreenFields) return;
     const address = screenAddress($('#new-screen-title').value,state.design.screens);

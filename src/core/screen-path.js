@@ -1,4 +1,4 @@
-const RESERVED = new Set(['/draft-model.js', '/record-list-field.js', '/setup', '/admin-preview', '/app.js', '/styles.css', '/admin.js', '/admin.css', '/setup.js', '/setup.css', '/studio-model.js', '/widget-kit.js', '/schema-fields.js', '/appearance-model.js', '/plugin-admin.js', '/plugin-admin.css', '/screen-path.js']);
+const RESERVED = new Set(['/display-guide.js', '/draft-model.js', '/record-list-field.js', '/setup', '/admin-preview', '/app.js', '/styles.css', '/admin.js', '/admin.css', '/setup.js', '/setup.css', '/studio-model.js', '/widget-kit.js', '/schema-fields.js', '/appearance-model.js', '/plugin-admin.js', '/plugin-admin.css', '/screen-path.js']);
 
 export function screenPathError(value) {
   if (typeof value !== 'string' || !value.startsWith('/')) return 'The web address path must start with /.';

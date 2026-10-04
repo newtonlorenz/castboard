@@ -1,5 +1,8 @@
 .camera-widget{display:flex;flex-direction:column;gap:6px;background:var(--panel-background,var(--panel));min-height:0}
 .camera-widget>.widget-head{flex:none;text-transform:none;letter-spacing:.02em;font-size:.75em;min-height:16px}
+.camera-media{position:relative;display:flex;flex:1;min-height:0;min-width:0;overflow:hidden}
+.camera-media-overlay>.camera-status{position:absolute;z-index:1;top:6px;left:6px;max-width:calc(100% - 12px);box-sizing:border-box;padding:4px 6px;border-radius:4px;background:rgba(0,0,0,.75);color:#fff;pointer-events:none}
+.camera-media-overlay+.camera-controls{justify-content:flex-end}
 .camera-picture{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg)}
 .camera-frame{display:block;width:100%;height:100%;object-fit:cover}
 .camera-placeholder{margin:0;padding:8px;text-align:center;font-size:.875em;line-height:1.5;color:var(--muted)}.camera-placeholder small{font-size:.85em}

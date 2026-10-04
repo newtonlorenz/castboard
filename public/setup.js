@@ -1,9 +1,13 @@
+import { displayKinds, displayKind, preferredDisplay, rememberDisplay } from '/display-guide.js';
 const $ = selector => document.querySelector(selector);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 let report;
 let delivery;
 let selectedScreen = new URL(location.href).searchParams.get('screen');
 let deliveryBusy = false;
+const deviceChoices = new Map();
+const requestedDevice = new URL(location.href).searchParams.get('device');
+if (selectedScreen && displayKinds.some(kind => kind.id === requestedDevice)) deviceChoices.set(selectedScreen, requestedDevice);
 const displayDrafts = new Map();
 const checks = new Map();
 let token = sessionStorage.getItem('castboard-admin-token') || '';
@@ -124,9 +128,12 @@ function renderDelivery() {
   if (!delivery) return;
   $('#screen-list').innerHTML = delivery.screens.map(screen => {
     const expanded = selectedScreen === screen.id;
-    const browserLink = screen.displayUrl ? `<div class="display-link"><span>${escapeHtml(screen.displayUrl)}</span><button class="button secondary" type="button" data-display-copy="${escapeHtml(screen.id)}">Copy link</button></div><p class="field-help">Open this link in the browser on your tablet, TV or kiosk.</p>` : `<p class="delivery-note">${escapeHtml(screen.linkMessage)}</p>`;
-    const targets = screen.targets.map(target => `<li class="display-target"><div><strong>${escapeHtml(target.name)}</strong><small>${escapeHtml(target.protocol === 'google-cast' ? 'Google Cast' : target.protocol === 'url' ? 'Browser display' : target.protocol)}</small></div><div class="display-actions"><button class="button secondary" type="button" data-send="${target.index}" ${target.canSend ? '' : 'disabled'}>Send screen</button><button class="button quiet" type="button" data-remove="${target.index}" aria-label="Remove ${escapeHtml(target.name)}">Remove</button></div><div class="remove-confirm" data-confirm="${target.index}" hidden><p>Remove this display from ${escapeHtml(screen.title)}? It will keep showing its current screen.</p><button class="button danger" type="button" data-confirm-remove="${target.index}">Remove display</button><button class="button secondary" type="button" data-keep="${target.index}">Keep display</button></div>${!target.canSend ? `<p class="target-note">${target.protocol === 'url' ? 'Use the browser link above on this display.' : !screen.displayUrl && screen.linkMessage.startsWith('This server') ? 'Set a reachable display URL before sending.' : 'Enable this delivery method in the server configuration.'}</p>` : ''}</li>`).join('');
-    return `<article class="delivery-screen" data-screen="${escapeHtml(screen.id)}"><div class="delivery-summary"><div><h3>${escapeHtml(screen.title)}</h3><p>${screen.targets.length ? `${screen.targets.length} saved display${screen.targets.length === 1 ? '' : 's'}` : 'No displays saved'}</p></div><div class="display-actions"><a class="button secondary" href="${escapeHtml(screen.path)}" target="_blank" rel="noopener">Open screen</a><button type="button" class="button ${expanded ? 'secondary' : 'primary'}" data-delivery-select="${escapeHtml(screen.id)}" aria-expanded="${expanded}" aria-controls="delivery-${escapeHtml(screen.id)}">${expanded ? 'Close settings' : 'Set up display'}</button></div></div><div id="delivery-${escapeHtml(screen.id)}" class="delivery-editor" ${expanded ? '' : 'hidden'}><h4>Browser link</h4>${browserLink}<h4>Saved displays</h4>${targets ? `<ul class="display-targets">${targets}</ul>` : '<p class="delivery-empty">Connect a Google Cast display below, or use the browser link above.</p>'}<details class="add-display"><summary>Add a Cast display</summary><p>Find a display on your network, or enter its device name or IP address. Adding it saves the connection; Send screen starts casting.</p><button class="button secondary" type="button" data-discover>Find displays</button><div class="discovery-results" role="status" aria-live="polite"></div><form class="display-form"><label class="field"><span>Display name</span><input name="name" required maxlength="100" placeholder="e.g. Reception" autocomplete="off"></label><label class="field"><span>Device name or IP address</span><input name="device" required maxlength="200" placeholder="e.g. Reception TV" autocomplete="off"></label><button type="submit" class="button primary" ${delivery.castEnabled ? '' : 'disabled'}>Add display</button>${delivery.castEnabled ? '' : '<p class="field-error">Google Cast is disabled in the server configuration.</p>'}</form></details><p class="delivery-feedback" role="status" aria-live="polite"></p></div></article>`;
+    const kind = deviceChoices.get(screen.id) || (screen.targets.some(target => target.protocol === 'google-cast') ? 'cast' : preferredDisplay(screen.id));
+    const guide = displayKind(kind);
+    const devicePicker = `<label class="field device-picker"><span>What kind of device?</span><select data-device-kind aria-describedby="device-help-${escapeHtml(screen.id)}">${displayKinds.map(item => `<option value="${item.id}" ${item.id === kind ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}</select></label><p id="device-help-${escapeHtml(screen.id)}" class="device-guidance">${escapeHtml(guide.detail)}</p>`;
+    const browserLink = screen.displayUrl ? `<div class="display-link"><span>${escapeHtml(screen.displayUrl)}</span><button class="button secondary" type="button" data-display-copy="${escapeHtml(screen.id)}">Copy link</button></div><p class="field-help">Open this link on the device, using a browser that can reach this server.</p>` : `<p class="delivery-note">${escapeHtml(screen.linkMessage)}</p>`;
+    const targets = screen.targets.map(target => `<li class="display-target"><div><strong>${escapeHtml(target.name)}</strong><small>${escapeHtml(target.protocol === 'google-cast' ? 'Google Cast' : target.protocol === 'url' ? 'Browser display' : target.protocol)}</small></div><div class="display-actions"><button class="button secondary" type="button" data-send="${target.index}" ${target.canSend ? '' : 'disabled'}>Send screen</button><button class="button quiet" type="button" data-remove="${target.index}" aria-label="Remove ${escapeHtml(target.name)}">Remove</button></div><div class="remove-confirm" data-confirm="${target.index}" hidden><p>Remove this display from ${escapeHtml(screen.title)}? It will keep showing its current screen.</p><button class="button danger" type="button" data-confirm-remove="${target.index}">Remove display</button><button class="button secondary" type="button" data-keep="${target.index}">Keep display</button></div>${!target.canSend ? `<p class="target-note">${target.protocol === 'url' ? 'Choose Tablet, TV or computer with a browser above to get the screen link.' : !screen.displayUrl && screen.linkMessage.startsWith('This server') ? 'Set a reachable display URL before sending.' : 'Enable this delivery method in the server configuration.'}</p>` : ''}</li>`).join('');
+    return `<article class="delivery-screen" data-screen="${escapeHtml(screen.id)}"><div class="delivery-summary"><div><h3>${escapeHtml(screen.title)}</h3><p>${screen.targets.length ? `${screen.targets.length} saved display${screen.targets.length === 1 ? '' : 's'}` : 'No saved connections'}</p></div><div class="display-actions"><a class="button secondary" href="${escapeHtml(screen.path)}" target="_blank" rel="noopener">Open screen</a><button type="button" class="button ${expanded ? 'secondary' : 'primary'}" data-delivery-select="${escapeHtml(screen.id)}" aria-expanded="${expanded}" aria-controls="delivery-${escapeHtml(screen.id)}">${expanded ? 'Close settings' : 'Set up display'}</button></div></div><div id="delivery-${escapeHtml(screen.id)}" class="delivery-editor" ${expanded ? '' : 'hidden'}>${devicePicker}<section class="device-browser" ${kind === 'cast' || kind === 'embedded' ? 'hidden' : ''}><h4>${kind === 'echo' ? 'Open in Silk on your Echo Show' : 'Open on your device'}</h4>${browserLink}${kind === 'echo' ? '<p class="field-help">Ask Alexa to open Silk, then enter this link. Browser availability and behaviour depend on your model. This does not set Castboard as the device’s home screen.</p>' : ''}</section><section class="device-embedded" ${kind === 'embedded' ? '' : 'hidden'}><h4>Connect your embedded display</h4><p class="delivery-note">In Displays, add your board, choose its adapter and assign this screen. Save the one-time connection key and install compatible receiver firmware using your board’s instructions.</p><a class="button primary" href="/admin/devices">Open Displays</a><p class="field-help">Set the resolution and image or native mode to match your receiver. Hardware plugins supply display settings; the board still needs its own firmware and driver.</p></section><details class="add-display" ${kind === 'cast' ? 'open' : 'hidden'}><summary>Connect a Google Cast display</summary>${!screen.displayUrl ? `<p class="delivery-note">${escapeHtml(screen.linkMessage)}</p>` : ''}<p>Find a display on your network, or enter its device name or IP address. Adding it saves the connection; Send screen starts casting.</p><button class="button secondary" type="button" data-discover>Find displays</button><div class="discovery-results" role="status" aria-live="polite"></div><form class="display-form"><label class="field"><span>Display name</span><input name="name" required maxlength="100" placeholder="e.g. Reception" autocomplete="off"></label><label class="field"><span>Device name or IP address</span><input name="device" required maxlength="200" placeholder="e.g. Reception TV" autocomplete="off"></label><button type="submit" class="button primary" ${delivery.castEnabled ? '' : 'disabled'}>Add display</button>${delivery.castEnabled ? '' : '<p class="field-error">Google Cast is disabled in the server configuration.</p>'}</form></details><h4>Saved connections</h4>${targets ? `<ul class="display-targets">${targets}</ul>` : '<p class="delivery-empty">No saved connections. Browser displays only need the link; they do not need to be added here.</p>'}<p class="delivery-feedback" role="status" aria-live="polite"></p></div></article>`;
   }).join('') || '<p class="no-results">Create a screen in <a href="/admin">Screens</a> to connect a display.</p>';
   document.querySelectorAll('.delivery-screen').forEach(article => {
     const draft = displayDrafts.get(article.dataset.screen);
@@ -156,7 +163,7 @@ async function updateDelivery(body, article) {
   const feedback = article.querySelector('.delivery-feedback');
   feedback.classList.remove('bad');
   feedback.textContent = body.action === 'send' ? 'Sending screen… This may take a moment.' : 'Saving display…';
-  const buttons = [...$('#screen-list').querySelectorAll('button, input')];
+  const buttons = [...$('#screen-list').querySelectorAll('button, input, select')];
   const previous = buttons.map(control => control.disabled);
   const focusedControl = document.activeElement;
   buttons.forEach(control => { control.disabled = true; });
@@ -165,6 +172,7 @@ async function updateDelivery(body, article) {
     const result = await request('/api/admin/delivery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, screenId: article.dataset.screen, revision: delivery.revision }) });
     if (body.action === 'send') feedback.textContent = result.message;
     else {
+      deviceChoices.set(article.dataset.screen, article.querySelector('[data-device-kind]').value);
       rememberDisplayDrafts();
       if (body.action === 'add') displayDrafts.delete(article.dataset.screen);
       delivery = result;
@@ -183,6 +191,21 @@ async function updateDelivery(body, article) {
 }
 
 $('#refresh-displays').addEventListener('click', loadDelivery);
+$('#screen-list').addEventListener('change', event => {
+  if (!event.target.matches('[data-device-kind]') || deliveryBusy) return;
+  const id = event.target.closest('[data-screen]').dataset.screen;
+  rememberDisplayDrafts();
+  deviceChoices.set(id, event.target.value);
+  rememberDisplay(id, event.target.value);
+  const url = new URL(location.href);
+  url.searchParams.set('device', event.target.value);
+  history.replaceState(null, '', url);
+  // Reopening the Cast guide should expose its next action.
+  if (event.target.value === 'cast' && displayDrafts.has(id)) displayDrafts.get(id).open = true;
+  renderDelivery();
+  document.querySelector(`[data-screen="${CSS.escape(id)}"] [data-device-kind]`)?.focus();
+});
+
 $('#screen-list').addEventListener('submit', event => {
   if (!event.target.matches('.display-form')) return;
   event.preventDefault();
@@ -198,6 +221,7 @@ $('#screen-list').addEventListener('click', async event => {
     selectedScreen = selectedScreen === button.dataset.deliverySelect ? null : button.dataset.deliverySelect;
     const url = new URL(location.href);
     selectedScreen ? url.searchParams.set('screen', selectedScreen) : url.searchParams.delete('screen');
+    url.searchParams.delete('device');
     history.replaceState(null, '', url);
     renderDelivery();
     document.querySelector(`[data-delivery-select="${CSS.escape(button.dataset.deliverySelect)}"]`)?.focus();

@@ -148,3 +148,33 @@ test('a close tap survives a background frame refresh but cannot close a differe
   await assert.rejects(renderer.render({...input,event:{...tap,eventId:'close-old-modal'}}),/fresh frame/);
   assert.equal(await page.locator('dialog[open]').count(),1);
 });
+
+
+test('new embedded screens save and connect through Displays while Cast setup stays separate', {skip:!enabled,timeout:60000}, async t=>{
+  const {chromium}=await import('playwright');
+  const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});t.after(()=>browser.close());
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-setup-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const config={server:{host:'127.0.0.1',port:8787},plugins:{clock:{enabled:true}},screens:{home:{title:'Home',path:'/',type:'single',panels:[{id:'clock',plugin:'clock'}]}}};
+  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
+  const app=await createApp({configPath});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();return app.dispose();});
+  const origin=`http://127.0.0.1:${app.server.address().port}`,page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(origin+'/admin');await page.locator('#screen-list button').first().waitFor();
+  await page.locator('#add-screen').click();await page.locator('#new-screen-title').fill('Desk display');await page.locator('#new-screen-device').selectOption('embedded');
+  assert.match(await page.locator('#new-device-help').textContent(),/use Displays/);
+  await page.locator('#create-screen').click();await page.locator('#plugin-list button').filter({hasText:'Clock'}).first().click();
+  await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-status').textContent==='All changes saved');
+  const saved=JSON.parse(await fs.readFile(configPath));assert.equal(saved.screens['desk-display'].panels.length,1);
+  assert.equal(await page.locator('#screen-presentation').count(),1);assert.equal(await page.locator('#screen-width').count(),1);
+  await page.locator('[data-inspector=screen]').click();
+  const nextPage=page.context().waitForEvent('page');await page.locator('#set-up-display').click();const setup=await nextPage;
+  await setup.waitForURL(/device=embedded/);await setup.locator('.device-embedded:visible').waitFor();
+  assert.equal(await setup.locator('.device-browser:visible').count(),0);
+  assert.match(await setup.locator('.device-embedded:visible').textContent(),/connection key/);
+  const picker=setup.locator('[data-screen="desk-display"] [data-device-kind]');
+  await picker.selectOption('cast');await setup.locator('[data-screen="desk-display"] [data-discover]').waitFor();
+  assert.equal(await setup.locator('.device-embedded:visible').count(),0);assert.equal(await setup.locator('.device-browser:visible').count(),0);
+  await picker.selectOption('embedded');await setup.getByRole('link',{name:'Open Displays'}).click();
+  await setup.waitForURL(origin+'/admin/devices');await setup.locator('#first-device').waitFor();
+  assert.deepEqual(errors,[]);
+});
