@@ -13,3 +13,11 @@ Use direct, factual labels and familiar controls. Important states are loading, 
 ## Plugin management
 
 Plugins are reusable packages; panels are configured copies on screens. Admin provides an installed list and a library of bundled and locally installed packages. People can install independent copies, edit their connection defaults, bind sources, test, enable, disable and remove unused copies. Secrets stay on the server and saves preserve unrelated clients and existing configuration. Display-specific options remain in Studio. Shared display packages and portable HTTP source adapters ship with safe demo defaults, without household data or service credentials.
+
+## Embedded displays and interactions
+
+People can register ESP32 and other small receivers in Displays, assign a screen, set resolution and refresh, choose image or native drawing, and control touch and plugin-action access. Each display has a separate connection key shown once when issued; replacing the key or removing the display revokes the previous access. Recent requests and compatibility notices describe server-observed state, without implying that the physical screen or touch hardware has been validated.
+
+Image mode uses an optional server renderer to preserve browser layouts and plugin controls. Native mode uses explicit plugin views and supported layouts to draw a lightweight scene on the receiver; it does not translate arbitrary HTML. The reference ESP32 library uses RGB565 for images and LVGL for native scenes. Board drivers, installation and observed display/touch checks remain hardware-specific work. [Embedded display documentation](docs/embedded-displays.md) defines supported behavior and limitations.
+
+Panels can open reusable modal compositions, navigate to another screen, go back, close a modal or run a configured plugin action. Modal compositions use the same plugins, arrangement and appearance tools as other screens. Browser modals retain the underlying widgets; native receivers present the composition as a detail page. Studio Preview follows navigation and opens modals while blocking live provider actions, and Reset preview returns to the composition being edited. Action confirmation, when configured, must give people an explicit Cancel and Confirm choice.

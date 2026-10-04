@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, fetchJson, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 const CONDITIONS = {
@@ -11,6 +12,7 @@ export function createPlugin({ config, context }) {
   if (config.provider === 'open-meteo' && (!Number.isFinite(Number(config.latitude)) || !Number.isFinite(Number(config.longitude)))) throw new Error('Plugin weather open-meteo provider requires numeric latitude and longitude');
   return {
     id: 'weather',
+    nativeView: nativeViews.weather,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Weather',

@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, fetchJson, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 const ALLOWED_ACTIONS = new Set(['previous', 'toggle', 'next', 'play', 'pause']);
@@ -21,6 +22,7 @@ export function createPlugin({ config, context }) {
   const controllable = config.provider === 'demo' || config.provider === 'sonos-http';
   return {
     id: 'sonos',
+    nativeView: nativeViews.sonos,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Sonos',

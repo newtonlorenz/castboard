@@ -5,7 +5,7 @@ import { isIP } from 'node:net';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const BRANDING_FIELDS = ['name', 'subtitle', 'location', 'accent', 'timeZone'];
-const SCREEN_FIELDS = ['title', 'path', 'type', 'layout', 'appearance', 'panels'];
+const SCREEN_FIELDS = ['title', 'path', 'type', 'layout', 'appearance', 'panels', 'presentation', 'viewport'];
 
 export function configRevision(rawConfig) {
   return createHash('sha256').update(JSON.stringify(rawConfig)).digest('hex').slice(0, 20);

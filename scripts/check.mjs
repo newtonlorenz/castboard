@@ -4,12 +4,12 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const directories = ['src', 'public', 'plugins', 'screen-types', 'cast-protocols', 'scripts', 'test', 'examples'];
+const directories = ['src', 'public', 'plugins', 'screen-types', 'cast-protocols', 'scripts', 'test', 'examples', 'services'];
 
 function javascriptFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return javascriptFiles(entryPath);
+    if (entry.isDirectory()) return ['node_modules','.pio'].includes(entry.name) ? [] : javascriptFiles(entryPath);
     return entry.isFile() && /\.m?js$/.test(entry.name) ? [entryPath] : [];
   });
 }

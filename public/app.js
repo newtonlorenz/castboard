@@ -1,14 +1,14 @@
-import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.10.0';
+import { createInteractionRuntime } from '/interaction-runtime.js';
+import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.11.0';
 
 const dashboard = document.getElementById('dashboard');
 const cleanups = [];
 window.addEventListener('pagehide', () => { for (const cleanup of cleanups.splice(0)) cleanup(); });
 
-import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.10.0';
+import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.11.0';
 let previewMounted;
 let previewRenderer;
-function applyScreenAppearance(appearance, branding) {
-  const root = document.documentElement;
+function applyScreenAppearance(appearance, branding, root = document.documentElement) {
   root.style.setProperty('--bg',appearance.background || '#07100f');
   root.style.removeProperty('--panel-background');
   root.style.fontSize = `${16 * ((appearance.fontScale || 100) / 100)}px`;
@@ -38,7 +38,7 @@ function applyPanelAppearance(element, appearance = {}, screenAppearance = {}) {
   panelFitters.get(element)?.();
 }
 
-function enablePanelAutoFit(element) {
+function enablePanelAutoFit(element, releases = cleanups) {
   const minimumScale = 0.55;
   let frame = 0;
 
@@ -82,12 +82,12 @@ function enablePanelAutoFit(element) {
   resize.observe(element);
   mutation.observe(element, { childList: true, characterData: true, subtree: true });
   if(element.shadowRoot)mutation.observe(element.shadowRoot,{childList:true,characterData:true,subtree:true});
-  cleanups.push(() => { panelFitters.delete(element);resize.disconnect(); mutation.disconnect(); cancelAnimationFrame(frame); });
+  releases.push(() => { panelFitters.delete(element);resize.disconnect(); mutation.disconnect(); cancelAnimationFrame(frame); });
   scheduleFit();
 }
 
 function visibleDesignSignature(config, screenId) {
-  return JSON.stringify({ branding: config.branding, plugins:config.plugins, screen: config.screens[screenId] });
+  return JSON.stringify({ branding: config.branding, plugins:config.plugins, screens: config.screens });
 }
 
 function watchDesign(config, screen) {
@@ -114,6 +114,71 @@ function watchDesign(config, screen) {
   cleanups.push(() => clearInterval(timer));
 }
 
+function mountComposition(config, screen, container, register, scoped) {
+  const releases = [];
+  let disposed = false;
+  const release = fn => {if (typeof fn === 'function') {if (disposed) fn(); else releases.push(fn);}};
+  const ready = (async () => {
+  const appearance = screen.appearance || {};
+  applyScreenAppearance(appearance, config.branding, scoped ? container : document.documentElement);
+  container.style.backgroundColor = appearance.background || '';
+  container.dataset.screen = screen.id;
+  container.dataset.screenType = screen.type;
+  container.setAttribute('aria-label', `${screen.title || screen.id} screen`);
+  container.innerHTML = '';
+  const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(config.screenTypes.find(type=>type.id===screen.type)?.version || 1)}`);
+  if (disposed) return;
+  const releaseRenderer = await renderer.prepare({ container: container, screen });
+  if (typeof releaseRenderer === 'function') release(releaseRenderer);
+  if (disposed) return;
+  for (const plugin of config.plugins.filter(plugin => screen.panels.some(panel => panel.plugin === plugin.id))) {
+    for (const asset of plugin.styles || []) {
+      const link = document.createElement('link'); link.rel = 'stylesheet';
+      link.href = `/plugins/${encodeURIComponent(plugin.id)}/assets/${asset}?v=${encodeURIComponent(plugin.version)}`;
+      document.head.append(link); release(() => link.remove());
+    }
+  }
+  const pluginConfigs = new Map(config.plugins.map(plugin => [plugin.id, plugin]));
+
+  await Promise.all(screen.panels.map(async panel => {
+    if (disposed) return;
+    const plugin = pluginConfigs.get(panel.plugin);
+    if (!plugin) return;
+    const element = document.createElement('section');
+    element.className = `widget widget-${plugin.type || plugin.id}`;
+    element.dataset.plugin = plugin.id;
+    element.dataset.panel = panel.id;
+    applyPanelAppearance(element, panel.appearance, appearance);
+    await renderer.place({ container: container, element, panel, screen });
+    if (disposed) return;
+    element.innerHTML = '<div class="widget-loading">Loading…</div>';
+    container.append(element);
+    const context = createWidgetContext({ app: config, screen, plugin, panel, element, announce(message) { container.setAttribute('data-status', message); } });
+    release(() => context.dispose());
+    try {
+      const module = await import(`/plugins/${encodeURIComponent(plugin.id)}/widget.js?v=${encodeURIComponent(plugin.version || '1')}`);
+      if (typeof module.mount !== 'function') throw new Error('Widget does not export mount()');
+      if (disposed) return;
+      const unmount = await module.mount({ element, config: { ...plugin.config, ...panel.options }, context, panel });
+      if (disposed) { if (typeof unmount === 'function') unmount(); return; }
+      context.onDispose(unmount);
+      element.dataset.mounted = 'true';
+      if (panel.options?.fitContent === true) enablePanelAutoFit(element, releases);
+      register(element, context, panel, screen);
+    } catch (error) {
+      if (disposed) return;
+      element.innerHTML = `<div class="empty-state"><strong>${escapeHtml(plugin.name)}</strong><span>${escapeHtml(error.message)}</span></div>`;
+      element.classList.add('widget-unavailable');
+    }
+  }));
+  })();
+  return {ready, dispose() {
+    disposed = true;
+    for (const fn of releases.splice(0).reverse()) {try {fn();} catch {}}
+    container.replaceChildren();
+  }};
+}
+
 const studioPreview = window.location.pathname === '/admin-preview';
 async function boot(draft, screenId) {
   const result = draft ? { response: { ok: true }, payload: draft } : await requestJson('/api/runtime-config', { cache: 'no-store' });
@@ -127,52 +192,14 @@ async function boot(draft, screenId) {
   const renderer = await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(screenType.version)}`);
   if (typeof renderer.prepare !== 'function' || typeof renderer.place !== 'function') throw new Error(`Screen type ${screen.type} has an invalid renderer`);
   document.title = `${screen.title || screen.id} · ${config.branding.name || 'Castboard'}`;
-  const appearance = screen.appearance || {};
-  applyScreenAppearance(appearance, config.branding);
-  dashboard.style.backgroundColor = appearance.background || '';
-  dashboard.dataset.screen = screen.id;
-  dashboard.dataset.screenType = screen.type;
-  dashboard.setAttribute('aria-label', `${screen.title || screen.id} screen`);
-  dashboard.innerHTML = '';
-  const releaseRenderer = await renderer.prepare({ container: dashboard, screen });
-  if (typeof releaseRenderer === 'function') cleanups.push(releaseRenderer);
-  for (const plugin of config.plugins.filter(plugin => screen.panels.some(panel => panel.plugin === plugin.id))) {
-    for (const asset of plugin.styles || []) {
-      const link = document.createElement('link'); link.rel = 'stylesheet';
-      link.href = `/plugins/${encodeURIComponent(plugin.id)}/assets/${asset}?v=${encodeURIComponent(plugin.version)}`;
-      document.head.append(link); cleanups.push(() => link.remove());
-    }
-  }
-  const pluginConfigs = new Map(config.plugins.map(plugin => [plugin.id, plugin]));
-
-  await Promise.all(screen.panels.map(async panel => {
-    const plugin = pluginConfigs.get(panel.plugin);
-    if (!plugin) return;
-    const element = document.createElement('section');
-    element.className = `widget widget-${plugin.type || plugin.id}`;
-    element.dataset.plugin = plugin.id;
-    element.dataset.panel = panel.id;
-    applyPanelAppearance(element, panel.appearance, appearance);
-    await renderer.place({ container: dashboard, element, panel, screen });
-    element.innerHTML = '<div class="widget-loading">Loading…</div>';
-    dashboard.append(element);
-    const context = createWidgetContext({ app: config, screen, plugin, panel, element, announce(message) { dashboard.setAttribute('data-status', message); } });
-    cleanups.push(() => context.dispose());
-    try {
-      const module = await import(`/plugins/${encodeURIComponent(plugin.id)}/widget.js?v=${encodeURIComponent(plugin.version || '1')}`);
-      if (typeof module.mount !== 'function') throw new Error('Widget does not export mount()');
-      const unmount = await module.mount({ element, config: { ...plugin.config, ...panel.options }, context, panel });
-      context.onDispose(unmount);
-      element.dataset.mounted = 'true';
-      if (panel.options?.fitContent === true) enablePanelAutoFit(element);
-    } catch (error) {
-      element.innerHTML = `<div class="empty-state"><strong>${escapeHtml(plugin.name)}</strong><span>${escapeHtml(error.message)}</span></div>`;
-      element.classList.add('widget-unavailable');
-    }
-  }));
+  const runtime = createInteractionRuntime({config,screenId:screen.id,host:dashboard,preview:studioPreview,
+    mount:(target,container,register,scoped)=>mountComposition(config,target,container,register,scoped)});
+  cleanups.push(()=>runtime.dispose());
+  await runtime.start();
   if (studioPreview) {previewMounted={config,screenId:screen.id};previewRenderer=renderer;return;}
+  if (location.pathname.startsWith('/device-view/')) return;
   const statusTimer = schedule(async () => {
-    try { await requestJson('/api/client-status', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screenId:screen.id,panels:[...dashboard.querySelectorAll('[data-panel]')].map(element=>({id:element.dataset.panel,state:element.dataset.freshness || (element.dataset.mounted ? 'live' : 'loading')}))})}); } catch {}
+    try { await requestJson('/api/client-status', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screenId:runtime.navigation.screenId,panels:[...dashboard.querySelectorAll('[data-panel]')].map(element=>({id:element.dataset.panel,state:element.dataset.freshness || (element.dataset.mounted ? 'live' : 'loading')}))})}); } catch {}
   }, 15000);
   cleanups.push(()=>clearInterval(statusTimer));
   watchDesign(config, screen);
@@ -193,7 +220,7 @@ if (studioPreview) {
     while (pending) {
       const next = pending; pending = null;
       const nextScreen=next.config.screens[next.screenId];
-      if(previewMounted && previewMounted.screenId===next.screenId && previewStructure(previewMounted.config,next.screenId)===previewStructure(next.config,next.screenId) && previewRenderer.editor?.incremental === true) {
+      if(!Object.values(next.config.screens).some(item=>item.panels.some(panel=>panel.interaction)) && !next.reset && previewMounted && previewMounted.screenId===next.screenId && previewStructure(previewMounted.config,next.screenId)===previewStructure(next.config,next.screenId) && previewRenderer.editor?.incremental === true) {
         try {
           applyScreenAppearance(nextScreen.appearance||{},next.config.branding);
           dashboard.style.backgroundColor=nextScreen.appearance?.background||'';
@@ -222,10 +249,7 @@ if (studioPreview) {
     pending = event.data;
     renderDraft();
   });
-  // A preview never operates controls belonging to a live provider.
-  for (const name of ['click', 'submit', 'keydown']) document.addEventListener(name, event => {
-    event.preventDefault(); event.stopImmediatePropagation();
-  }, true);
+  // The interaction runtime allows draft navigation and blocks live controls.
   window.parent.postMessage({ type: 'castboard-preview-ready' }, window.location.origin);
 } else boot().catch(error => {
   dashboard.innerHTML = `<div class="boot-state error"><strong>Castboard could not start</strong><span>${escapeHtml(error.message)}</span></div>`;

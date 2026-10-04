@@ -20,6 +20,7 @@ export async function discoverScreenTypes({ screenTypesDir, config, configDir })
     if (!type || type.id !== entry.name || !VALID_ID.test(type.id)) throw new Error(`Screen type ID mismatch in ${entry.name}`);
     if (typeof type.name !== 'string' || !type.name.trim()) throw new Error(`Screen type ${entry.name} must provide a name`);
     if (type.validateScreen !== undefined && typeof type.validateScreen !== 'function') throw new Error(`Screen type ${entry.name}.validateScreen must be a function`);
+    if (type.nativeLayout !== undefined && typeof type.nativeLayout !== 'function') throw new Error(`Screen type ${id}.nativeLayout must be a function`);
     types.push({ ...type, directory: path.dirname(modulePath) });
   }
   const byId = new Map(types.map(type => [type.id, type]));

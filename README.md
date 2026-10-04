@@ -314,3 +314,10 @@ If Castboard gives an old screen a new job, **star the project and show people w
 Castboard can load external source, view, layout and delivery packages. Multiple configured instances can use one plugin definition, and several views can share one source. Modules own their CSS, schemas, data semantics and actions; the dashboard frame is independent of any particular design.
 
 See [extension contracts and lifecycle](docs/extensions.md) and [the flexible deployment example](examples/flexible/README.md). Private integrations and presets can live outside this repository.
+
+### ESP32 and small displays
+
+Use **Displays** to register a receiver and choose image or native mode. Configure
+reusable modals and navigation under **On tap** in Studio. See the
+[embedded display guide](docs/embedded-displays.md) for the optional Docker image
+renderer, receiver library, protocol and hardware requirements.

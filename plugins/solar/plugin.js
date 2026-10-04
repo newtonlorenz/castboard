@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, fetchJson, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 const number = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
@@ -8,6 +9,7 @@ export function createPlugin({ config, context }) {
   if (config.provider === 'fronius' && !config.baseUrl) throw new Error('Plugin solar fronius provider requires baseUrl');
   return {
     id: 'solar',
+    nativeView: nativeViews.solar,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Solar',

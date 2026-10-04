@@ -16,6 +16,16 @@
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
 button { font: inherit; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel-interaction { position: absolute; right: 8px; bottom: 8px; z-index: 2; min-height: 44px; max-width: calc(100% - 16px); padding: 8px 14px; border: 1px solid var(--accent); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; }
+.panel-interaction:hover { background: var(--panel-background, #192926); }
+.widget[data-interactive] { cursor: pointer; }
+.screen-modal { padding: 0; border: 0; border-radius: var(--panel-radius, 16px); width: min(var(--modal-width, 800px), calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px); background: var(--bg); color: var(--text); box-shadow: 0 24px 80px rgba(0,0,0,.5); }
+.screen-modal::backdrop { background: rgba(0,0,0,.7); }
+.screen-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.screen-modal-header h2 { margin: 0; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.screen-modal-header button { min-width: 64px; min-height: 44px; padding: 8px 12px; color: var(--text); background: var(--panel-background, #192926); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.screen-modal .screen-modal-content { height: min(var(--modal-height, 480px), calc(100dvh - 92px)); min-height: 120px; color: var(--text); font-family: var(--font-family); }
+.display-message { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 100; max-width: min(520px, calc(100vw - 32px)); padding: 12px 18px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 15px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
 
 .home-screen {
   background:
@@ -69,3 +79,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Internal frames consume Studio variables once, without outer chrome. */
 .widget[data-chrome=internal]{border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}
+.action-confirmation{max-width:min(440px,calc(100vw - 32px));padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);font:inherit}
+.action-confirmation::backdrop{background:#000a}
+.action-confirmation h2{margin:0 0 12px;font-size:1.2em}.action-confirmation p{margin:0 0 24px;line-height:1.5}
+.action-confirmation button{min-height:44px;padding:8px 16px;margin-right:8px;border-radius:8px;border:1px solid var(--line);background:var(--panel-background,#14201e);color:var(--text);font:inherit}

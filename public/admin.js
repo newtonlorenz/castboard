@@ -1,7 +1,8 @@
+import { validateInteraction } from '/interaction-model.js';
 import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
-import { schemaFields } from '/schema-fields.js?v=0.10.0';
-import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.10.2';
+import { schemaFields } from '/schema-fields.js?v=0.11.0';
+import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.11.0';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -260,6 +261,16 @@ function populateCatalogControls() {
 }
 
 function renderAll() {
+  const screen=currentScreen();
+  if (state.viewportScreenId!==state.selectedScreenId) {
+    state.viewportScreenId=state.selectedScreenId;
+    if(screen?.viewport) {
+      state.viewport={...screen.viewport};
+      const value=`${state.viewport.width}x${state.viewport.height}`;
+      if(![...$('#viewport').options].some(option=>option.value===value))$('#viewport').add(new Option(`${state.viewport.width} × ${state.viewport.height} · Screen`,value));
+      $('#viewport').value=value;
+    }
+  }
   renderScreens();
   renderPanelList();
   renderBranding();
@@ -364,11 +375,46 @@ function renderInspector() {
     if (output) output.textContent = appearance[field] || `Inherited · ${input.value}`;
   }
   $('#theme-preset').value = matchingTheme(appearance);
+  $('#screen-presentation').value=screen.presentation||'screen';
+  $('#screen-width').value=screen.viewport?.width||'';
+  $('#screen-height').value=screen.viewport?.height||'';
   $('#set-default').disabled = state.selectedScreenId === state.design.defaultScreen;
 
   renderPanelInspector();
 }
 
+function renderInteractionFields() {
+  const panel=currentPanel(); if(!panel)return;
+  const interaction=panel.interaction || {};
+  $('#interaction-type').value=interaction.type || '';
+  $('#interaction-destination').hidden=!['modal','screen'].includes(interaction.type);
+  $('#interaction-action-fields').hidden=interaction.type!=='action';
+  $('#interaction-label-field').hidden=!interaction.type;
+  $('#interaction-screen').replaceChildren(...[{id:'',title:'Choose a destination'},...Object.entries(state.design.screens).map(([id,screen])=>({id,title:screen.title||id}))].map(item=>new Option(item.title,item.id)));
+  $('#interaction-screen').value=interaction.screenId || '';
+  $('#interaction-edit').disabled=!state.design.screens[interaction.screenId];
+  $('#interaction-source').replaceChildren(new Option('Panel source',''),...(state.runtime?.plugins||[]).filter(source=>source.hasAction).map(source=>new Option(source.name+' ('+source.id+')',source.id)));
+  for(const field of ['source','action','label','confirmation'])$('#interaction-'+field).value=interaction[field] || '';
+  $('#interaction-payload').value=JSON.stringify(interaction.payload||{},null,2);
+  $('#interaction-payload').setCustomValidity(''); $('#interaction-error').textContent='';
+}
+function saveInteractionFields() {
+  const panel=currentPanel(); if(!panel)return;
+  const type=$('#interaction-type').value;
+  if(!type){delete panel.interaction;markDirty('Tap behaviour changed');renderInteractionFields();renderCanvas();return;}
+  const next={type};
+  if(['modal','screen'].includes(type))next.screenId=$('#interaction-screen').value;
+  if(type==='action'){
+    next.action=$('#interaction-action').value.trim();
+    if($('#interaction-source').value)next.source=$('#interaction-source').value;
+    if($('#interaction-confirmation').value.trim())next.confirmation=$('#interaction-confirmation').value.trim();
+    try {next.payload=JSON.parse($('#interaction-payload').value||'{}');if(!next.payload||Array.isArray(next.payload)||typeof next.payload!=='object'||Object.hasOwn(next.payload,'action'))throw new Error('Use a JSON object without an action field.');$('#interaction-payload').setCustomValidity('');}
+    catch(error){$('#interaction-payload').setCustomValidity(error.message);$('#interaction-error').textContent=error.message;markDirty();return;}
+  }
+  if($('#interaction-label').value.trim())next.label=$('#interaction-label').value.trim();
+  panel.interaction=next;
+  markDirty('Tap behaviour changed');renderCanvas();
+}
 function renderPanelInspector() {
   const screen = currentScreen();
   const panel = currentPanel();
@@ -421,6 +467,7 @@ function renderPanelInspector() {
     markDirty('Panel placement changed'); renderCanvas();
   });
   renderPanelAppearance(panel, screen);
+  renderInteractionFields();
   const index = screen.panels.indexOf(panel);
   $('#panel-earlier').disabled = index <= 0;
   $('#panel-later').disabled = index === screen.panels.length - 1;
@@ -752,7 +799,8 @@ function setInspectorTab(tab) {
 
 function setMode(mode) {
   state.mode = mode;
-  for (const button of $$('[data-mode]')) button.classList.toggle('active', button.dataset.mode === mode);
+  $('#reset-preview').hidden=mode!=='preview';
+  for (const button of $$('[data-mode]')) {button.classList.toggle('active', button.dataset.mode === mode);button.setAttribute('aria-pressed',String(button.dataset.mode===mode));}
   $('#canvas-frame').classList.toggle('preview', mode === 'preview');
   if (mode === 'preview') refreshPreview();
 }
@@ -766,7 +814,7 @@ function updatePreview() {
 function sendDraft() {
   if (!state.previewReady || !state.runtime || !currentScreen()) return;
   const config = { ...state.runtime, branding: state.design.branding, defaultScreen:state.design.defaultScreen, screens:state.design.screens };
-  $('#live-preview').contentWindow.postMessage({type:'castboard-draft', config, screenId:state.selectedScreenId}, window.location.origin);
+  $('#live-preview').contentWindow.postMessage({type:'castboard-draft', config, screenId:state.selectedScreenId,reset:state.previewReset||0}, window.location.origin);
 }
 function refreshPreview() { sendDraft(); }
 
@@ -1004,6 +1052,8 @@ function deleteScreen(confirmed = false) {
   if (confirmed !== true) return showNotice(`Remove “${screen.title || state.selectedScreenId}”? Its delivery settings will be removed when you save.`, [['Remove screen', () => deleteScreen(true)], ['Cancel', () => showNotice('')]]);
   showNotice('');
   const deletedId = state.selectedScreenId;
+  const references=Object.values(state.design.screens).flatMap(screen=>screen.panels).filter(panel=>['modal','screen'].includes(panel.interaction?.type)&&panel.interaction.screenId===deletedId);
+  if(references.length)return toast('Change the '+references.length+' tap destination(s) using this screen before removing it.',true);
   delete state.design.screens[deletedId];
   if (state.design.defaultScreen === deletedId) state.design.defaultScreen = Object.keys(state.design.screens)[0];
   state.selectedScreenId = state.design.defaultScreen;
@@ -1019,7 +1069,9 @@ function validateDesign() {
   if (!screens.length) errors.push('At least one screen is required.');
   if (!state.design.screens[state.design.defaultScreen]) errors.push('The default screen does not exist.');
   const paths = new Set();
+  const installed=Object.fromEntries((state.runtime?.plugins||[]).map(plugin=>[plugin.id,{enabled:true}]));
   for (const [id, screen] of screens) {
+    for(const panel of screen.panels){try{validateInteraction(panel.interaction,state.design.screens,installed,`${screen.title||id}: ${panel.id}`);}catch(error){errors.push(error.message);}}
     if (!/^[a-z][a-z0-9-]*$/.test(id)) errors.push(`Screen ID “${id}” is invalid.`);
     const pathError = screenPathError(screen.path);
     if (pathError) errors.push(`${screen.title || id}: ${pathError}`);
@@ -1194,6 +1246,30 @@ function bindEvents() {
   $('#add-screen').addEventListener('click', showNewScreenDialog);
   $('#duplicate-screen').addEventListener('click', duplicateScreen);
   $('#delete-screen').addEventListener('click', () => deleteScreen());
+  $('#reset-preview').onclick=()=>{state.previewReset=(state.previewReset||0)+1;sendDraft();};
+  $('#screen-presentation').onchange=()=>{currentScreen().presentation=$('#screen-presentation').value;markDirty('Presentation changed');renderCanvas();};
+  for(const field of ['width','height'])$('#screen-'+field).onchange=()=>{
+    const width=Number($('#screen-width').value),height=Number($('#screen-height').value);
+    if(!width&&!height)delete currentScreen().viewport;
+    else currentScreen().viewport={width:width||800,height:height||480};
+    markDirty('Preferred size changed');renderInspector();renderCanvas();
+  };
+  $('#interaction-type').onchange=()=>{
+    const panel=currentPanel(),type=$('#interaction-type').value;
+    if(type)panel.interaction={type,...(['modal','screen'].includes(type)?{screenId:currentPanel().interaction?.screenId||''}:{}),...(type==='action'?{action:''}:{})};
+    else delete panel.interaction;
+    markDirty('Tap behaviour changed');renderInteractionFields();renderCanvas();
+  };
+  for(const field of ['screen','source','action','payload','label','confirmation'])$('#interaction-'+field).addEventListener('change',()=>{saveInteractionFields();if(field==='screen')$('#interaction-edit').disabled=!state.design.screens[$('#interaction-screen').value];});
+  $('#interaction-edit').onclick=()=>{if(!canLeaveField())return;state.selectedScreenId=currentPanel().interaction.screenId;state.selectedPanelId='';rememberScreen();renderAll();setInspectorTab('screen');};
+  $('#interaction-create').onclick=()=>{
+    if(!canLeaveField())return;
+    const panel=currentPanel(),id=uniqueScreenId((panel.options?.title||pluginName(panel.plugin))+' details');
+    state.design.screens[id]={id,title:(panel.options?.title||pluginName(panel.plugin))+' details',path:'/screens/'+id,type:'grid',layout:defaultLayout('grid'),appearance:{},presentation:'modal',viewport:{width:800,height:480},panels:[]};
+    panel.interaction={type:'modal',screenId:id};
+    state.selectedScreenId=id;state.selectedPanelId='';markDirty('Modal created · add panels and save');rememberScreen();renderAll();setInspectorTab('screen');openPanelLibrary();
+  };
+
   $('#set-default').addEventListener('click', () => {
     state.design.defaultScreen = state.selectedScreenId;
     markDirty('Default screen changed · unsaved');

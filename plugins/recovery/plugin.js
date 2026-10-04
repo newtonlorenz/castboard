@@ -1,9 +1,11 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 export function createPlugin({ config, context }) {
   validateProviderConfig('recovery', config, ['demo', 'http-json', 'file-json']);
   return {
     id: 'recovery',
+    nativeView: nativeViews.recovery,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Recovery',

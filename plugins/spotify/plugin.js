@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import path from 'node:path';
 import { readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 import { runCommand } from '../../src/core/command.js';
@@ -48,6 +49,7 @@ export function createPlugin({ config, context }) {
   const controllable = config.provider === 'demo' || config.provider === 'spotify-player';
   return {
     id: 'spotify',
+    nativeView: nativeViews.spotify,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Spotify',

@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, fetchJson, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 
 function configuredTickers(config) {
@@ -53,6 +54,7 @@ export function createPlugin({ config, context }) {
   }
   return {
     id: 'stocks',
+    nativeView: nativeViews.stocks,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Stocks',

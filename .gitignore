@@ -25,3 +25,9 @@ secrets.yaml
 .impeccable/options.json
 .impeccable/mocks/
 .impeccable/config.local.json
+
+# Embedded builds and private receiver credentials.
+.pio/
+receivers/**/secrets.h
+receivers/**/board_port.h
+examples/embedded/data/

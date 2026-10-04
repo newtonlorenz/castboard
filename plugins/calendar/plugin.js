@@ -1,3 +1,4 @@
+import { nativeViews } from '../../src/core/native-views.js';
 import { demoTimestamp, fetchText, readJsonSource, validateProviderConfig } from '../../src/core/providers.js';
 import { parseIcs } from '../../src/core/ics.js';
 
@@ -6,6 +7,7 @@ export function createPlugin({ config, context }) {
   if (config.provider === 'ics' && !config.url) throw new Error('Plugin calendar ics provider requires url');
   return {
     id: 'calendar',
+    nativeView: nativeViews.calendar,
     assets: ['style.css'],
     styles: ['style.css'],
     name: 'Calendar',

@@ -1,3 +1,4 @@
+import { gridLayout } from '../../src/core/native-layout.js';
 function positiveInteger(value) {
   return Number.isInteger(Number(value)) && Number(value) > 0;
 }
@@ -9,6 +10,7 @@ function boundedSpacing(value) {
 export function createScreenType() {
   return {
     id: 'grid',
+    nativeLayout: gridLayout,
     name: 'Fixed grid',
     version: '1.1.0',
     validateScreen(screen, screenId) {

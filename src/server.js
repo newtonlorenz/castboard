@@ -14,6 +14,8 @@ import { publicAsset, extensionMetadata, validateSchema } from './core/extension
 import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
 import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
 import { discoverCastProtocols } from './core/cast-protocol-registry.js';
+import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
+import { createNativeScenes } from './core/native-scene.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -85,6 +87,8 @@ export async function createApp(options = {}) {
   const reads = new Map();
   const screenRequests = Object.create(null);
   const clients = new Map();
+  const deviceDiagnostics = new Map();
+  const deviceRequests = new Map();
   function clientAddress(req) {
     const socket=req.socket.remoteAddress?.replace(/^::ffff:/,'');
     const forwarded=req.headers['x-castboard-receiver'];
@@ -113,9 +117,23 @@ export async function createApp(options = {}) {
   let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
-  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
+  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); nativeScenes.dispose(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
 
   let publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
+
+  async function runAction(id, body, request = {}) {
+    const plugin = byId.get(id);
+    if (!plugin?.action) throw Object.assign(new Error('This plugin does not support actions'), {statusCode:422});
+    if (plugin.actionSchemas) {
+      if (!body || typeof body.action !== 'string' || !Object.hasOwn(plugin.actionSchemas, body.action)) throw Object.assign(new Error('Unsupported action'), {statusCode:422});
+      try { validateSchema(body, plugin.actionSchemas[body.action], `Action ${body.action}`); }
+      catch (error) { error.statusCode=422; throw error; }
+    }
+    const result = await plugin.action(body, request);
+    for (const key of reads.keys()) if (key.startsWith(`${id}:`)) reads.delete(key);
+    return result;
+  }
+  const nativeScenes = createNativeScenes({getConfig:()=>runtimeConfig,getPlugin:id=>byId.get(id),getScreenType:id=>screenTypesById.get(id),read:id=>context.read(id),action:runAction});
 
   function adminPayload() {
     return {
@@ -144,6 +162,76 @@ export async function createApp(options = {}) {
       const allowedHosts = [...(runtimeConfig.server.allowedHosts || []), ...(publicHostname ? [publicHostname] : [])];
       if (!isAllowedApplicationHost(req.headers.host, allowedHosts)) {
         return jsonResponse(res, 421, { error: { code: 'HOST_NOT_ALLOWED', message: 'Request host is not allowed' } });
+      }
+      if (url.pathname === '/api/admin/devices') {
+        if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Display management requires admin access'}});
+        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.server.publicUrl || ''});
+        if (req.method === 'GET') return jsonResponse(res,200,payload());
+        if (req.method !== 'POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
+        if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Display changes require JSON'}});
+        const body = await readBody(req);
+        if (pluginSaveInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res,409,{error:{message:'Settings changed. Refresh displays before saving.'}});
+        pluginSaveInProgress=true;
+        try {
+          const changed=changeDeviceConfig(rawConfig,body);
+          const nextConfig=validateConfig(expandEnvironment(changed.config,runtimeEnv));
+          const nextPath=writableConfigPath(configPath,path.dirname(configPath));
+          await writeConfigAtomic(nextPath,changed.config);
+          rawConfig=changed.config;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);
+          nativeScenes.reset(body.id);deviceDiagnostics.delete(body.id);
+          return jsonResponse(res,200,{...payload(),...(changed.token?{connectionKey:changed.token}:{}),applied:true});
+        } finally { pluginSaveInProgress=false; }
+      }
+      const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
+      if (deviceMatch) {
+        const [,id,operation,pluginId]=deviceMatch;
+        const device=authenticateDevice(runtimeConfig,id,req.headers.authorization);
+        const rate=deviceRequests.get(id) || {at:Date.now(),count:0};
+        if (Date.now()-rate.at>60000) {rate.at=Date.now();rate.count=0;}
+        deviceRequests.set(id,rate);
+        if (++rate.count>600) return jsonResponse(res,429,{error:{message:'Display request limit exceeded. Retry in a minute.'}});
+        deviceDiagnostics.set(id,{lastSeenAt:new Date().toISOString(),remoteAddress:clientAddress(req),operation:operation.startsWith('plugins/')?'data':operation});
+        if (req.method==='GET' && operation==='config') return jsonResponse(res,200,{protocol:'castboard-device/1',id,name:device.name,mode:device.mode,width:device.width,height:device.height,format:device.format,refreshMs:device.refreshMs,touch:device.touch,allowActions:device.allowActions});
+        if (req.method==='GET' && operation==='bootstrap') return jsonResponse(res,200,devicePublicConfig(runtimeConfig,publicConfig,device));
+        if (operation==='scene' && req.method==='GET' && device.mode==='native') return jsonResponse(res,200,await nativeScenes.scene(id,device));
+        if (operation==='events' && req.method==='POST' && device.mode==='native') {
+          if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Touch events require JSON'}});
+          return jsonResponse(res,200,await nativeScenes.event(id,device,await readBody(req)));
+        }
+        if (device.mode==='frame' && ((operation==='frame' && req.method==='GET') || (operation==='touch' && req.method==='POST'))) {
+          if (!runtimeConfig.embedded?.rendererUrl) return jsonResponse(res,503,{error:{message:'Image mode needs the optional frame renderer. Set it up before connecting this display.'}});
+          let event;
+          if (operation==='touch') {
+            if (!device.touch) return jsonResponse(res,403,{error:{message:'Touch is disabled for this display'}});
+            if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Touch events require JSON'}});
+            event=await readBody(req);
+          }
+          let frame;
+          try {
+            frame=await fetch(new URL('/render',runtimeConfig.embedded.rendererUrl),{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${runtimeConfig.embedded.rendererToken}`},body:JSON.stringify({id,token:req.headers.authorization.slice(7),width:device.width,height:device.height,format:device.format,revision:configRevision(rawConfig),...(event?{event}: {})}),signal:AbortSignal.timeout(40000)});
+          } catch { return jsonResponse(res,503,{error:{message:'The image renderer is unavailable. The display can keep its last frame and retry.'}}); }
+          if (!frame.ok) {const error=await frame.json().catch(()=>({}));return jsonResponse(res,frame.status,{error:{message:error.error?.message || 'The image renderer could not update this display'}});}
+          const length=Number(frame.headers.get('content-length'));
+          if (!length || length>8*1024*1024) {await frame.body?.cancel();return jsonResponse(res,502,{error:{message:'Invalid frame size'}});}
+          const buffer=Buffer.from(await frame.arrayBuffer());
+          if (buffer.length!==length) return jsonResponse(res,502,{error:{message:'Incomplete frame'}});
+          const frameId=frame.headers.get('x-frame-id');
+          res.setHeader('ETag',`"${frameId}"`);
+          res.setHeader('Cache-Control','private, no-cache');
+          for(const field of ['id','width','height','format']) res.setHeader(`X-Frame-${field}`,frame.headers.get(`x-frame-${field}`)||'');
+          if (!event && req.headers['if-none-match']===`"${frameId}"`) {res.writeHead(304);res.end();return;}
+          res.writeHead(200,{'Content-Type':device.format==='jpeg'?'image/jpeg':'application/octet-stream','Content-Length':buffer.length});res.end(buffer);return;
+        }
+        if (operation.startsWith('plugins/')) {
+          const actionDisabled = operation.endsWith('/action') && (!device.allowActions || !device.touch);
+          if (!deviceScope(runtimeConfig,device).plugins.has(pluginId) || actionDisabled) return jsonResponse(res,403,{error:{message:'This plugin operation is not assigned to this display'}});
+          url.pathname=`/api/${operation}`;
+        } else return jsonResponse(res,405,{error:{message:'Operation is unavailable in this display mode'}});
+      }
+      const deviceView=url.pathname.match(/^\/device-view\/([a-z][a-z0-9-]{0,63})$/);
+      if (deviceView && req.method==='GET') {
+        authenticateDevice(runtimeConfig,deviceView[1],req.headers.authorization);
+        return sendFile(res,path.join(PUBLIC_DIR,'index.html'));
       }
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
@@ -284,14 +372,7 @@ export async function createApp(options = {}) {
           if (operation === 'action' && req.method === 'POST' && plugin.action) {
             if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Plugin actions require application/json' } });
             const body = await readBody(req);
-            if (plugin.actionSchemas) {
-              // Inherited object properties are not declared action names.
-              if (!body || typeof body.action !== 'string' || !Object.hasOwn(plugin.actionSchemas, body.action)) throw Object.assign(new Error('Unsupported action'), { statusCode: 422 });
-              const schema = plugin.actionSchemas[body.action];
-              try { validateSchema(body, schema, `Action ${body.action}`); } catch (error) { error.statusCode = 422; throw error; }
-            }
-            const result = await plugin.action(body, { url, req });
-            for (const key of reads.keys()) if (key.startsWith(`${id}:`)) reads.delete(key);
+            const result = await runAction(id,body,{url,req});
             return jsonResponse(res, 200, { ok: true, data: result });
           }
           if (operation === 'stream' && req.method === 'GET' && plugin.stream) return await plugin.stream(req, res, { url });
@@ -336,6 +417,8 @@ export async function createApp(options = {}) {
       if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
       if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
+      if(req.method==='GET'&&url.pathname==='/admin/devices'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'devices.html'));
+      if(req.method==='GET'&&/^\/devices\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
       if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
@@ -345,7 +428,7 @@ export async function createApp(options = {}) {
         const entry=screenRequests[screen] ||= {count:0}; entry.count += 1; entry.lastRequestAt=new Date().toISOString(); entry.remoteAddress=clientAddress(req);
         return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       }
-      if (req.method === 'GET' && /^\/(app|widget-kit)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
+      if (req.method === 'GET' && /^\/(app|widget-kit|interaction-model|interaction-runtime)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
       if (req.method === 'GET' && url.pathname === '/schema-fields.js') return sendFile(res, path.join(PUBLIC_DIR, 'schema-fields.js'), true);
       if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
       if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.png') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.png'), true);

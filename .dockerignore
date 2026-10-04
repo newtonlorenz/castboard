@@ -6,6 +6,12 @@
 .npmrc
 castboard.config.json
 node_modules
+**/node_modules
+**/.pio
+receivers/**/secrets.h
+receivers/**/board_port.h
+examples/embedded/data
+.impeccable/review
 coverage
 *.log
 *.pid

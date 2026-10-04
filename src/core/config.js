@@ -1,4 +1,6 @@
+import { validateDevices } from './devices.js';
 import fs from 'node:fs';
+import { validateInteraction } from '../../public/interaction-model.js';
 import path from 'node:path';
 import { isIP } from 'node:net';
 import { screenPathError } from './screen-path.js';
@@ -117,6 +119,11 @@ export function validateConfig(config) {
     if (paths.has(screen.path)) throw new Error(`Screen path must be unique: ${screen.path}`);
     paths.add(screen.path);
     if (screen.layout !== undefined) assertObject(screen.layout, `screens.${screenId}.layout`);
+    if (screen.presentation !== undefined && !['screen', 'modal'].includes(screen.presentation)) throw new Error(`screens.${screenId}.presentation must be screen or modal`);
+    if (screen.viewport !== undefined) {
+      assertObject(screen.viewport, `screens.${screenId}.viewport`);
+      for (const field of ['width','height']) if (!Number.isInteger(screen.viewport[field]) || screen.viewport[field] < 160 || screen.viewport[field] > 4096) throw new Error(`screens.${screenId}.viewport.${field} must be an integer from 160 to 4096`);
+    }
     if (screen.appearance !== undefined) validateAppearance(screen.appearance, `screens.${screenId}.appearance`);
     if (!Array.isArray(screen.panels)) throw new Error(`screens.${screenId}.panels must be an array`);
     const panelIds = new Set();
@@ -134,6 +141,7 @@ export function validateConfig(config) {
         if (panel.options.fitContent !== undefined && typeof panel.options.fitContent !== 'boolean') throw new Error(`screens.${screenId}.panels[${index}].options.fitContent must be a boolean`);
       }
       if (panel.appearance !== undefined) validateAppearance(panel.appearance, `screens.${screenId}.panels[${index}].appearance`, true);
+      validateInteraction(panel.interaction, config.screens, config.plugins, `Panel ${panel.id} interaction`);
     }
     if (screen.targets !== undefined && !Array.isArray(screen.targets)) throw new Error(`screens.${screenId}.targets must be an array`);
     for (const [index, target] of (screen.targets || []).entries()) {
@@ -145,6 +153,7 @@ export function validateConfig(config) {
     }
   }
   if (config.defaultScreen && !config.screens[config.defaultScreen]) throw new Error(`defaultScreen references an unknown screen: ${config.defaultScreen}`);
+  validateDevices(config);
   return config;
 }
 
@@ -193,6 +202,8 @@ export function publicAppConfig(config, plugins, screenTypes = []) {
       type: screen.type || 'grid',
       layout: screen.layout || {},
       appearance: screen.appearance || {},
+      ...(screen.presentation ? { presentation: screen.presentation } : {}),
+      ...(screen.viewport ? { viewport: screen.viewport } : {}),
       panels: screen.panels,
     }])),
     screenTypes: screenTypes.map(type => ({ id: type.id, name: type.name, version: type.version || '1.0.0', ...extensionMetadata(type) })),
@@ -209,6 +220,7 @@ export function publicAppConfig(config, plugins, screenTypes = []) {
         hasData: typeof plugin.getData === 'function',
         hasAction: typeof plugin.action === 'function',
         hasStream: typeof plugin.stream === 'function',
+        hasNativeView: typeof plugin.nativeView === 'function',
         config: safeConfig,
         ...(plugin.styles?.length ? {styles: plugin.styles} : {}),
         ...(Object.keys(plugin.bindings || {}).length ? { bindings: plugin.bindings } : {}),
