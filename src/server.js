@@ -288,9 +288,9 @@ export async function createApp(options = {}) {
           res.setHeader('ETag',`"${etag}"`);
           res.setHeader('Cache-Control','private, no-cache');
           for(const field of ['id','width','height','format']) res.setHeader(`X-Frame-${field}`,frame.headers.get(`x-frame-${field}`)||'');
+          res.setHeader('X-Frame-Format',device.format);
           if (!event && req.headers['if-none-match']===`"${etag}"`) {res.writeHead(304);res.end();return;}
           const encoded=await encodeAdapterResult(adapter,'encodeFrame',{data:buffer,format:frame.headers.get('x-frame-format'),width:device.width,height:device.height,frameId},adapterContext,{data:buffer,contentType:device.format==='jpeg'?'image/jpeg':'application/octet-stream'});
-          res.setHeader('X-Frame-Format',device.format);
           res.writeHead(200,{'Content-Type':encoded.contentType,'Content-Length':encoded.data.length});res.end(encoded.data);return;
         }
         if (operation.startsWith('plugins/')) {

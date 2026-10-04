@@ -78,7 +78,7 @@ test('uploaded adapter encodes real frames, maps inputs, scopes credentials and 
   const frame=await fetch(base+'/api/devices/mono/frame',{headers:auth});assert.equal(frame.status,200);assert.equal(frame.headers.get('x-frame-format'),'mono1');
   const pixels=Buffer.from(await frame.arrayBuffer());assert.equal(pixels.length,1024);assert.equal(pixels[0],0x50);assert.equal(received.format,'rgb565');
   assert.equal((await fetch(base+'/api/devices/mono/frame')).status,401);
-  const etag=frame.headers.get('etag');assert.equal((await fetch(base+'/api/devices/mono/frame',{headers:{...auth,'If-None-Match':etag}})).status,304);
+  const etag=frame.headers.get('etag'),unchanged=await fetch(base+'/api/devices/mono/frame',{headers:{...auth,'If-None-Match':etag}});assert.equal(unchanged.status,304);assert.equal(unchanged.headers.get('x-frame-format'),'mono1');
   const beforeOptions=await(await fetch(base+'/api/admin/devices')).json();
   assert.equal((await fetch(base+'/api/admin/devices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update',revision:beforeOptions.revision,id:'mono',device:{options:{invert:true}}})})).status,200);
   const changedFrame=await fetch(base+'/api/devices/mono/frame',{headers:{...auth,'If-None-Match':etag}});assert.equal(changedFrame.status,200);assert.notEqual(changedFrame.headers.get('etag'),etag);
