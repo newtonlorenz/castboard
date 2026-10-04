@@ -49,3 +49,4 @@ jobs:
           python-version: '3.12'
       - run: pip install platformio==6.1.18
       - run: pio run -d receivers/esp32/test/compile
+      - run: python receivers/esp32/test/image_format.py

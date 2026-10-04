@@ -1,6 +1,5 @@
 #include "CastboardReceiver.h"
 #include <ArduinoJson.h>
-#include <src/misc/cache/instance/lv_image_cache.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -52,7 +51,7 @@ bool CastboardReceiver::begin(lv_obj_t* parent) {
   const String server(settings_.server);
   if(!server.startsWith("http://") && !server.startsWith("https://"))return false;
   if(server.startsWith("https://") && !settings_.rootCA)return false;
-  parent_=parent?parent:lv_screen_active();
+  parent_=parent?parent:castboard_lvgl::screen();
   canvas_=lv_obj_create(parent_);lv_obj_remove_style_all(canvas_);lv_obj_set_size(canvas_,lv_pct(100),lv_pct(100));
   statusLabel_=lv_label_create(parent_);lv_label_set_text(statusLabel_,"Connecting to Castboard...");
   lv_obj_align(statusLabel_,LV_ALIGN_BOTTOM_MID,0,-4);lv_obj_set_style_bg_opa(statusLabel_,LV_OPA_90,0);lv_obj_set_style_bg_color(statusLabel_,lv_color_hex(0x14201e),0);lv_obj_set_style_text_color(statusLabel_,lv_color_white(),0);lv_obj_set_style_pad_all(statusLabel_,4,0);
@@ -133,25 +132,24 @@ void CastboardReceiver::inputEvent(lv_event_t* event) {
   if(lv_event_get_code(event)!=LV_EVENT_CLICKED)return;
   const char* control=static_cast<char*>(lv_obj_get_user_data(target));
   if(control)self->send(control);
-  else{lv_point_t point;lv_indev_get_point(lv_indev_active(),&point);self->send("",point.x,point.y);}
+  else{lv_point_t point;lv_indev_get_point(castboard_lvgl::input(),&point);self->send("",point.x,point.y);}
 }
 void CastboardReceiver::display(Result* result) {
   if(result->error.length()){status_=result->error;return;}
   JsonDocument doc;
   if(result->native && (deserializeJson(doc,result->bytes,result->length) || String(doc["protocol"]|"")!="castboard-scene/1")){status_="Invalid scene - keeping last view";return;}
-  auto* display=lv_obj_get_display(parent_);
-  if(result->width!=lv_display_get_horizontal_resolution(display) || result->height!=lv_display_get_vertical_resolution(display)){status_="Set display resolution to match the panel in Castboard";return;}
+  if(result->width!=castboard_lvgl::width(parent_) || result->height!=castboard_lvgl::height(parent_)){status_="Set display resolution to match the panel in Castboard";return;}
   if(result->native && native_ && revision_==doc["sceneId"].as<String>()){status_=doc["message"]|"";return;}
-  lv_obj_clean(canvas_);if(pixels_)lv_image_cache_drop(&image_);free(pixels_);pixels_=nullptr;native_=result->native;
+  lv_obj_clean(canvas_);if(pixels_)castboard_lvgl::dropImage(&image_);free(pixels_);pixels_=nullptr;native_=result->native;
   auto attach=[&](lv_obj_t* obj,const char* control){lv_obj_add_flag(obj,LV_OBJ_FLAG_CLICKABLE);lv_obj_set_user_data(obj,control?strdup(control):nullptr);lv_obj_add_event_cb(obj,inputEvent,LV_EVENT_ALL,this);};
   if(!native_){
     pixels_=result->bytes;result->bytes=nullptr;revision_=result->revision;
-    image_={};image_.header.magic=LV_IMAGE_HEADER_MAGIC;image_.header.cf=LV_COLOR_FORMAT_RGB565;image_.header.w=result->width;image_.header.h=result->height;image_.header.stride=result->width*2;image_.data_size=result->length;image_.data=pixels_;
-    auto* img=lv_image_create(canvas_);lv_image_set_src(img,&image_);attach(img,nullptr);lv_obj_remove_flag(canvas_,LV_OBJ_FLAG_SCROLLABLE);
+    castboard_lvgl::setImage(image_,pixels_,result->length,result->width,result->height);
+    auto* img=castboard_lvgl::imageObject(canvas_,&image_);attach(img,nullptr);castboard_lvgl::clearFlag(canvas_,LV_OBJ_FLAG_SCROLLABLE);
   }else{
     revision_=doc["sceneId"].as<String>();lv_obj_add_flag(canvas_,LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_opa(canvas_,LV_OPA_COVER,0);lv_obj_set_style_bg_color(canvas_,color(doc["background"],"#07100f"),0);
-    auto button=[&](lv_obj_t* parent,const char* text,const char* event){auto* btn=lv_button_create(parent);auto* copy=lv_label_create(btn);lv_label_set_text(copy,text);lv_obj_center(copy);lv_obj_set_height(btn,44);attach(btn,event);return btn;};
+    auto button=[&](lv_obj_t* parent,const char* text,const char* event){auto* btn=castboard_lvgl::button(parent);auto* copy=lv_label_create(btn);lv_label_set_text(copy,text);lv_obj_center(copy);lv_obj_set_height(btn,44);attach(btn,event);return btn;};
     if(doc["navigation"].size()){JsonObjectConst nav=doc["navigation"][0];auto* btn=button(canvas_,nav["label"]|"Back",nav["event"]|"back");lv_obj_set_pos(btn,8,2);lv_obj_set_width(btn,100);}
     for(JsonObjectConst panel:doc["panels"].as<JsonArrayConst>()){
       auto* box=lv_obj_create(canvas_);lv_obj_remove_style_all(box);auto bounds=panel["bounds"];auto style=panel["appearance"];
@@ -179,5 +177,5 @@ void CastboardReceiver::display(Result* result) {
 }
 void CastboardReceiver::loop() {
   if(!results_)return;Result* result=nullptr;
-  if(xQueueReceive(results_,&result,0)==pdTRUE){display(result);free(result->bytes);delete result;lv_label_set_text(statusLabel_,status_.c_str());lv_obj_move_foreground(statusLabel_);if(status_.isEmpty())lv_obj_add_flag(statusLabel_,LV_OBJ_FLAG_HIDDEN);else lv_obj_remove_flag(statusLabel_,LV_OBJ_FLAG_HIDDEN);}
+  if(xQueueReceive(results_,&result,0)==pdTRUE){display(result);free(result->bytes);delete result;lv_label_set_text(statusLabel_,status_.c_str());lv_obj_move_foreground(statusLabel_);if(status_.isEmpty())lv_obj_add_flag(statusLabel_,LV_OBJ_FLAG_HIDDEN);else castboard_lvgl::clearFlag(statusLabel_,LV_OBJ_FLAG_HIDDEN);}
 }

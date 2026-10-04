@@ -31,3 +31,4 @@ secrets.yaml
 receivers/**/secrets.h
 receivers/**/board_port.h
 examples/embedded/data/
+receivers/**/build/

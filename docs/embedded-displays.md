@@ -84,21 +84,24 @@ failed services. Size the session limit to the host's memory.
 
 ## 4. Receiver library
 
-`receivers/esp32` contains an Arduino ESP32 / LVGL 9 library and an integration
-example. It supports RGB565 image mode and native scenes, with background network
-I/O, bounded downloads, stale-touch rejection and last-view retention. JPEG is
+`receivers/esp32` contains an Arduino ESP32 library for LVGL 8.4 and 9.x, a generic
+integration example and a Freenove FNK0104B board port. It supports RGB565 image
+mode and native scenes, with background network I/O, bounded downloads, stale-touch rejection and last-view retention. JPEG is
 available in the protocol for receivers that provide their own decoder; the
 included library uses RGB565.
 
 Use the board's existing working LCD and touch driver. Supply `board_begin()` and
 `board_loop()` in the example's `board_port.h`; keep resolution, orientation and
 calibration consistent with Displays. Different ESP32 boards use different buses,
-LCD controllers, touch chips and memory wiring. The example deliberately assumes
-no GPIO map and does not include a flashing script. Preserve a known-good firmware
+LCD controllers, touch chips and memory wiring. The generic example deliberately
+assumes no GPIO map and does not include a flashing script. The
+[Freenove FNK0104B example](../receivers/esp32/examples/freenove_fnk0104b/README.md)
+provides a 320 × 240 ILI9341 / FT6336U port using LVGL 8.4 and a compile-only
+script with board-local settings. Preserve a known-good firmware
 and configuration before installing a receiver build on hardware.
 
-At 800 × 480, one RGB565 frame is 768,000 bytes. Downloading a replacement while
-keeping the displayed image needs roughly two frames plus LVGL/network memory;
+At 320 × 240, one RGB565 frame is 153,600 bytes; at 800 × 480 it is 768,000 bytes.
+Downloading a replacement while keeping the displayed image needs roughly two frames plus LVGL/network memory;
 PSRAM is strongly recommended. Native scenes are capped at 128 KiB. The reference
 receiver uses bundled Montserrat fonts; frame mode preserves arbitrary web fonts.
 It reports a resolution mismatch instead of drawing to incorrect coordinates.
@@ -107,11 +110,15 @@ Compile the API/link harness (does not operate a physical panel):
 
 ```sh
 pio run -d receivers/esp32/test/compile
+python3 receivers/esp32/test/image_format.py
 ```
 
-For a real board, depend on this library from your board project, enable LVGL 9
-and the desired font sizes, then follow its manufacturer's flashing and recovery
-procedure. `secrets.h`, build files and board-local ports are ignored by Git.
+The harness builds against LVGL 9.4 and LVGL 8.4, including the swapped-colour
+configuration. For a real board, depend on this library, pin LVGL 8.4 or 9.x in
+your board project and enable the desired font sizes, then follow its
+manufacturer's flashing and recovery procedure. LVGL 8 requires 16-bit colour;
+the receiver converts incoming RGB565 pixels when `LV_COLOR_16_SWAP` is enabled.
+`secrets.h`, build files and board-local ports are ignored by Git.
 
 ## Protocol version 1
 

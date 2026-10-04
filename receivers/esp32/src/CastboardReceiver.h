@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <atomic>
-#include <lvgl.h>
+#include "lvgl_compat.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
@@ -33,7 +33,7 @@ class CastboardReceiver {
   lv_obj_t* parent_=nullptr;
   lv_obj_t* statusLabel_=nullptr;
   lv_obj_t* canvas_=nullptr;
-  lv_image_dsc_t image_{};
+  castboard_lvgl::Image image_{};
   uint8_t* pixels_=nullptr;
   String revision_, status_;
   bool native_=false;
