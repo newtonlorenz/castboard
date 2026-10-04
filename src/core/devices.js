@@ -96,7 +96,11 @@ export function deviceReport(config, plugins, screenTypes, diagnostics = new Map
     for (const screenId of scope.screens) {
       const screen = config.screens[screenId];
       if (!screenTypes.find(type => type.id === (screen.type || 'grid'))?.nativeLayout) issues.push(`${screen.title || screenId}: layout needs an image renderer`);
-      for (const panel of screen.panels) if (!plugins.find(plugin => plugin.id === panel.plugin)?.nativeView) issues.push(`${screen.title || screenId} / ${panel.id}: plugin needs an image renderer`);
+      for (const panel of screen.panels) {
+        const plugin=plugins.find(plugin=>plugin.id===panel.plugin);
+        if(!plugin?.nativeView)issues.push(`${screen.title || screenId} / ${panel.id}: plugin needs an image renderer`);
+        else if(plugin.nativeImages && !config.embedded?.rendererUrl)issues.push(`${screen.title || screenId} / ${panel.id}: native images need the optional image renderer`);
+      }
     }
     return { id, ...settings, nativeIssues: issues, status: diagnostics.get(id) || null };
   });

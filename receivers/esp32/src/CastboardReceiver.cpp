@@ -71,7 +71,7 @@ void CastboardReceiver::network() {
     HTTPClient http;http.setConnectTimeout(3000);http.setTimeout(5000);http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
     if(!http.begin(*client,base+path))return -1;
     http.addHeader("Authorization",String("Bearer ")+settings_.connectionKey);
-    const char* headers[]={"X-Frame-Id"};http.collectHeaders(headers,1);
+    const char* headers[]={"X-Frame-Id","X-Frame-Width","X-Frame-Height","X-Frame-Format"};http.collectHeaders(headers,4);
     if(path=="/frame" && frameId.length())http.addHeader("If-None-Match",String('"')+frameId+'"');
     int code;
     if(body.length()){http.addHeader("Content-Type","application/json");code=http.POST(body);}else code=http.GET();
@@ -79,7 +79,9 @@ void CastboardReceiver::network() {
       BufferStream buffer(limit);
       const int copied=buffer.data?http.writeToStream(&buffer):-1;
       if(copied<0 || buffer.overflow || !buffer.size){http.end();return -2;}
-      result->bytes=buffer.data;result->length=buffer.size;buffer.data=nullptr;result->revision=http.header("X-Frame-Id");
+      result->bytes=buffer.data;result->length=buffer.size;buffer.data=nullptr;result->revision=http.header("X-Frame-Id");result->format=http.header("X-Frame-Format");
+      if(http.hasHeader("X-Frame-Width"))result->width=http.header("X-Frame-Width").toInt();
+      if(http.hasHeader("X-Frame-Height"))result->height=http.header("X-Frame-Height").toInt();
     }
     http.end();return code;
   };
@@ -108,6 +110,26 @@ void CastboardReceiver::network() {
     }
     auto* result=new Result();result->native=mode=="native";result->width=width;result->height=height;
     const int code=request(path,body,result->native?128*1024:size_t(width)*height*2,result);
+    if(code==200 && result->native) {
+      JsonDocument scene;
+      if(!deserializeJson(scene,result->bytes,result->length) && String(scene["protocol"]|"")=="castboard-scene/1") {
+        size_t imageBytes=0;
+        for(JsonObjectConst panel:scene["panels"].as<JsonArrayConst>()) {
+          if(!panel["image"].is<JsonObjectConst>())continue;
+          const auto info=panel["image"];NativeImage image;
+          image.index=info["index"].as<String>();image.resourceId=info["resourceId"].as<String>();image.width=info["width"]|0;image.height=info["height"]|0;
+          const String path=info["path"]|"",expected=String("/images/")+image.index+"?sceneId="+scene["sceneId"].as<String>();
+          const bool indexValid=image.index.length()>0 && image.index.length()<=2 && image.index.toInt()>=0 && image.index==String(image.index.toInt());
+          const size_t length=image.width>0 && image.height>0?size_t(image.width)*image.height*2:0;
+          if(!indexValid || image.resourceId.length()!=24 || strspn(image.resourceId.c_str(),"0123456789abcdef")!=24 || path!=expected || image.width>width || image.height>height || !length || imageBytes+length>size_t(width)*height*4 || result->images.size()>=4) {result->error="Invalid image resource - keeping last view";break;}
+          imageBytes+=length;Result snapshot;
+          const int imageCode=request(path,"",length,&snapshot);
+          if(imageCode==200 && snapshot.length==length && snapshot.width==image.width && snapshot.height==image.height && snapshot.format=="rgb565") {image.bytes=std::shared_ptr<uint8_t>(snapshot.bytes,free);snapshot.bytes=nullptr;image.length=length;}
+          else image.error="Image unavailable - keeping last image";
+          free(snapshot.bytes);result->images.push_back(std::move(image));
+        }
+      }
+    }
     if(code==200 && (!result->native && result->length!=size_t(width)*height*2)){free(result->bytes);result->bytes=nullptr;result->error="Incomplete image - keeping last frame";}
     else if(code!=200 && code!=304 && code!=409)result->error=code==401?"Connection key rejected":"Update failed - keeping last view";
     if(code!=200 && code!=304){connected_=false;frameId="";xQueueReset(events_);}
@@ -139,15 +161,29 @@ void CastboardReceiver::display(Result* result) {
   JsonDocument doc;
   if(result->native && (deserializeJson(doc,result->bytes,result->length) || String(doc["protocol"]|"")!="castboard-scene/1")){status_="Invalid scene - keeping last view";return;}
   if(result->width!=castboard_lvgl::width(parent_) || result->height!=castboard_lvgl::height(parent_)){status_="Set display resolution to match the panel in Castboard";return;}
-  if(result->native && native_ && revision_==doc["sceneId"].as<String>()){status_=doc["message"]|"";return;}
-  lv_obj_clean(canvas_);if(pixels_)castboard_lvgl::dropImage(&image_);free(pixels_);pixels_=nullptr;native_=result->native;
+  if(result->native && native_ && revision_==doc["sceneId"].as<String>()) {
+    status_=doc["message"]|"";
+    for(const auto& incoming:result->images) {
+      if(!incoming.bytes){status_=incoming.error;continue;}
+      for(auto& drawn:nativeImages_)if(drawn->value.index==incoming.index) {
+        if(drawn->value.bytes)castboard_lvgl::dropImage(&drawn->descriptor);
+        drawn->value=incoming;
+        castboard_lvgl::setImage(drawn->descriptor,drawn->value.bytes.get(),drawn->value.length,drawn->value.width,drawn->value.height);
+        if(drawn->object)castboard_lvgl::updateImageObject(drawn->object,&drawn->descriptor);
+        else {lv_obj_clean(drawn->slot);drawn->object=castboard_lvgl::imageObject(drawn->slot,&drawn->descriptor);}
+      }
+    }
+    return;
+  }
+  auto previousImages=std::move(nativeImages_);nativeImages_.clear();
+  lv_obj_clean(canvas_);for(auto& drawn:previousImages)if(drawn->value.bytes)castboard_lvgl::dropImage(&drawn->descriptor);if(pixels_)castboard_lvgl::dropImage(&image_);free(pixels_);pixels_=nullptr;native_=result->native;
   auto attach=[&](lv_obj_t* obj,const char* control){lv_obj_add_flag(obj,LV_OBJ_FLAG_CLICKABLE);lv_obj_set_user_data(obj,control?strdup(control):nullptr);lv_obj_add_event_cb(obj,inputEvent,LV_EVENT_ALL,this);};
   if(!native_){
     pixels_=result->bytes;result->bytes=nullptr;revision_=result->revision;
     castboard_lvgl::setImage(image_,pixels_,result->length,result->width,result->height);
     auto* img=castboard_lvgl::imageObject(canvas_,&image_);attach(img,nullptr);castboard_lvgl::clearFlag(canvas_,LV_OBJ_FLAG_SCROLLABLE);
   }else{
-    revision_=doc["sceneId"].as<String>();lv_obj_add_flag(canvas_,LV_OBJ_FLAG_SCROLLABLE);
+    revision_=doc["sceneId"].as<String>();status_=doc["message"]|"";lv_obj_add_flag(canvas_,LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_opa(canvas_,LV_OPA_COVER,0);lv_obj_set_style_bg_color(canvas_,color(doc["background"],"#07100f"),0);
     auto button=[&](lv_obj_t* parent,const char* text,const char* event){auto* btn=castboard_lvgl::button(parent);auto* copy=lv_label_create(btn);lv_label_set_text(copy,text);lv_obj_center(copy);lv_obj_set_height(btn,44);attach(btn,event);return btn;};
     if(doc["navigation"].size()){JsonObjectConst nav=doc["navigation"][0];auto* btn=button(canvas_,nav["label"]|"Back",nav["event"]|"back");lv_obj_set_pos(btn,8,2);lv_obj_set_width(btn,100);}
@@ -155,7 +191,21 @@ void CastboardReceiver::display(Result* result) {
       auto* box=lv_obj_create(canvas_);lv_obj_remove_style_all(box);auto bounds=panel["bounds"];auto style=panel["appearance"];
       lv_obj_set_pos(box,bounds["x"]|0,bounds["y"]|0);lv_obj_set_size(box,bounds["width"]|160,bounds["height"]|100);
       lv_obj_set_style_bg_opa(box,LV_OPA_COVER,0);lv_obj_set_style_bg_color(box,color(style["background"],"#14201e"),0);lv_obj_set_style_text_color(box,color(style["textColor"],"#f3faf7"),0);lv_obj_set_style_radius(box,style["radius"]|12,0);lv_obj_set_style_pad_all(box,style["padding"]|12,0);lv_obj_set_style_pad_row(box,6,0);lv_obj_set_flex_flow(box,LV_FLEX_FLOW_COLUMN);
-      label(box,panel["title"]|"",14);
+      const char* title=panel["title"]|"";if(*title)label(box,title,14);
+      if(panel["image"].is<JsonObjectConst>()) {
+        auto drawn=std::unique_ptr<DrawnImage>(new DrawnImage());
+        drawn->value.index=panel["image"]["index"].as<String>();drawn->value.resourceId=panel["image"]["resourceId"].as<String>();
+        drawn->value.width=panel["image"]["width"]|1;drawn->value.height=panel["image"]["height"]|1;
+        drawn->slot=lv_obj_create(box);lv_obj_remove_style_all(drawn->slot);castboard_lvgl::clearFlag(drawn->slot,LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_size(drawn->slot,drawn->value.width,drawn->value.height);
+        for(const auto& incoming:result->images)if(incoming.index==drawn->value.index){drawn->value=incoming;break;}
+        if(drawn->value.bytes)castboard_lvgl::setImage(drawn->descriptor,drawn->value.bytes.get(),drawn->value.length,drawn->value.width,drawn->value.height);
+        else for(const auto& previous:previousImages)if(castboard_lvgl::retainImage(drawn->descriptor,drawn->value,previous->descriptor,previous->value))break;
+        if(drawn->value.bytes)drawn->object=castboard_lvgl::imageObject(drawn->slot,&drawn->descriptor);
+        if(drawn->value.error.length())status_=drawn->value.error;
+        if(!drawn->object)label(drawn->slot,"Image unavailable",14);
+        nativeImages_.push_back(std::move(drawn));
+      }
       const int scale=style["fontScale"]|100;
       for(JsonObjectConst item:panel["lines"].as<JsonArrayConst>()){
         const String kind=item["kind"]|"body";auto* text=label(box,item["text"]|"",(kind=="metric"?32:20)*scale/100);
@@ -171,7 +221,6 @@ void CastboardReceiver::display(Result* result) {
       label(overlay,doc["confirmation"]["message"]|"Confirm action",20);
       button(overlay,"Cancel",doc["confirmation"]["cancelEvent"]|"cancel");button(overlay,"Confirm",doc["confirmation"]["confirmEvent"]|"confirm");
     }
-    status_=doc["message"]|"";
   }
   if(!native_)status_="";
 }

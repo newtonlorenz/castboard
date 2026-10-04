@@ -6,12 +6,14 @@ behaviours and reusable modal compositions configured in Studio.
 | Mode | How it works | Use it for |
 | --- | --- | --- |
 | Image | A separate Chromium worker renders the screen. The receiver downloads RGB565 pixels or JPEG and sends tap coordinates. | Browser widgets, exact fonts and colours, existing plugin controls and complex layouts. |
-| Native | The server sends a small JSON scene. The receiver draws text, metrics, lists and buttons using LVGL. | Lower bandwidth and a display that keeps its last scene during a connection failure. |
+| Native | The server sends a small JSON scene. The receiver draws text, metrics, lists, buttons and optional snapshots using LVGL. | Lower bandwidth and a display that keeps its last scene during a connection failure. |
 
 Native mode is a separate plugin view, not an HTML interpreter. It uses the
-receiver's available fonts and drawing primitives. Charts, camera/video, arbitrary
-HTML, external artwork and animations are not automatically translated. Use image
-mode for those designs. Image mode is limited to assets served from the configured
+receiver's available fonts and drawing primitives. Camera snapshots are supported
+through an explicit native image hook and the optional image renderer. Charts,
+continuous video, arbitrary HTML, external artwork and animations are not
+automatically translated. Use image mode for browser designs; its frame refresh
+rate still limits motion on the receiver. Image mode is limited to assets served from the configured
 Castboard origin; remote assets should be proxied by a trusted plugin.
 
 Different hardware can use a [display plugin](display-adapters.md): upload it from
@@ -81,7 +83,10 @@ Worker environment:
 - `CASTBOARD_CHROMIUM_PATH`: optional existing Chromium executable for local use.
 
 The worker must not be published to the LAN or internet. It accepts only a device
-ID and bounded viewport, never arbitrary URLs or JavaScript. Each device gets an
+ID and bounded viewport or a scoped plugin image resource, never arbitrary URLs
+or JavaScript. Native image conversion permits four concurrent requests, reads
+JPEG/PNG snapshots up to 2 MiB and 16 million input pixels, and produces bounded
+RGB565 output. Redirects are rejected and each source request has a deadline. Each device gets an
 isolated browser context with a scoped credential. Contexts expire after five
 minutes without requests; reconnection opens the assigned screen. Configuration
 or key changes replace the context. Browser crashes cause a failed update and
@@ -92,7 +97,8 @@ failed services. Size the session limit to the host's memory.
 
 `receivers/esp32` contains an Arduino ESP32 library for LVGL 8.4 and 9.x, a generic
 integration example and a Freenove FNK0104B board port. It supports RGB565 image
-mode and native scenes, with background network I/O, bounded downloads, stale-touch rejection and last-view retention. JPEG is
+mode and native scenes with optional RGB565 images, background network I/O, bounded
+downloads, stale-touch rejection and last-view retention. JPEG is
 available in the protocol for receivers that provide their own decoder; the
 included library uses RGB565.
 
@@ -108,7 +114,12 @@ and configuration before installing a receiver build on hardware.
 
 At 320 × 240, one RGB565 frame is 153,600 bytes; at 800 × 480 it is 768,000 bytes.
 Downloading a replacement while keeping the displayed image needs roughly two frames plus LVGL/network memory;
-PSRAM is strongly recommended. Native scenes are capped at 128 KiB. The reference
+PSRAM is strongly recommended. Native scenes are capped at 128 KiB. A scene can
+include up to four images, with combined image area at most twice the display
+area. Keeping old images while downloading replacements needs up to twice that
+image budget, plus scene, LVGL and network memory. Native image failures keep the
+previous image across unrelated data updates; an initially missing image
+recovers in place. Physical heap and reconnect testing remain required. The reference
 receiver uses bundled Montserrat fonts; frame mode preserves arbitrary web fonts.
 It reports a resolution mismatch instead of drawing to incorrect coordinates.
 
@@ -135,6 +146,7 @@ URL. Route prefix: `/api/devices/<id>`.
 | --- | --- |
 | `GET /config` | `castboard-device/1`, dimensions, mode, format, refresh and controls. |
 | `GET /scene` | `castboard-scene/1`: `sceneId`, panels, appearance, text lines, control IDs and optional confirmation. Native mode only. |
+| `GET /images/<index>?sceneId=<sceneId>` | RGB565 image for the current native scene, with the same dimension/format headers as a frame. Stale scenes return `409`; images outside that scene return `403`. |
 | `POST /events` | JSON `{sceneId,eventId,event}`. Returns the next native scene. |
 | `GET /frame` | Raw RGB565 little-endian pixels, row-major with no header, or JPEG. `X-Frame-Id`, `X-Frame-Width`, `X-Frame-Height`, `X-Frame-Format` headers. Image mode only. |
 | `POST /touch` | JSON `{frameId,eventId,x,y}` in configured pixel coordinates. Returns a new frame. |
@@ -183,9 +195,46 @@ configured interaction. Optional `controls` (up to eight) contain `label`,
 panel's assigned source and appear only when device actions are enabled. Spotify
 and Sonos provide Previous, Play/Pause and Next this way. Provider errors render an unavailable state rather than
 made-up values. Standard Clock, Weather, Calendar, News, Stocks, Solar, Recovery,
-Focus, Spotify, Sonos and Vehicle include text views. Focus needs its Calendar/Recovery
+Focus, Spotify, Sonos and Vehicle include text views. Camera includes a native
+snapshot view when the image renderer is configured. Focus needs its Calendar/Recovery
 sources assigned through bindings or another panel. Other plugins use image mode
 until their own native view is supplied.
+
+A native view can include an image resource and a read-only refresh control:
+
+```js
+return {
+  title: 'Camera',
+  lines: [],
+  image: {params: {mode: 'snapshot'}, fit: 'contain'},
+  controls: [{type: 'refresh', label: 'Refresh image'}],
+};
+```
+
+The source defaults to the panel's selected source. An optional `image.source`
+resolves a binding alias or assigned plugin ID; that plugin must provide `stream`.
+Its resource route must return one JPEG/PNG image. `params` holds primitive query
+values with simple alphanumeric/underscore/hyphen keys, at most 1 KiB serialized.
+Castboard calculates dimensions from the panel bounds, text and controls. It
+returns an opaque image index, stable `resourceId`, dimensions, `format: 'rgb565'` and a relative
+`/images/<index>?sceneId=<sceneId>` path. The upstream URL and credentials never
+appear in the scene. The resource ID changes with assignment/configuration,
+screen, panel, source, parameters or image dimensions. An optional private
+`image.key` string (up to 128 characters) distinguishes upstream resources within
+one plugin, such as a camera selected from a changing service list. It contributes
+to the opaque identity without appearing in the scene. Receivers may retain an
+image across scene updates only while its resource ID and dimensions match. Authentication, assignment and scene revision are checked
+again after conversion. Custom scene encoders must preserve these resource
+references or implement a matching receiver. Native images always use RGB565;
+a display plugin's image-mode encoder does not transform them.
+
+Declare `nativeImages: true` in a plugin descriptor when its native view needs the
+image worker, so Displays can explain a missing renderer. Reference firmware
+fetches each image after a scene response. Older receiver builds ignore this new
+optional field; update firmware to show native camera images. Refresh controls
+rebuild the scene and fetch its images without operating the data provider, so
+they need touch enabled but do not require plugin-action permission. The eight
+control limit includes both refresh and provider-action controls.
 
 A screen type may provide `nativeLayout(screen, {width,height})`, returning one
 `{id,x,y,width,height}` rectangle per panel. Fixed grid, responsive flow and single
@@ -205,6 +254,8 @@ CASTBOARD_BROWSER_TESTS=1 node --test services/frame-renderer/test/*.test.js
 
 The browser suite exercises rendering, modal touches, duplicate/stale inputs,
 independent sessions, native parity, safe preview, one-time registration keys,
-display-plugin uploads and tap-only forecasts at 320 × 240.
+display-plugin uploads, tap-only forecasts and camera refresh/failure recovery at
+320 × 240. Native image tests cover assignment, stale revisions, RGB565 colour
+encoding and bounded responses; browser tests cover MJPEG cleanup on navigation.
 Physical board support still requires a successful board build, installation and
 observed display/touch checks on that board; a protocol test does not establish it.

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { requestNativeImage } from './core/embedded-images.js';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -232,7 +233,7 @@ export async function createApp(options = {}) {
           return jsonResponse(res,200,{...payload(),...(changed.token?{connectionKey:changed.token}:{}),applied:true});
         } finally { pluginSaveInProgress=false; }
       }
-      const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
+      const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|images\/[0-9]{1,2}|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
       if (deviceMatch) {
         const [,id,operation,pluginId]=deviceMatch;
         const device=authenticateDevice(runtimeConfig,id,req.headers.authorization);
@@ -265,6 +266,14 @@ export async function createApp(options = {}) {
         }
         if (req.method==='GET' && operation==='bootstrap') return jsonResponse(res,200,devicePublicConfig(runtimeConfig,publicConfig,device));
         if (operation==='scene' && req.method==='GET' && device.mode==='native') return sendScene(await nativeScenes.scene(id,device));
+        if(operation.startsWith('images/') && req.method==='GET' && device.mode==='native') {
+          const index=operation.slice(7),sceneId=url.searchParams.get('sceneId');
+          const image=nativeScenes.image(id,device,index,sceneId);
+          const result=await requestNativeImage(runtimeConfig.embedded,{id,token:req.headers.authorization.slice(7),...image});
+          authenticateDevice(runtimeConfig,id,req.headers.authorization);
+          nativeScenes.image(id,runtimeConfig.devices[id],index,sceneId);
+          res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':result.buffer.length,'X-Frame-Id':result.frameId,'X-Frame-Width':image.width,'X-Frame-Height':image.height,'X-Frame-Format':'rgb565','Cache-Control':'no-store'});res.end(result.buffer);return;
+        }
         if (operation==='events' && req.method==='POST' && device.mode==='native') {
           return sendScene(await nativeScenes.event(id,device,await input()));
         }

@@ -33,8 +33,8 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
     const viewport = { width: device.width, height: device.height - offset };
     const boxes = await type.nativeLayout(screen, viewport);
     if (!Array.isArray(boxes) || boxes.length !== screen.panels.length || boxes.length > 100) throw deviceError('The native layout returned invalid panel bounds');
-    const events = new Map();
-    const panels = await Promise.all(screen.panels.map(async panel => {
+    const events = new Map(), images = new Map();
+    const panels = await Promise.all(screen.panels.map(async (panel,panelIndex) => {
       const plugin = getPlugin(panel.plugin);
       if (!plugin?.nativeView) throw deviceError(`${plugin?.name || panel.plugin} needs image mode`);
       const bounds = boxes.find(box => box.id === panel.id);
@@ -60,19 +60,41 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
         events.set(event, { interaction: panel.interaction, panel });
       }
       const controls=[];
+      for(const [index,control] of (Array.isArray(result.controls)?result.controls:[]).slice(0,8).entries()) {
+        if(device.touch && control?.type==='refresh') {
+          const eventId=`refresh:${panel.id}:${index}`;
+          events.set(eventId,{interaction:{type:'refresh'},panel});
+          controls.push({event:eventId,label:boundedText(control.label || 'Refresh',80)});
+        }
+      }
       if (device.touch && device.allowActions && getPlugin(panel.source || panel.plugin)?.action) {
         for(const [index,control] of (Array.isArray(result.controls)?result.controls:[]).slice(0,8).entries()) {
-          if(!control || typeof control!=='object') continue;
+          if(!control || typeof control!=='object' || control.type==='refresh') continue;
           if(!/^[a-z][a-z0-9-]{0,79}$/.test(control.action || '') || control.payload && (typeof control.payload!=='object' || Array.isArray(control.payload) || Object.hasOwn(control.payload,'action')) || JSON.stringify(control.payload || {}).length>8192) continue;
           const eventId=`control:${panel.id}:${index}`;
           events.set(eventId,{interaction:{type:'action',action:control.action,payload:control.payload,...(control.confirmation?{confirmation:boundedText(control.confirmation)}:{})},panel});
           controls.push({event:eventId,label:boundedText(control.label || control.action,80)});
         }
       }
+      let image;
+      if(result.image) {
+        const spec=result.image, style=appearance(screen,panel);
+        const source=spec.source ? bindings[spec.source] || spec.source : panel.source || panel.plugin;
+        const params=spec.params || {};
+        if(spec.key!==undefined && (typeof spec.key!=='string' || spec.key.length>128))throw deviceError('Invalid native image identity');
+        if(!deviceScope(config,device).plugins.has(source) || !getPlugin(source)?.stream || !params || typeof params!=='object' || Array.isArray(params) || Object.entries(params).some(([key,value])=>!/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(key) || !['string','number','boolean'].includes(typeof value)) || JSON.stringify(params).length>1024) throw deviceError('Invalid native image resource');
+        const width=Math.max(1,Math.min(device.width,Math.floor(bounds.width-style.padding*2)));
+        const reserved=(result.title?20:0)+(result.lines.length?result.lines.length*26:0)+controls.length*50+(event?50:0);
+        const height=Math.max(1,Math.min(device.height,Math.floor(bounds.height-style.padding*2-reserved-6)));
+        if(images.size>=4 || [...images.values()].reduce((sum,item)=>sum+item.width*item.height,0)+width*height>device.width*device.height*2) throw deviceError('Native images exceed the display budget');
+        const index=String(panelIndex),fit=spec.fit==='cover'?'cover':'contain';
+        images.set(index,{source,params,width,height,fit,background:style.background});
+        image={index,width,height,format:'rgb565',resourceId:hash({revision:item.revision,screenId,panelId:panel.id,source,params,width,height,fit,background:style.background,key:spec.key || ''})};
+      }
       return { id: panel.id, bounds: Object.fromEntries(['x', 'y', 'width', 'height'].map(key => [key, Math.round(bounds[key] + (key === 'y' ? offset : 0))])), appearance: appearance(screen, panel), title: boundedText(result.title, 80), state,
         lines: result.lines.slice(0, 40).map(line => ({ text: boundedText(line.text), kind: ['metric', 'body', 'muted'].includes(line.kind) ? line.kind : 'body' })),
         ...(event ? { event, label: interactionLabel(panel.interaction, config.screens) } : {}),
-        ...(controls.length ? {controls} : {}),
+        ...(controls.length ? {controls} : {}), ...(image ? {image} : {}),
       };
     }));
     const navigation = [];
@@ -84,7 +106,8 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
     }
     const scene = { protocol: 'castboard-scene/1', screenId, title: screen.title || screenId, width: device.width, height: device.height, refreshMs: device.refreshMs, background: screen.appearance?.background || '#07100f', modal, navigation, panels, ...(confirmation ? { confirmation } : {}), ...(item.message ? { message: item.message } : {}) };
     scene.sceneId = hash({ revision: item.revision, scene });
-    item.scene = scene; item.events = events;
+    for(const panel of panels)if(panel.image)panel.image.path=`/images/${panel.image.index}?sceneId=${scene.sceneId}`;
+    item.scene = scene; item.events = events; item.images=images;
     if (Buffer.byteLength(JSON.stringify(scene)) > 128 * 1024) throw deviceError('The native scene exceeds 128 KiB');
     return scene;
   }
@@ -95,6 +118,13 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
     try { return await fn(item); } finally { item.pending = false; }
   }
   return {
+    image(id,device,index,sceneId) {
+      const item=session(id,device);
+      if(!item.scene || item.scene.sceneId!==sceneId)throw deviceError('The display changed; fetch a fresh scene',409);
+      const image=item.images?.get(index);
+      if(!image)throw deviceError('This image is not available on the active screen',403);
+      return image;
+    },
     scene: (id, device) => locked(id, device, item => build(id, device, item)),
     event: (id, device, body) => locked(id, device, async item => {
       if (!device.touch) throw deviceError('Touch is disabled for this display', 403);
@@ -113,7 +143,8 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
       if (item.seen.size > 128) item.seen.delete(item.seen.keys().next().value);
       const { interaction, panel } = target;
       item.message = null;
-      if (body.event === 'cancel') item.confirmation = null;
+      if(interaction.type==='refresh') { /* A data refresh cannot operate a provider. */ }
+      else if (body.event === 'cancel') item.confirmation = null;
       else if (interaction.type === 'action') {
         if (!device.allowActions) throw deviceError('Actions are disabled for this display', 403);
         if (interaction.confirmation && body.event !== 'confirm') item.confirmation = target;

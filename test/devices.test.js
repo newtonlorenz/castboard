@@ -117,3 +117,44 @@ test('view-only devices reject direct plugin actions while retaining data access
     assert.equal(response.status,device.touch && device.allowActions?200:403,id);
   }
 });
+
+test('native image resources stay scoped to the active scene and refresh requires no provider-action permission',async()=>{
+  const config=configFixture(),device=config.devices.desk;device.allowActions=false;
+  let actions=0;
+  const service=createNativeScenes({getConfig:()=>config,getScreenType:()=>({nativeLayout:()=>[{id:'clock',x:0,y:0,width:320,height:240}]}),getPlugin:id=>({name:id,stream:()=>{},nativeView:()=>({title:'Image',lines:[],image:{params:{mode:'snapshot'}},controls:[{type:'refresh',label:'Refresh image'}]})}),read:async()=>({}),action:async()=>{actions++;}});
+  const scene=await service.scene('desk',device),image=scene.panels[0].image;
+  assert.equal(image.format,'rgb565');assert.match(image.path,/^\/images\/0\?sceneId=/);assert.equal(image.source,undefined);
+  assert.equal(service.image('desk',device,'0',scene.sceneId).source,'clock');
+  assert.throws(()=>service.image('desk',device,'1',scene.sceneId),/not available/);
+  assert.throws(()=>service.image('desk',device,'0','stale'),/fresh scene/);
+  const next=await service.event('desk',device,{sceneId:scene.sceneId,event:scene.panels[0].controls[0].event,eventId:'refresh001'});
+  assert.equal(actions,0);assert.ok(next.panels[0].image);
+  device.tokenHash='0'.repeat(64);assert.throws(()=>service.image('desk',device,'0',scene.sceneId),/fresh scene/);
+});
+
+test('native image hooks cannot select an unassigned plugin',async()=>{
+  const config=configFixture();
+  const service=createNativeScenes({getConfig:()=>config,getScreenType:()=>({nativeLayout:()=>[{id:'clock',x:0,y:0,width:320,height:240}]}),getPlugin:id=>({name:id,stream:()=>{},nativeView:()=>({lines:[],image:{source:'weather'}})}),read:async()=>({}),action:async()=>{}});
+  await assert.rejects(service.scene('desk',config.devices.desk),/Invalid native image/);
+});
+
+test('native image identity survives changing data but rejects reassignment and navigation',async()=>{
+  const config=configFixture(),device=config.devices.desk;
+  config.plugins.camera={enabled:true,provider:'camera-service'};
+  config.screens.home.panels.push({id:'camera',plugin:'camera'});
+  config.screens.details.panels=[{id:'camera',plugin:'camera'}];
+  let clock='12:00',cameraKey='front';
+  const service=createNativeScenes({getConfig:()=>config,getScreenType:()=>({nativeLayout:screen=>screen.panels.map(panel=>({id:panel.id,x:0,y:0,width:320,height:192}))}),getPlugin:id=>({name:id,getData:()=>{},stream:()=>{},nativeView:()=>id==='camera'?{lines:[],image:{key:cameraKey,params:{mode:'snapshot'}}}:{lines:[{text:clock}]}}),read:async()=>({}),action:async()=>{}});
+  const first=await service.scene('desk',device);clock='12:01';
+  const updated=await service.scene('desk',device);
+  assert.notEqual(first.sceneId,updated.sceneId);
+  assert.equal(first.panels[1].image.resourceId,updated.panels[1].image.resourceId);
+  assert.throws(()=>service.image('desk',device,'1',first.sceneId),/fresh scene/);
+  cameraKey='side';const reassigned=await service.scene('desk',device);
+  assert.notEqual(updated.panels[1].image.resourceId,reassigned.panels[1].image.resourceId);
+  const modal=await service.event('desk',device,{sceneId:reassigned.sceneId,event:'panel:clock',eventId:'camera-modal-1'});
+  assert.notEqual(modal.panels[0].image.resourceId,reassigned.panels[1].image.resourceId);
+  config.plugins.camera.provider='stream';
+  const reconfigured=await service.scene('desk',device);
+  assert.notEqual(reconfigured.panels[1].image.resourceId,reassigned.panels[1].image.resourceId);
+});

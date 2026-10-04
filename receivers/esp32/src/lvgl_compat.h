@@ -24,6 +24,7 @@ inline void dropImage(Image* image) { lv_img_cache_invalidate_src(image); }
 inline lv_obj_t* imageObject(lv_obj_t* parent, Image* image) {
   auto* obj = lv_img_create(parent); lv_img_set_src(obj, image); return obj;
 }
+inline void updateImageObject(lv_obj_t* object,Image* image) { lv_img_set_src(object,image); lv_obj_invalidate(object); }
 inline lv_obj_t* button(lv_obj_t* parent) { return lv_btn_create(parent); }
 #else
 using Image = lv_image_dsc_t;
@@ -36,8 +37,16 @@ inline void dropImage(Image* image) { lv_image_cache_drop(image); }
 inline lv_obj_t* imageObject(lv_obj_t* parent, Image* image) {
   auto* obj = lv_image_create(parent); lv_image_set_src(obj, image); return obj;
 }
+inline void updateImageObject(lv_obj_t* object,Image* image) { lv_image_set_src(object,image); lv_obj_invalidate(object); }
 inline lv_obj_t* button(lv_obj_t* parent) { return lv_button_create(parent); }
 #endif
+// Reuse only the same server-issued resource. Copy the descriptor with the
+// owned pixels: setImage() would swap already-converted LVGL 8 pixels again.
+template <typename State>
+bool retainImage(Image& descriptor,State& value,const Image& previousDescriptor,const State& previous) {
+  if(value.bytes || !previous.bytes || value.resourceId.length()!=24 || value.resourceId!=previous.resourceId || value.width!=previous.width || value.height!=previous.height)return false;
+  value.bytes=previous.bytes;value.length=previous.length;descriptor=previousDescriptor;return true;
+}
 inline void setImage(Image& image, uint8_t* pixels, size_t length, int width, int height) {
   image = {};
 #if LVGL_VERSION_MAJOR == 8

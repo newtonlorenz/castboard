@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 #include <atomic>
+#include <memory>
+#include <vector>
 #include "lvgl_compat.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -26,7 +28,9 @@ class CastboardReceiver {
   const char* status() const { return status_.c_str(); }
  private:
   struct Event { bool native; char control[96]; char revision[40]; char id[40]; int x; int y; };
-  struct Result { uint8_t* bytes=nullptr; size_t length=0; bool native=false; int width=0; int height=0; String revision; String error; };
+  struct NativeImage { String index,resourceId; std::shared_ptr<uint8_t> bytes; size_t length=0; int width=0,height=0; String error; };
+  struct DrawnImage { NativeImage value; castboard_lvgl::Image descriptor{}; lv_obj_t* object=nullptr; lv_obj_t* slot=nullptr; };
+  struct Result { uint8_t* bytes=nullptr; size_t length=0; bool native=false; int width=0; int height=0; String revision; String error; String format; std::vector<NativeImage> images; };
   Settings settings_;
   QueueHandle_t events_=nullptr, results_=nullptr;
   TaskHandle_t task_=nullptr;
@@ -35,6 +39,7 @@ class CastboardReceiver {
   lv_obj_t* canvas_=nullptr;
   castboard_lvgl::Image image_{};
   uint8_t* pixels_=nullptr;
+  std::vector<std::unique_ptr<DrawnImage>> nativeImages_;
   String revision_, status_;
   bool native_=false;
   std::atomic<bool> connected_{false};

@@ -33,5 +33,7 @@ and browser rendering run on the Castboard server, not on the microcontroller.
 
 This is a receiver, not a copy of a household dashboard. Configure screens,
 plugins, private data sources and tap behaviours in Castboard. Inventory any
-existing firmware features before replacing it. Native mode has text and button
-views; camera images and browser-specific controls require image mode.
+existing firmware features before replacing it. Native mode has text, button and camera snapshot views. Snapshots need the
+optional image renderer; they update at the configured display interval. Browser
+widgets and their specific controls use image mode. Neither mode is a full-rate
+video transport.
