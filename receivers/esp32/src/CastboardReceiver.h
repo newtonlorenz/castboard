@@ -26,6 +26,10 @@ class CastboardReceiver {
   bool begin(lv_obj_t* parent = nullptr);
   void loop();
   const char* status() const { return status_.c_str(); }
+  // Call from the LVGL/application task. Network work remains on its own task.
+  void refresh() { refreshRequested_.store(true); }
+  const char* mode() const { return native_ ? "native" : "image"; }
+  uint32_t updates() const { return updates_; }
  private:
   struct Event { bool native; char control[96]; char revision[40]; char id[40]; int x; int y; };
   struct NativeImage { String index,resourceId; std::shared_ptr<uint8_t> bytes; size_t length=0; int width=0,height=0; String error; };
@@ -42,6 +46,8 @@ class CastboardReceiver {
   std::vector<std::unique_ptr<DrawnImage>> nativeImages_;
   String revision_, status_;
   bool native_=false;
+  uint32_t updates_=0;
+  std::atomic<bool> refreshRequested_{false};
   std::atomic<bool> connected_{false};
   static void networkTask(void* self);
   static void inputEvent(lv_event_t* event);

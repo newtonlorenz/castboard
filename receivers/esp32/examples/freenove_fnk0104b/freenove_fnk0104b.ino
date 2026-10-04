@@ -6,14 +6,14 @@
 CastboardReceiver receiver({CASTBOARD_SERVER, CASTBOARD_DEVICE_ID, CASTBOARD_KEY, CASTBOARD_ROOT_CA});
 
 void printStatus() {
-  Serial.printf("Wi-Fi: %s | signal: %d dBm | heap: %u | PSRAM free: %u | receiver: %s\n",
+  Serial.printf("Wi-Fi: %s | signal: %d dBm | heap: %u | PSRAM free: %u | mode: %s | updates: %u | receiver: %s\n",
     WiFi.status() == WL_CONNECTED ? "connected" : "offline", WiFi.RSSI(),
-    ESP.getFreeHeap(), ESP.getFreePsram(), *receiver.status() ? receiver.status() : "ready");
+    ESP.getFreeHeap(), ESP.getFreePsram(), receiver.mode(), receiver.updates(), *receiver.status() ? receiver.status() : "ready");
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Castboard FNK0104B receiver. Commands: status, help.");
+  Serial.println("Castboard FNK0104B receiver. Commands: status, refresh (or fetch), help.");
   freenove_begin();
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
@@ -36,7 +36,8 @@ void loop() {
     if (ch == '\n' || ch == '\r') {
       command.trim();
       if (command == "status") printStatus();
-      else if (command.length()) Serial.println("Commands: status, help.");
+      else if (command == "refresh" || command == "fetch") { receiver.refresh(); Serial.println("Refresh requested"); }
+      else if (command.length()) Serial.println("Commands: status, refresh (or fetch), help.");
       command = "";
     } else if (command.length() < 32) command += ch;
   }

@@ -87,6 +87,7 @@ void CastboardReceiver::network() {
   };
   for(;;){
     if(WiFi.status()!=WL_CONNECTED){connected_=false;frameId="";xQueueReset(events_);auto* result=new Result();result->error="Wi-Fi offline - keeping last view";deliver(result);vTaskDelay(pdMS_TO_TICKS(3000));continue;}
+    if(refreshRequested_.exchange(false)) { mode="";frameId="";nextPoll=0; }
     if(mode.isEmpty() || uint32_t(millis()-lastConfig)>60000){
       Result config;const int code=request("/config","",16384,&config);
       JsonDocument doc;
@@ -161,6 +162,7 @@ void CastboardReceiver::display(Result* result) {
   JsonDocument doc;
   if(result->native && (deserializeJson(doc,result->bytes,result->length) || String(doc["protocol"]|"")!="castboard-scene/1")){status_="Invalid scene - keeping last view";return;}
   if(result->width!=castboard_lvgl::width(parent_) || result->height!=castboard_lvgl::height(parent_)){status_="Set display resolution to match the panel in Castboard";return;}
+  ++updates_;
   if(result->native && native_ && revision_==doc["sceneId"].as<String>()) {
     status_=doc["message"]|"";
     for(const auto& incoming:result->images) {
