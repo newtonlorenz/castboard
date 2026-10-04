@@ -1,31 +1,67 @@
-# Vehicle
+# Vehicle Status
 
-Battery percentage, charging status/power and optional range. Works in browser,
-image and native receiver modes. Install from **Plugins → Library** and configure
-the installed copy; panel appearance and display options stay in Studio.
+Show battery, charging and range from Home Assistant or JSON. Choose entities, units, labels and visible measurements.
 
-Choose sample data, a canonical JSON endpoint/file, or Home Assistant. Home
-Assistant requires its URL, a private long-lived access token and a battery
-percentage entity. Charging power, charging state and range entities are optional.
-The token stays on the server. No vehicle-control actions are exposed.
+Package ID: `vehicle`. Category: Display plugins. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
-Power sensors can use W or kW; range sensors can use km or mi. Unknown units and
-unavailable values remain unavailable, rather than becoming zero. A configured
-charging-state sensor takes precedence; otherwise positive power indicates
-charging. A failed sensor can leave other available readings visible; a complete
-connection failure reports unavailable. `updatedAt` is the oldest available sensor
-report/update timestamp, not the time Castboard fetched it.
+## Set up
 
-Panel options: title/label, charging power, range, distance unit and refresh.
-Small panels use a compact summary. Use a separate detail composition for range
-or larger type, linked through the panel's **On tap** setting.
+Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-JSON sources return `{batteryPercent, chargingKw, charging, rangeKm, updatedAt}`.
-Measurements and `charging` may be null. Battery outside 0–100 and negative power
-or range become unavailable. An optional `label` is plain text. Provider metadata,
-entity IDs and credentials are not forwarded to the screen.
+Available sources: **Sample data** (`demo`), **Home Assistant** (`home-assistant`), **Web endpoint (JSON)** (`http-json`), **Local file (JSON)** (`file-json`).
 
-[Home Assistant REST API](https://developers.home-assistant.io/docs/api/rest/)
-defines the state endpoint and Bearer-token authentication. Code is covered by
-Castboard's [MIT licence](../../LICENSE). Keep private configuration out of shared
-packages.
+Start with **Sample data** to try the layout without an external service. HTTP and file JSON must match the [canonical contracts](../../docs/PLUGIN-CONTRACTS.md). File paths are relative to the Castboard configuration. JSON files and HTTP responses are limited to 1 MiB. See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
+
+Add the installed copy to a screen with **Add to a screen**. Screen Studio can override the display settings below for each panel. Browser rendering supports phones, tablets, kiosks and Cast displays; image mode renders the same view for an embedded receiver. Native mode is supported only by packages with a native view; use image mode for camera/video and rich companion panels.
+
+A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
+
+## Connection settings
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
+| Data source | `provider` | Sample data, Home Assistant, Web endpoint (JSON), Local file (JSON) | demo | Choose where this copy gets its data. Sample data lets you try the display before connecting a service. |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Response cache · milliseconds | `cacheMs` | integer; min 0; max 3600000 | 15000 | How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval. |
+| Request timeout · milliseconds | `timeoutMs` | integer; min 500; max 120000 | — | Maximum wait for an upstream response before showing an unavailable state. |
+| JSON endpoint | `url` | string | — | Endpoint returning the documented JSON data format for this plugin. |
+| JSON file path | `path` | string | — | Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path. |
+| Request headers | `headers` | object | — | Optional request headers as a JSON object. Saved values are hidden and never sent to displays. |
+| Home Assistant URL | `baseUrl` | string | — | Base address of the compatible service, reachable from the Castboard server. |
+| Home Assistant token | `token` | string | — | Authentication token kept on the server. Leave empty when editing to keep the saved value. |
+| Battery percentage entity | `batteryEntity` | string | — |  |
+| Charging power entity (optional) | `powerEntity` | string | — |  |
+| Charging state entity (optional) | `chargingEntity` | string | — |  |
+| Range entity (optional) | `rangeEntity` | string | — |  |
+| Charging power unit | `powerUnit` | Use sensor unit, Watts, Kilowatts | — |  |
+| Vehicle label | `label` | string | — |  |
+| Show charging power | `showPower` | boolean | true |  |
+| Show range | `showRange` | boolean | false |  |
+| Distance unit | `distanceUnit` | km, mi | — |  |
+| Refresh · seconds | `refreshSeconds` | integer; min 15; max 3600 | — | How often the display checks for new data. Server caching may reuse the previous response. |
+| Compact layout | `compact` | boolean | false | Use the layout designed for small screens. |
+| Show charging status | `showStatus` | boolean | true |  |
+
+## Panel overrides
+
+Panel overrides affect only that panel. Source credentials and content settings remain on the installed plugin.
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Vehicle label | `label` | string | — |  |
+| Show charging power | `showPower` | boolean | — |  |
+| Show range | `showRange` | boolean | — |  |
+| Distance unit | `distanceUnit` | km, mi | — |  |
+| Refresh · seconds | `refreshSeconds` | integer; min 15; max 3600 | — | How often the display checks for new data. Server caching may reuse the previous response. |
+| Compact layout | `compact` | boolean | false | Use the layout designed for small screens. |
+| Show charging status | `showStatus` | boolean | true |  |
+
+## Privacy and maintenance
+
+Private headers and tokens stay on the server; source connections are separate from display options. Use environment references for credentials; keep local configuration and personal data out of Git. Installing an external plugin loads trusted server code.
+
+See [the catalog](../../docs/PLUGIN-CATALOG.md), [source contracts](../../docs/PLUGIN-CONTRACTS.md), [panel bridge contracts](../../docs/AMBIENT-PLUGINS.md) and [authoring guide](../../docs/PLUGINS.md). Report reproducible issues with the package ID, provider type and redacted data shape.
+
+<!-- Generated by scripts/plugin-docs.mjs; update plugin.json and regenerate. -->

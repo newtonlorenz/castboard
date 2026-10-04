@@ -1,61 +1,68 @@
-# Camera
+# Camera Viewer
 
-Show a camera as a browser stream or periodically refreshed snapshots. Install
-from **Plugins → Library**, configure the installed copy, then add it to a screen.
-Use **On tap → Modal** in Studio to open a larger camera panel from another panel.
+Show a live stream or refreshing snapshots from a camera service or Home Assistant. Control image fit, titles and update timestamps.
 
-Choose one data source:
+Package ID: `camera`. Category: Display plugins. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
-- **Home Assistant:** enter the service URL, a token and a `camera.*` entity.
-  Castboard uses the authenticated camera proxy routes on the server.
-- **Direct camera stream:** provide a browser-compatible image/MJPEG URL, an
-  optional JPEG/PNG snapshot URL, and any required request headers. A snapshot URL
-  can be used alone. Select **Snapshots** for a still-image-only source.
-- **Camera service:** provide a base URL, camera list path, preferred camera ID
-  and stream path template. A listed camera may provide `snapshotUrl` and
-  `streamUrl`; otherwise the template is appended to the base URL.
-- **Sample data:** an explicitly labelled placeholder; no camera is contacted.
+## Set up
 
-The default stream template is `/api/cameras/{id}/mjpeg`. Tokens, headers and
-upstream camera URLs remain server-side. Browser and embedded receivers use
-Castboard's scoped resource route; never put credentials in panel options.
+Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-Studio exposes title, camera label, title visibility, stream/snapshot mode,
-snapshot interval (1–300 seconds), image fit and a **Refresh image** button.
-Shared defaults are also available under Plugins. **Fill panel** crops the image;
-**Show whole image** preserves its full aspect ratio. Refresh works in Preview
-without enabling provider actions.
+Available sources: **Sample data** (`demo`), **Direct camera stream** (`stream`), **Camera service** (`camera-service`), **Home Assistant** (`home-assistant`).
 
-Enable **Show update time over image** to place the snapshot update time at the
-top of the image. With **Show Refresh image button** off, the footer disappears
-and the image fills the available panel height. Stream and connection status use
-the same overlay. This option applies to browsers and embedded image mode.
+Start with **Sample data** to try the layout without an external service. See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
 
-A decoded replacement takes over only after it loads. A failed update keeps the
-previous image with an explicit status; an initial failure shows **Image
-unavailable**. Streams release their upstream connection when the panel closes.
-Snapshot extraction accepts JPEG, PNG or one MJPEG part, with a 2 MiB limit and a
-request deadline. Unsupported formats require a camera-side bridge.
+Add the installed copy to a screen with **Add to a screen**. Screen Studio can override the display settings below for each panel. Browser rendering supports phones, tablets, kiosks and Cast displays; image mode renders the same view for an embedded receiver. Native mode is supported only by packages with a native view; use image mode for camera/video and rich companion panels.
 
-## Embedded displays
+A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
 
-Image mode captures the browser camera view at the display's configured refresh
-interval. It is not a full-rate video transport.
+## Connection settings
 
-Native mode requests one RGB565 snapshot per scene update and supports a local
-**Refresh image** control even when provider actions are disabled. It needs the
-optional image renderer and matching receiver firmware with native image support.
-The display's refresh interval controls native polling; the panel's snapshot
-interval controls the browser widget. A native view can use an MJPEG source, but
-extracts one frame per update rather than decoding a continuous video stream on
-the microcontroller. The reference receiver retains a failed image's previous
-pixels across unrelated data updates and recovers a missing image in
-place. A changed camera, assignment, configuration, size or screen does not reuse
-pixels from the previous resource.
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
+| Data source | `provider` | Sample data, Direct camera stream, Camera service, Home Assistant | demo | Choose where this copy gets its data. Sample data lets you try the display before connecting a service. |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Response cache · milliseconds | `cacheMs` | integer; min 0; max 3600000 | — | How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval. |
+| Request timeout · milliseconds | `timeoutMs` | integer; min 500; max 120000 | — | Maximum wait for an upstream response before showing an unavailable state. |
+| Service URL | `baseUrl` | string | — | Base address of the compatible service, reachable from the Castboard server. |
+| Camera stream URL | `streamUrl` | string | — |  |
+| Camera label | `name` | string | — |  |
+| Camera list path | `listPath` | string | — |  |
+| Stream path template | `streamPath` | string | — |  |
+| Preferred camera ID | `preferredId` | string | — |  |
+| Request headers | `headers` | object | — | Optional request headers as a JSON object. Saved values are hidden and never sent to displays. |
+| Snapshot URL (optional) | `snapshotUrl` | string | — |  |
+| Home Assistant token | `token` | string | — | Authentication token kept on the server. Leave empty when editing to keep the saved value. |
+| Camera entity | `entity` | string | — |  |
+| Show | `displayMode` | Live stream, Snapshots, Camera shortcut | — |  |
+| Snapshot refresh · seconds | `refreshSeconds` | integer; min 1; max 300 | — | How often the display checks for new data. Server caching may reuse the previous response. |
+| Show Refresh image button | `showRefresh` | boolean | — |  |
+| Image fit | `fit` | Fill panel, Show whole image | — |  |
+| Show camera title | `showTitle` | boolean | — |  |
+| Show update time over image | `overlayTimestamp` | boolean | — | Place the update time at the top of the image. Hide the Refresh image button to give the image more room. |
+| Update time zone | `timeZone` | string | — | Empty uses the screen’s time zone. For example Europe/Madrid or America/New_York. |
 
-See [embedded displays](../../docs/embedded-displays.md),
-[provider payloads](../../docs/PLUGIN-CONTRACTS.md) and
-[plugin authoring](../../docs/PLUGINS.md).
+## Panel overrides
 
-Code is covered by the project's [MIT licence](../../LICENSE). Share code and
-assets; keep deployment settings and credentials private.
+Panel overrides affect only that panel. Source credentials and content settings remain on the installed plugin.
+
+| Setting | Key | Accepted values | Default | Notes |
+| --- | --- | --- | --- | --- |
+| Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
+| Camera label | `name` | string | — |  |
+| Show | `displayMode` | Live stream, Snapshots, Camera shortcut | — |  |
+| Snapshot refresh · seconds | `refreshSeconds` | integer; min 1; max 300 | — | How often the display checks for new data. Server caching may reuse the previous response. |
+| Show Refresh image button | `showRefresh` | boolean | — |  |
+| Image fit | `fit` | Fill panel, Show whole image | — |  |
+| Show camera title | `showTitle` | boolean | — |  |
+| Show update time over image | `overlayTimestamp` | boolean | — | Place the update time at the top of the image. Hide the Refresh image button to give the image more room. |
+| Update time zone | `timeZone` | string | — | Empty uses the screen’s time zone. For example Europe/Madrid or America/New_York. |
+
+## Privacy and maintenance
+
+Private headers and tokens stay on the server; source connections are separate from display options. Use environment references for credentials; keep local configuration and personal data out of Git. Installing an external plugin loads trusted server code.
+
+See [the catalog](../../docs/PLUGIN-CATALOG.md), [source contracts](../../docs/PLUGIN-CONTRACTS.md), [panel bridge contracts](../../docs/AMBIENT-PLUGINS.md) and [authoring guide](../../docs/PLUGINS.md). Report reproducible issues with the package ID, provider type and redacted data shape.
+
+<!-- Generated by scripts/plugin-docs.mjs; update plugin.json and regenerate. -->

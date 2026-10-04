@@ -29,3 +29,11 @@ test('a plugin placed on a screen must provide a browser widget', async t => {
   const root = await pluginFixture(t, "export function createPlugin() { return { id: 'sample', name: 'Sample' }; }\n", false);
   await assert.rejects(discoverPlugins({ pluginsDir: root, config, context: {} }), /without widget\.js/);
 });
+
+
+test('display defaults preserve the public hook instance context and configured false values',async t=>{
+ const root=await pluginFixture(t,"export function createPlugin(){return {id:'sample',name:'Sample',publicConfig(){return {id:this.id,title:this.name,show:true};}}}");
+ await fs.writeFile(path.join(root,'sample','plugin.json'),JSON.stringify({name:'Sample package',settingsSchema:{type:'object',properties:{displayName:{type:'string'},show:{type:'boolean'}}},optionSchema:{type:'object',properties:{show:{type:'boolean',default:true}}}}));
+ const [plugin]=await discoverPlugins({pluginsDir:root,config:{plugins:{copy:{type:'sample',displayName:'Lobby display',show:false}},screens:{home:{panels:[{id:'copy',plugin:'copy'}]}}},context:{}});
+ assert.deepEqual(plugin.publicConfig(),{show:false,id:'copy',title:'Lobby display'});
+});

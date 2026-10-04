@@ -1,9 +1,9 @@
 {
-  "name": "Ambient config source",
-  "description": "Connects a typed display data contract to the configured services source.",
-  "version": "1.0.0",
+  "name": "Shared Display Settings",
+  "description": "Provide shared location and display settings to companion panels.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Sources",
+  "category": "Data connectors",
   "defaultConfig": {
     "route": "/api/config"
   },
@@ -16,9 +16,18 @@
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "route": {
         "type": "string",
-        "title": "Data route"
+        "title": "Data route",
+        "description": "Route exposed by the shared service, such as /api/weather. Only supported routes can be used.",
+        "group": "Data source"
       }
     }
   }

@@ -1,26 +1,39 @@
 {
-  "name": "Ambient Camera",
-  "description": "Live camera images with automatic stream fallback.",
-  "version": "1.0.1",
+  "name": "Camera Panel",
+  "description": "Browse cameras and snapshots from connected camera resources. Choose a camera name and image refresh timing.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "cameraName": {
         "type": "string",
-        "title": "Preferred camera name"
+        "title": "Preferred camera name",
+        "description": "Camera name supplied by the connected camera service. Empty uses the default camera.",
+        "group": "Display"
       },
       "frameRefreshMs": {
         "type": "integer",
         "title": "Image refresh \u00b7 milliseconds",
         "minimum": 800,
-        "maximum": 60000
+        "maximum": 60000,
+        "description": "Time between snapshot updates, in milliseconds.",
+        "group": "Updates"
       }
     }
   },
@@ -29,17 +42,23 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "cameraName": {
         "type": "string",
-        "title": "Preferred camera name"
+        "title": "Preferred camera name",
+        "description": "Camera name supplied by the connected camera service. Empty uses the default camera.",
+        "group": "Display"
       },
       "frameRefreshMs": {
         "type": "integer",
         "title": "Image refresh \u00b7 milliseconds",
         "minimum": 800,
-        "maximum": 60000
+        "maximum": 60000,
+        "description": "Time between snapshot updates, in milliseconds.",
+        "group": "Updates"
       }
     }
   },

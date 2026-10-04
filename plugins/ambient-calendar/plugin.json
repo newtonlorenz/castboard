@@ -1,29 +1,42 @@
 {
-  "name": "Ambient Calendar",
-  "description": "A timeline of today's timed and all-day events.",
-  "version": "1.0.0",
+  "name": "Calendar Timeline",
+  "description": "Show a timeline of events from a calendar adapter, with a configurable look-ahead period.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "hoursAhead": {
         "type": "integer",
         "title": "Timeline hours",
         "minimum": 1,
         "maximum": 24,
-        "default": 6
+        "default": 6,
+        "description": "How many hours the calendar timeline looks ahead.",
+        "group": "Content"
       }
     }
   },
@@ -32,20 +45,26 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "hoursAhead": {
         "type": "integer",
         "title": "Timeline hours",
         "minimum": 1,
         "maximum": 24,
-        "default": 6
+        "default": 6,
+        "description": "How many hours the calendar timeline looks ahead.",
+        "group": "Content"
       }
     }
   },

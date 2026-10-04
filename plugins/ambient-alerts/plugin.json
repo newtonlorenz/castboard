@@ -1,29 +1,41 @@
 {
-  "name": "Ambient Alerts",
-  "description": "Detection snapshots with an image and video viewer.",
-  "version": "1.0.0",
+  "name": "Camera Alerts",
+  "description": "Review camera detections supplied by the connected camera resources.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "maxAlerts": {
         "type": "integer",
         "title": "Detections to show",
         "minimum": 1,
         "maximum": 20,
-        "default": 5
+        "default": 5,
+        "group": "Content"
       }
     }
   },
@@ -32,20 +44,25 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "maxAlerts": {
         "type": "integer",
         "title": "Detections to show",
         "minimum": 1,
         "maximum": 20,
-        "default": 5
+        "default": 5,
+        "group": "Content"
       }
     }
   },

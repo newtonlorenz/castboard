@@ -1,22 +1,33 @@
 {
-  "name": "Ambient Weather",
-  "description": "Temperature, conditions, humidity, wind and UV.",
-  "version": "1.0.0",
+  "name": "Current Weather Panel",
+  "description": "Show current conditions supplied by a weather adapter. Choose Celsius or Fahrenheit and update timing.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "temperatureUnit": {
         "type": "string",
@@ -25,7 +36,43 @@
           "celsius",
           "fahrenheit"
         ],
-        "default": "celsius"
+        "default": "celsius",
+        "group": "Display"
+      },
+      "windUnit": {
+        "type": "string",
+        "title": "Wind unit",
+        "enum": [
+          "kph",
+          "mph",
+          "ms"
+        ],
+        "default": "kph",
+        "group": "Display"
+      },
+      "showFeels": {
+        "type": "boolean",
+        "title": "Show feels-like temperature",
+        "default": true,
+        "group": "Display"
+      },
+      "showHumidity": {
+        "type": "boolean",
+        "title": "Show humidity",
+        "default": true,
+        "group": "Display"
+      },
+      "showWind": {
+        "type": "boolean",
+        "title": "Show wind",
+        "default": true,
+        "group": "Display"
+      },
+      "showUv": {
+        "type": "boolean",
+        "title": "Show UV index",
+        "default": true,
+        "group": "Display"
       }
     }
   },
@@ -34,13 +81,17 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "temperatureUnit": {
         "type": "string",
@@ -49,7 +100,43 @@
           "celsius",
           "fahrenheit"
         ],
-        "default": "celsius"
+        "default": "celsius",
+        "group": "Display"
+      },
+      "windUnit": {
+        "type": "string",
+        "title": "Wind unit",
+        "enum": [
+          "kph",
+          "mph",
+          "ms"
+        ],
+        "default": "kph",
+        "group": "Display"
+      },
+      "showFeels": {
+        "type": "boolean",
+        "title": "Show feels-like temperature",
+        "default": true,
+        "group": "Display"
+      },
+      "showHumidity": {
+        "type": "boolean",
+        "title": "Show humidity",
+        "default": true,
+        "group": "Display"
+      },
+      "showWind": {
+        "type": "boolean",
+        "title": "Show wind",
+        "default": true,
+        "group": "Display"
+      },
+      "showUv": {
+        "type": "boolean",
+        "title": "Show UV index",
+        "default": true,
+        "group": "Display"
       }
     }
   },

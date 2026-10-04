@@ -1,15 +1,22 @@
 {
-  "name": "News and briefings",
-  "description": "RSS, Atom, Markdown and JSON stories with an interactive reader.",
-  "version": "1.2.0",
+  "name": "News & Briefings",
+  "description": "Show news from RSS, Atom, Markdown or JSON. Choose feeds, filter stories and control reading and update timing.",
+  "version": "1.4.0",
   "license": "MIT",
-  "category": "Display",
+  "category": "Display plugins",
   "defaultConfig": {
     "provider": "demo"
   },
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -26,25 +33,33 @@
           "markdown-directory": "Markdown folder",
           "http-json": "Web endpoint (JSON)",
           "file-json": "Local file (JSON)"
-        }
+        },
+        "description": "Choose where this copy gets its data. Sample data lets you try the display before connecting a service.",
+        "group": "Data source"
       },
       "title": {
         "type": "string",
-        "title": "Default title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "cacheMs": {
         "type": "integer",
         "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
-        "advanced": true
+        "advanced": true,
+        "description": "How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval.",
+        "group": "Updates"
       },
       "timeoutMs": {
         "type": "integer",
         "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
-        "advanced": true
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
       },
       "url": {
         "type": "string",
@@ -53,7 +68,9 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "description": "Endpoint returning the documented JSON data format for this plugin.",
+        "group": "Data source"
       },
       "path": {
         "type": "string",
@@ -63,7 +80,9 @@
             "file-json",
             "markdown-directory"
           ]
-        }
+        },
+        "description": "Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path.",
+        "group": "Data source"
       },
       "headers": {
         "type": "object",
@@ -71,15 +90,18 @@
         "sensitive": true,
         "showWhen": {
           "provider": [
-            "http-json"
+            "http-json",
+            "rss"
           ]
         },
-        "advanced": true
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
       },
       "feeds": {
         "type": "array",
         "title": "RSS / Atom feeds",
-        "description": "Add up to eight feeds. An empty list uses the default BBC News feeds.",
+        "description": "Add up to 20 feeds, each with a source name and category. Pause a feed without removing its settings.",
         "showWhen": {
           "provider": [
             "rss"
@@ -111,13 +133,19 @@
                 "category": {
                   "type": "string",
                   "title": "Category"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Enabled",
+                  "default": true
                 }
               }
             }
           ]
         },
         "stringItemProperty": "url",
-        "maxItems": 8
+        "maxItems": 20,
+        "group": "Data source"
       },
       "maxFiles": {
         "type": "integer",
@@ -128,13 +156,15 @@
           "provider": [
             "markdown-directory"
           ]
-        }
+        },
+        "group": "Content"
       },
       "maxStories": {
         "type": "integer",
         "title": "Maximum stories",
         "minimum": 1,
-        "maximum": 200
+        "maximum": 200,
+        "group": "Content"
       },
       "refreshMinutes": {
         "type": "integer",
@@ -145,7 +175,160 @@
           "provider": [
             "rss"
           ]
-        }
+        },
+        "description": "Minimum interval between requests to the upstream provider. Display checks can be more frequent.",
+        "group": "Updates"
+      },
+      "useDefaultFeeds": {
+        "type": "boolean",
+        "title": "Use example feeds when the list is empty",
+        "default": true,
+        "description": "Uses the three BBC feeds only when you have not added feeds. Switch off to require your own sources.",
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        },
+        "group": "Data source"
+      },
+      "maxStoriesPerFeed": {
+        "type": "integer",
+        "title": "Stories per feed",
+        "minimum": 1,
+        "maximum": 200,
+        "default": 200,
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        },
+        "group": "Content"
+      },
+      "includeKeywords": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Include keywords",
+        "description": "One phrase per line. Keep a story when its title or text contains any phrase; empty includes everything.",
+        "group": "Content"
+      },
+      "excludeKeywords": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Exclude keywords",
+        "description": "One phrase per line. Excludes a story if its title or text contains any phrase.",
+        "group": "Content"
+      },
+      "categories": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Include categories",
+        "description": "One category per line, matched without regard to case. Empty includes all categories.",
+        "group": "Content"
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Include sources",
+        "description": "One source name per line. Empty includes every source.",
+        "group": "Content"
+      },
+      "maxAgeHours": {
+        "type": "integer",
+        "title": "Maximum story age \u00b7 hours",
+        "minimum": 0,
+        "maximum": 8760,
+        "default": 0,
+        "description": "0 keeps all dates. Stories without a publication date remain available.",
+        "group": "Content"
+      },
+      "deduplicate": {
+        "type": "boolean",
+        "title": "Remove duplicate stories",
+        "default": true,
+        "description": "Merge matching article URLs, including links with tracking parameters.",
+        "group": "Content"
+      },
+      "sortOrder": {
+        "type": "string",
+        "title": "Story order",
+        "enum": [
+          "source-order",
+          "newest",
+          "oldest",
+          "title",
+          "source"
+        ],
+        "enumLabels": {
+          "source-order": "Keep source order",
+          "newest": "Newest first",
+          "oldest": "Oldest first",
+          "title": "Headline A\u2013Z",
+          "source": "Source A\u2013Z"
+        },
+        "description": "RSS defaults to newest first. Other providers keep their source order.",
+        "group": "Content"
+      },
+      "view": {
+        "type": "string",
+        "title": "Layout",
+        "enum": [
+          "compact",
+          "list",
+          "wire"
+        ],
+        "enumLabels": {
+          "compact": "Rotating headline",
+          "list": "Headline list",
+          "wire": "Reader with headline sidebar"
+        },
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per story \u00b7 seconds",
+        "minimum": 1,
+        "maximum": 300,
+        "default": 18,
+        "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Rotate stories automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "showSummary": {
+        "type": "boolean",
+        "title": "Show story summary",
+        "default": true,
+        "group": "Display"
+      },
+      "showTicker": {
+        "type": "boolean",
+        "title": "Show headline ticker",
+        "default": true,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check for updates \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "description": "How often the display checks for data. Feed refresh and response cache control upstream requests.",
+        "group": "Updates"
       }
     }
   },
@@ -154,28 +337,66 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "view": {
         "type": "string",
-        "title": "Presentation",
+        "title": "Layout",
         "enum": [
           "compact",
           "list",
           "wire"
-        ]
+        ],
+        "enumLabels": {
+          "compact": "Rotating headline",
+          "list": "Headline list",
+          "wire": "Reader with headline sidebar"
+        },
+        "group": "Display"
       },
       "maxStories": {
         "type": "integer",
         "title": "Stories to show",
         "minimum": 1,
-        "maximum": 200
+        "maximum": 200,
+        "group": "Content"
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Seconds per story",
+        "title": "Time per story \u00b7 seconds",
         "minimum": 1,
-        "maximum": 300
+        "maximum": 300,
+        "default": 18,
+        "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Rotate stories automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "showSummary": {
+        "type": "boolean",
+        "title": "Show story summary",
+        "default": true,
+        "group": "Display"
+      },
+      "showTicker": {
+        "type": "boolean",
+        "title": "Show headline ticker",
+        "default": true,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check for updates \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "description": "How often the display checks for data. Feed refresh and response cache control upstream requests.",
+        "group": "Updates"
       }
     }
   }

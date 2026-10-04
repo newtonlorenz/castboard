@@ -1,15 +1,22 @@
 {
-  "name": "Solar",
-  "description": "Energy production and usage from Fronius or JSON.",
-  "version": "1.3.0",
+  "name": "Energy Monitor",
+  "description": "Show generation, consumption and grid flow from Fronius or JSON. Choose watts or kilowatts, labels and precision.",
+  "version": "1.4.0",
   "license": "MIT",
-  "category": "Display",
+  "category": "Display plugins",
   "defaultConfig": {
     "provider": "demo"
   },
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -24,25 +31,33 @@
           "fronius": "Fronius inverter",
           "http-json": "Web endpoint (JSON)",
           "file-json": "Local file (JSON)"
-        }
+        },
+        "description": "Choose where this copy gets its data. Sample data lets you try the display before connecting a service.",
+        "group": "Data source"
       },
       "title": {
         "type": "string",
-        "title": "Default title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "cacheMs": {
         "type": "integer",
         "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
-        "advanced": true
+        "advanced": true,
+        "description": "How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval.",
+        "group": "Updates"
       },
       "timeoutMs": {
         "type": "integer",
         "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
-        "advanced": true
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
       },
       "url": {
         "type": "string",
@@ -51,7 +66,9 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "description": "Endpoint returning the documented JSON data format for this plugin.",
+        "group": "Data source"
       },
       "path": {
         "type": "string",
@@ -60,7 +77,9 @@
           "provider": [
             "file-json"
           ]
-        }
+        },
+        "description": "Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path.",
+        "group": "Data source"
       },
       "headers": {
         "type": "object",
@@ -72,7 +91,9 @@
             "fronius"
           ]
         },
-        "advanced": true
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
       },
       "baseUrl": {
         "type": "string",
@@ -81,12 +102,61 @@
           "provider": [
             "fronius"
           ]
-        }
+        },
+        "description": "Base address of the compatible service, reachable from the Castboard server.",
+        "group": "Data source"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "powerUnit": {
+        "type": "string",
+        "title": "Power unit",
+        "enum": [
+          "kW",
+          "W"
+        ],
+        "enumLabels": {
+          "kW": "Kilowatts",
+          "W": "Watts"
+        },
+        "default": "kW",
+        "group": "Display"
+      },
+      "precision": {
+        "type": "integer",
+        "title": "Decimal places",
+        "minimum": 0,
+        "maximum": 3,
+        "default": 1,
+        "description": "Decimal places shown for power values.",
+        "group": "Display"
+      },
+      "loadLabel": {
+        "type": "string",
+        "title": "Usage label",
+        "default": "Home load",
+        "description": "For example Home load, Office usage or Site demand.",
+        "group": "Display"
+      },
+      "showGrid": {
+        "type": "boolean",
+        "title": "Show grid import / export",
+        "default": true,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check for updates \u00b7 seconds",
+        "minimum": 5,
+        "maximum": 3600,
+        "default": 15,
+        "description": "How often the display requests data. The response cache can reduce upstream requests.",
+        "group": "Updates"
       }
     }
   },
@@ -95,12 +165,61 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "powerUnit": {
+        "type": "string",
+        "title": "Power unit",
+        "enum": [
+          "kW",
+          "W"
+        ],
+        "enumLabels": {
+          "kW": "Kilowatts",
+          "W": "Watts"
+        },
+        "default": "kW",
+        "group": "Display"
+      },
+      "precision": {
+        "type": "integer",
+        "title": "Decimal places",
+        "minimum": 0,
+        "maximum": 3,
+        "default": 1,
+        "description": "Decimal places shown for power values.",
+        "group": "Display"
+      },
+      "loadLabel": {
+        "type": "string",
+        "title": "Usage label",
+        "default": "Home load",
+        "description": "For example Home load, Office usage or Site demand.",
+        "group": "Display"
+      },
+      "showGrid": {
+        "type": "boolean",
+        "title": "Show grid import / export",
+        "default": true,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check for updates \u00b7 seconds",
+        "minimum": 5,
+        "maximum": 3600,
+        "default": 15,
+        "description": "How often the display requests data. The response cache can reduce upstream requests.",
+        "group": "Updates"
       }
     }
   }

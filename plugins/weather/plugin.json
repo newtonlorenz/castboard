@@ -1,9 +1,9 @@
 {
-  "name": "Weather",
-  "description": "Current conditions, UV, hourly and seven-day forecasts from Open-Meteo or your own data.",
-  "version": "1.3.1",
+  "name": "Weather & Forecast",
+  "description": "Show local conditions and forecasts from Open-Meteo or JSON. Choose location, units and forecast layout.",
+  "version": "1.5.0",
   "license": "MIT",
-  "category": "Display",
+  "category": "Display plugins",
   "defaultConfig": {
     "provider": "demo",
     "cacheMs": 300000
@@ -11,6 +11,13 @@
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "provider": {
         "type": "string",
         "title": "Data source",
@@ -25,25 +32,33 @@
           "open-meteo": "Open-Meteo (no account needed)",
           "http-json": "Web endpoint (JSON)",
           "file-json": "Local file (JSON)"
-        }
+        },
+        "description": "Choose where this copy gets its data. Sample data lets you try the display before connecting a service.",
+        "group": "Data source"
       },
       "title": {
         "type": "string",
-        "title": "Default title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "cacheMs": {
         "type": "integer",
         "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
-        "advanced": true
+        "advanced": true,
+        "description": "How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval.",
+        "group": "Updates"
       },
       "timeoutMs": {
         "type": "integer",
         "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
-        "advanced": true
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
       },
       "url": {
         "type": "string",
@@ -52,7 +67,9 @@
           "provider": [
             "http-json"
           ]
-        }
+        },
+        "description": "Endpoint returning the documented JSON data format for this plugin.",
+        "group": "Data source"
       },
       "path": {
         "type": "string",
@@ -61,7 +78,9 @@
           "provider": [
             "file-json"
           ]
-        }
+        },
+        "description": "Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path.",
+        "group": "Data source"
       },
       "headers": {
         "type": "object",
@@ -72,7 +91,9 @@
             "http-json"
           ]
         },
-        "advanced": true
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
       },
       "latitude": {
         "type": "number",
@@ -83,7 +104,8 @@
           "provider": [
             "open-meteo"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "longitude": {
         "type": "number",
@@ -94,11 +116,13 @@
           "provider": [
             "open-meteo"
           ]
-        }
+        },
+        "group": "Data source"
       },
       "label": {
         "type": "string",
-        "title": "Location label"
+        "title": "Location label",
+        "group": "Display"
       },
       "view": {
         "type": "string",
@@ -114,30 +138,36 @@
           "hourly": "Hourly forecast",
           "daily": "Daily forecast",
           "forecast": "Current and forecast"
-        }
+        },
+        "group": "Display"
       },
       "hours": {
         "type": "integer",
         "title": "Forecast hours",
         "minimum": 1,
-        "maximum": 24
+        "maximum": 24,
+        "group": "Display"
       },
       "days": {
         "type": "integer",
         "title": "Forecast days",
         "minimum": 1,
-        "maximum": 7
+        "maximum": 7,
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 30,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "forecastLayout": {
         "type": "string",
         "title": "Forecast layout",
         "enum": [
+          "overview",
           "auto",
           "paged",
           "full"
@@ -145,13 +175,47 @@
         "enumLabels": {
           "auto": "Fit the panel",
           "paged": "Pages with Previous / Next",
-          "full": "Full forecast (scrollable)"
-        }
+          "full": "Full forecast (scrollable)",
+          "overview": "Two pages \u00b7 24 hours / 7 days"
+        },
+        "group": "Display"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "temperatureUnit": {
+        "type": "string",
+        "title": "Temperature unit",
+        "enum": [
+          "celsius",
+          "fahrenheit"
+        ],
+        "enumLabels": {
+          "celsius": "Celsius \u00b7 \u00b0C",
+          "fahrenheit": "Fahrenheit \u00b7 \u00b0F"
+        },
+        "default": "celsius",
+        "group": "Display"
+      },
+      "windUnit": {
+        "type": "string",
+        "title": "Wind speed unit",
+        "enum": [
+          "kmh",
+          "mph",
+          "ms"
+        ],
+        "enumLabels": {
+          "kmh": "Kilometres per hour",
+          "mph": "Miles per hour",
+          "ms": "Metres per second"
+        },
+        "default": "kmh",
+        "group": "Display"
       }
     }
   },
@@ -160,11 +224,14 @@
     "properties": {
       "label": {
         "type": "string",
-        "title": "Location label"
+        "title": "Location label",
+        "group": "Display"
       },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "view": {
         "type": "string",
@@ -180,30 +247,36 @@
           "hourly": "Hourly forecast",
           "daily": "Daily forecast",
           "forecast": "Current and forecast"
-        }
+        },
+        "group": "Display"
       },
       "hours": {
         "type": "integer",
         "title": "Forecast hours",
         "minimum": 1,
-        "maximum": 24
+        "maximum": 24,
+        "group": "Display"
       },
       "days": {
         "type": "integer",
         "title": "Forecast days",
         "minimum": 1,
-        "maximum": 7
+        "maximum": 7,
+        "group": "Display"
       },
       "refreshSeconds": {
         "type": "integer",
         "title": "Refresh \u00b7 seconds",
         "minimum": 30,
-        "maximum": 3600
+        "maximum": 3600,
+        "description": "How often the display checks for new data. Server caching may reuse the previous response.",
+        "group": "Updates"
       },
       "forecastLayout": {
         "type": "string",
         "title": "Forecast layout",
         "enum": [
+          "overview",
           "auto",
           "paged",
           "full"
@@ -211,13 +284,47 @@
         "enumLabels": {
           "auto": "Fit the panel",
           "paged": "Pages with Previous / Next",
-          "full": "Full forecast (scrollable)"
-        }
+          "full": "Full forecast (scrollable)",
+          "overview": "Two pages \u00b7 24 hours / 7 days"
+        },
+        "group": "Display"
       },
       "compact": {
         "type": "boolean",
         "title": "Compact layout",
-        "default": false
+        "default": false,
+        "description": "Use the layout designed for small screens.",
+        "group": "Display"
+      },
+      "temperatureUnit": {
+        "type": "string",
+        "title": "Temperature unit",
+        "enum": [
+          "celsius",
+          "fahrenheit"
+        ],
+        "enumLabels": {
+          "celsius": "Celsius \u00b7 \u00b0C",
+          "fahrenheit": "Fahrenheit \u00b7 \u00b0F"
+        },
+        "default": "celsius",
+        "group": "Display"
+      },
+      "windUnit": {
+        "type": "string",
+        "title": "Wind speed unit",
+        "enum": [
+          "kmh",
+          "mph",
+          "ms"
+        ],
+        "enumLabels": {
+          "kmh": "Kilometres per hour",
+          "mph": "Miles per hour",
+          "ms": "Metres per second"
+        },
+        "default": "kmh",
+        "group": "Display"
       }
     }
   }

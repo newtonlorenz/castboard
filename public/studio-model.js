@@ -22,7 +22,7 @@ export function compatibleSource(pluginId, catalog) {
   const plugin = catalog.plugins.find(item => item.id === pluginId);
   if (!plugin?.inputContract) return undefined;
   const sources = (catalog.sources || []).filter(item => item.contract === plugin.inputContract);
-  return (sources.find(item => item.id === pluginId) || sources[0])?.id;
+  return (sources.find(item => item.id === plugin.defaultSource) || sources.find(item => item.id === pluginId) || sources[0])?.id;
 }
 export function schemaDefaults(schema) {
   const result = {};

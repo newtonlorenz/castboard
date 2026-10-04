@@ -1,4 +1,4 @@
-import {title} from '/widget-kit.js';
+import {title} from '/widget-kit.js?v=0.13.0';
 
 export function mount({element,config,context}) {
   element.classList.add('camera-widget');
@@ -31,7 +31,7 @@ export function mount({element,config,context}) {
       const ready=()=>{
         if(pending!==next || context.signal.aborted || !next.naturalWidth)return;
         finish();stop(current);current=next;pending=null;picture.replaceChildren(next);element.dataset.freshness='live';
-        status.textContent=config.displayMode==='snapshot'?`Updated ${new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`:'Stream';
+        status.textContent=config.displayMode==='snapshot'?`Updated ${new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:config.timeZone || context.app.branding.timeZone})}`:'Stream';
         next.onload=null;next.onerror=()=>{if(current===next){element.dataset.freshness='stale';status.textContent='Stream interrupted';}};
       };
       next.onload=ready;next.onerror=failed;

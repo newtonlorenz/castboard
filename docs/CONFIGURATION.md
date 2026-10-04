@@ -130,7 +130,7 @@ News is an ordinary plugin-backed panel. Its `options.view` may be:
 
 ### RSS and Atom news
 
-The `rss` provider aggregates up to eight feeds, removes duplicate links, sorts dated stories newest first, and keeps working when only some feeds respond. If `feeds` is omitted, Castboard uses its public BBC starter feeds.
+The `rss` provider aggregates up to 20 feeds, removes duplicate links, sorts dated stories newest first, and keeps working when only some feeds respond. If `feeds` is omitted, Castboard uses its public BBC starter feeds.
 
 ```json
 "news": {
@@ -248,3 +248,11 @@ For a discovery service returning `{ "cameras": [{ "id", "name", "status" }] }`:
 Each `## Heading` becomes one story. For richer categories and metadata, use canonical JSON.
 
 For `extensions` roots, plugin `type`/instances, `source`/`bindings`, caching and schema-driven controls, see [extension contracts](extensions.md).
+
+## Reusable display defaults
+
+Each installed plugin copy can have its own name, content source, content filters and display defaults. **Plugins** groups settings by their purpose and hides fields that do not apply to the selected provider. Secret headers and tokens stay in connection settings. In Screen Studio, panel options override display defaults only; changing one panel does not change other panels using the copy.
+
+News Reader supports RSS/Atom, JSON, Markdown directories and compatible briefing services. Add up to 20 feeds, pause individual feeds, choose optional BBC starter feeds, and limit stories per feed. Include keywords match any supplied term; exclude keywords remove any matching story. Category and source filters match complete names ignoring case. Age filtering ignores undated stories, which are kept. Order and duplicate removal apply before the maximum-story limit; common tracking parameters do not make links unique. Source refresh and display refresh are separate: server caching may reuse data to avoid refetching feeds for every display.
+
+Noticeboard schedules and Countdown targets use absolute ISO timestamps with a time-zone offset. Admin date/time controls let you enter local times and save the corresponding UTC instant. Use the target date’s correct time zone when writing JSON directly.

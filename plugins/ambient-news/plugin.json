@@ -1,33 +1,321 @@
 {
-  "name": "Ambient news reader",
-  "description": "Category selection, rotating stories, headline rail and full article reader.",
-  "version": "1.0.0",
+  "name": "News Reader",
+  "description": "A full-screen news reader with categories, automatic rotation and article view. Choose briefing services, RSS, Atom, Markdown or JSON.",
+  "version": "1.5.0",
   "license": "MIT",
-  "category": "Ambient displays",
-  "defaultConfig": {},
+  "category": "Dashboard panels",
+  "defaultConfig": {
+    "provider": "demo"
+  },
   "settingsSchema": {
     "type": "object",
     "properties": {
-      "title": {
+      "displayName": {
         "type": "string",
-        "title": "Title"
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
       },
-      "refreshSeconds": {
+      "provider": {
+        "type": "string",
+        "title": "Data source",
+        "enum": [
+          "briefings",
+          "demo",
+          "rss",
+          "markdown-directory",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "briefings": "Connected briefing service",
+          "demo": "Sample data",
+          "rss": "RSS / Atom feeds",
+          "markdown-directory": "Markdown folder",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        },
+        "default": "briefings",
+        "description": "Choose where this reader obtains its stories. Source settings apply to this copy only.",
+        "group": "Data source"
+      },
+      "cacheMs": {
         "type": "integer",
-        "title": "Refresh \u00b7 seconds",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000,
+        "advanced": true,
+        "description": "How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval.",
+        "group": "Updates"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000,
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        },
+        "description": "Endpoint returning the documented JSON data format for this plugin.",
+        "group": "Data source"
+      },
+      "path": {
+        "type": "string",
+        "title": "Markdown directory or JSON file",
+        "showWhen": {
+          "provider": [
+            "file-json",
+            "markdown-directory"
+          ]
+        },
+        "description": "Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path.",
+        "group": "Data source"
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json",
+            "rss"
+          ]
+        },
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
+      },
+      "feeds": {
+        "type": "array",
+        "title": "RSS / Atom feeds",
+        "description": "Add up to 20 feeds, each with a source name and category. Pause a feed without removing its settings.",
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        },
+        "addLabel": "Add feed",
+        "itemLabel": "feed",
+        "emptyLabel": "No feeds yet. Add your first feed below.",
+        "items": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "required": [
+                "url"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Name"
+                },
+                "url": {
+                  "type": "string",
+                  "title": "Feed URL",
+                  "format": "uri"
+                },
+                "category": {
+                  "type": "string",
+                  "title": "Category"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "title": "Enabled",
+                  "default": true
+                }
+              }
+            }
+          ]
+        },
+        "stringItemProperty": "url",
+        "maxItems": 20,
+        "group": "Data source"
+      },
+      "maxFiles": {
+        "type": "integer",
+        "title": "Markdown files to read",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 100,
+        "showWhen": {
+          "provider": [
+            "markdown-directory"
+          ]
+        },
+        "group": "Content"
+      },
+      "maxStories": {
+        "type": "integer",
+        "title": "Maximum stories",
+        "minimum": 1,
+        "maximum": 200,
+        "group": "Content",
+        "default": 40
+      },
+      "refreshMinutes": {
+        "type": "integer",
+        "title": "Feed refresh \u00b7 minutes",
+        "minimum": 1,
+        "maximum": 1440,
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        },
+        "description": "Minimum interval between requests to the upstream provider. Display checks can be more frequent.",
+        "group": "Updates"
+      },
+      "useDefaultFeeds": {
+        "type": "boolean",
+        "title": "Use example feeds when the list is empty",
+        "default": true,
+        "description": "Uses the three BBC feeds only when you have not added feeds. Switch off to require your own sources.",
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        },
+        "group": "Data source"
+      },
+      "maxStoriesPerFeed": {
+        "type": "integer",
+        "title": "Stories per feed",
+        "minimum": 1,
+        "maximum": 200,
+        "default": 200,
+        "showWhen": {
+          "provider": [
+            "rss"
+          ]
+        },
+        "group": "Content"
+      },
+      "includeKeywords": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Include keywords",
+        "description": "One phrase per line. Keep a story when its title or text contains any phrase; empty includes everything.",
+        "group": "Content"
+      },
+      "excludeKeywords": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Exclude keywords",
+        "description": "One phrase per line. Excludes a story if its title or text contains any phrase.",
+        "group": "Content"
+      },
+      "categories": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Include categories",
+        "description": "One category per line, matched without regard to case. Empty includes all categories.",
+        "group": "Content"
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 50,
+        "title": "Include sources",
+        "description": "One source name per line. Empty includes every source.",
+        "group": "Content"
+      },
+      "maxAgeHours": {
+        "type": "integer",
+        "title": "Maximum story age \u00b7 hours",
+        "minimum": 0,
+        "maximum": 8760,
+        "default": 0,
+        "description": "0 keeps all dates. Stories without a publication date remain available.",
+        "group": "Content"
+      },
+      "deduplicate": {
+        "type": "boolean",
+        "title": "Remove duplicate stories",
+        "default": true,
+        "description": "Merge matching article URLs, including links with tracking parameters.",
+        "group": "Content"
+      },
+      "sortOrder": {
+        "type": "string",
+        "title": "Story order",
+        "enum": [
+          "source-order",
+          "newest",
+          "oldest",
+          "title",
+          "source"
+        ],
+        "enumLabels": {
+          "source-order": "Keep source order",
+          "newest": "Newest first",
+          "oldest": "Oldest first",
+          "title": "Headline A\u2013Z",
+          "source": "Source A\u2013Z"
+        },
+        "description": "RSS defaults to newest first. Other providers keep their source order.",
+        "group": "Content"
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Seconds per story",
+        "title": "Time per story \u00b7 seconds",
         "minimum": 1,
         "maximum": 300,
-        "default": 18
+        "default": 18,
+        "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Rotate stories automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "showSummary": {
+        "type": "boolean",
+        "title": "Show story summary",
+        "default": true,
+        "group": "Display"
+      },
+      "showTicker": {
+        "type": "boolean",
+        "title": "Show headline ticker",
+        "default": true,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check for updates \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "description": "How often the display checks for data. Feed refresh and response cache control upstream requests.",
+        "group": "Updates"
       },
       "briefings": {
         "type": "array",
-        "title": "Categories",
+        "title": "Briefing sources",
         "items": {
           "type": "object",
           "required": [
@@ -46,34 +334,97 @@
             "emoji": {
               "type": "string",
               "title": "Short label"
+            },
+            "enabled": {
+              "type": "boolean",
+              "title": "Enabled",
+              "default": true
             }
           }
         },
-        "addLabel": "Add category",
-        "itemLabel": "category",
-        "emptyLabel": "No categories added yet."
+        "addLabel": "Add briefing",
+        "itemLabel": "briefing",
+        "emptyLabel": "Uses categories supplied by the connected service.",
+        "showWhen": {
+          "provider": [
+            "briefings"
+          ]
+        },
+        "description": "Choose briefing IDs supplied by your connected service. Use RSS / Atom for your own news websites.",
+        "group": "Content"
+      },
+      "briefingMaxAgeDays": {
+        "type": "integer",
+        "title": "Maximum briefing age \u00b7 days",
+        "minimum": 0,
+        "maximum": 365,
+        "default": 1,
+        "showWhen": {
+          "provider": [
+            "briefings"
+          ]
+        },
+        "description": "1 includes today\u2019s briefings. 0 also keeps older briefings supplied by the service.",
+        "group": "Content"
+      },
+      "showHeadlines": {
+        "type": "boolean",
+        "title": "Show headline sidebar",
+        "default": true,
+        "group": "Display"
+      },
+      "showCategories": {
+        "type": "boolean",
+        "title": "Show category buttons",
+        "default": true,
+        "group": "Display"
       }
     }
   },
   "optionSchema": {
     "type": "object",
     "properties": {
-      "title": {
-        "type": "string",
-        "title": "Title"
-      },
-      "refreshSeconds": {
+      "maxStories": {
         "type": "integer",
-        "title": "Refresh \u00b7 seconds",
+        "title": "Maximum stories",
         "minimum": 1,
-        "maximum": 3600
+        "maximum": 200,
+        "group": "Content"
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Seconds per story",
+        "title": "Time per story \u00b7 seconds",
         "minimum": 1,
         "maximum": 300,
-        "default": 18
+        "default": 18,
+        "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Rotate stories automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "showSummary": {
+        "type": "boolean",
+        "title": "Show story summary",
+        "default": true,
+        "group": "Display"
+      },
+      "showTicker": {
+        "type": "boolean",
+        "title": "Show headline ticker",
+        "default": true,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check for updates \u00b7 seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "description": "How often the display checks for data. Feed refresh and response cache control upstream requests.",
+        "group": "Updates"
       },
       "briefings": {
         "type": "array",
@@ -96,9 +447,36 @@
             "emoji": {
               "type": "string",
               "title": "Short label"
+            },
+            "enabled": {
+              "type": "boolean",
+              "title": "Enabled",
+              "default": true
             }
           }
-        }
+        },
+        "addLabel": "Add briefing",
+        "itemLabel": "briefing",
+        "emptyLabel": "Uses categories supplied by the connected service.",
+        "showWhen": {
+          "provider": [
+            "briefings"
+          ]
+        },
+        "description": "Choose briefing IDs supplied by your connected service. Use RSS / Atom for your own news websites.",
+        "group": "Content"
+      },
+      "showHeadlines": {
+        "type": "boolean",
+        "title": "Show headline sidebar",
+        "default": true,
+        "group": "Display"
+      },
+      "showCategories": {
+        "type": "boolean",
+        "title": "Show category buttons",
+        "default": true,
+        "group": "Display"
       }
     }
   },

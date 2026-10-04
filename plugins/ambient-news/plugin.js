@@ -1,1 +1,9 @@
-export function createPlugin({config}) {return {id:"ambient-news",name:"Ambient news reader",publicConfig:()=>({...Object.fromEntries(["title", "refreshSeconds", "rotationSeconds", "briefings"].filter(key=>config[key]!==undefined).map(key=>[key,config[key]]))}),optionSchema:{"type": "object", "properties": {"title": {"type": "string", "title": "Title"}, "refreshSeconds": {"type": "integer", "title": "Refresh \u00b7 seconds", "minimum": 1, "maximum": 3600}, "rotationSeconds": {"type": "integer", "title": "Seconds per story", "minimum": 1, "maximum": 300, "default": 18}, "briefings": {"type": "array", "title": "Categories", "items": {"type": "object", "required": ["key", "name"], "properties": {"key": {"type": "string", "title": "Category key"}, "name": {"type": "string", "title": "Name"}, "emoji": {"type": "string", "title": "Short label"}}}}}}};}
+import {createPlugin as createNews} from '../news/plugin.js';
+const displayKeys=["title", "maxStories", "rotationSeconds", "autoRotate", "showSummary", "showTicker", "refreshSeconds", "briefings", "showHeadlines", "showCategories", "includeKeywords", "excludeKeywords", "categories", "sources", "maxAgeHours", "sortOrder", "deduplicate", "briefingMaxAgeDays"];
+export function createPlugin({config,context}) {
+  const provider=config.provider || 'briefings';
+  const backend=provider==='briefings'?{}:createNews({config:{...config,provider},context});
+  return {...backend,id:'ambient-news',name:'News Reader',assets:['selection.js'],styles:[],
+    publicConfig:()=>({...backend.publicConfig?.(),readerProvider:provider,...Object.fromEntries(displayKeys.filter(key=>config[key]!==undefined).map(key=>[key,config[key]]))})
+  };
+}

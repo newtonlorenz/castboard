@@ -1,11 +1,11 @@
 import { createInteractionRuntime } from '/interaction-runtime.js';
-import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.11.0';
+import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.13.0';
 
 const dashboard = document.getElementById('dashboard');
 const cleanups = [];
 window.addEventListener('pagehide', () => { for (const cleanup of cleanups.splice(0)) cleanup(); });
 
-import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.11.0';
+import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.13.0';
 let previewMounted;
 let previewRenderer;
 function applyScreenAppearance(appearance, branding, root = document.documentElement) {

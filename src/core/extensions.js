@@ -39,12 +39,18 @@ export function validateSchema(value, schema, label = 'options') {
     if (schema.minimum !== undefined && value < schema.minimum) throw new Error(`${label} is below its minimum`);
     if (schema.maximum !== undefined && value > schema.maximum) throw new Error(`${label} exceeds its maximum`);
   } else if (schema.type && typeof value !== schema.type) throw new Error(`${label} must be ${schema.type}`);
+  if (typeof value === 'string') {
+    if (schema.minLength !== undefined && [...value].length < schema.minLength) throw new Error(`${label} is too short`);
+    if (schema.maxLength !== undefined && [...value].length > schema.maxLength) throw new Error(`${label} is too long`);
+    if (schema.pattern && !new RegExp(schema.pattern).test(value)) throw new Error(`${label} has an invalid format`);
+    if (schema.format === 'date-time' && value && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(Date.parse(value)))) throw new Error(`${label} must include a valid date, time and time zone`);
+  }
   if (schema.enum && !schema.enum.includes(value)) throw new Error(`${label} must be one of ${schema.enum.join(', ')}`);
 }
 
 export function extensionMetadata(extension) {
   const metadata = {};
-  for (const key of ['version', 'optionSchema', 'layoutSchema', 'positionSchema', 'sizeSchema', 'contract', 'inputContract', 'capabilities']) {
+  for (const key of ['version', 'optionSchema', 'layoutSchema', 'positionSchema', 'sizeSchema', 'contract', 'inputContract', 'defaultSource', 'capabilities']) {
     if (extension[key] !== undefined) metadata[key] = JSON.parse(JSON.stringify(extension[key]));
   }
   return metadata;

@@ -89,3 +89,19 @@ Account IDs and full broker payloads should be removed by the collector before t
 ```
 
 Treat all provider text as untrusted. First-party widgets escape content before inserting it into HTML.
+
+## Noticeboard
+
+```json
+{"notices":[{"id":"welcome","title":"Welcome","body":"Opening hours: 09:00–17:00\nPlease sign in at reception.","enabled":true,"startsAt":"2030-12-01T09:00:00Z","expiresAt":"2030-12-31T17:00:00Z"}],"updatedAt":"2030-12-01T09:00:00Z"}
+```
+
+`body` is required plain text, up to 12,000 characters. Headings are optional, up to 160 characters. The source may contain up to 100 notices. Disabled, future and expired notices are hidden. Schedules use ISO timestamps with a time-zone offset; expiry is exclusive. Browser views rotate notices and allow scrolling longer text. Native views show up to 12 notices and receivers may truncate long bodies; use image mode for long instructions. HTML is displayed as text.
+
+## Countdown
+
+```json
+{"target":"2030-12-25T09:00:00+01:00","title":"Community gathering","description":"Main hall opens at 09:00","updatedAt":"2030-12-01T09:00:00Z"}
+```
+
+`target` is required and includes an explicit UTC or numeric offset. Optional `title` and `description` are text. Countdown calculations use the absolute instant; the display time zone affects the date label. Once reached, show the configured completion message or count time elapsed. Demo targets are fixed when the plugin starts, two days ahead; restarting creates a new sample target.

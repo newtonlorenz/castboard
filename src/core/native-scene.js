@@ -43,7 +43,7 @@ export function createNativeScenes({ getConfig, getPlugin, getScreenType, read, 
       const options = { ...(plugin.publicConfig?.() || {}), ...panel.options };
       const bindings = { ...plugin.bindings, ...panel.bindings };
       try {
-        const source = panel.source || panel.plugin;
+        const source = panel.source || bindings[options.sourceAlias] || plugin.defaultSource || panel.plugin;
         const data = getPlugin(source)?.getData ? await read(source) : {};
         result = await plugin.nativeView({ data, options, panel, screen, branding: config.branding || {}, now: new Date(), read: alias => {
           const sourceId=bindings[alias] || alias;

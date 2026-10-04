@@ -112,3 +112,11 @@ Content plugins supply widgets and data. Display plugins adapt Castboard's outpu
 and input for receiver hardware. Upload and manage them in **Displays → Display
 plugins**, also linked from Plugins. See [the display plugin contract](display-adapters.md)
 for ZIP packaging, generated settings, encoding hooks and a working monochrome example.
+
+## Documenting configurable packages
+
+Bundled package names, settings, panel options, defaults and dependencies are documented from `plugin.json`. Run `npm run docs:plugins` after changing a manifest; `npm run check` rejects stale guides. Keep provider examples and payload semantics in `docs/PLUGIN-CONTRACTS.md` and bridge adapters in `docs/AMBIENT-PLUGINS.md`.
+
+Settings support a JSON Schema subset: object properties/required/additionalProperties, arrays/items/minItems/maxItems, anyOf, enum, integer/number bounds, string minLength/maxLength/pattern and date-time format. Date-time values must carry a time-zone offset. `multiline: true` requests a text area; repeated records also support date-time and multiline controls. `showWhen` maps sibling keys to allowed values and hides irrelevant controls. Groups organize General, Data source, Content, Display, Updates and advanced settings.
+
+Defaults in `optionSchema` and explicitly configured matching settings are forwarded to browser/native views. The registry excludes private fields; a factory’s `publicConfig` can add only safe display data. Panel options override these display defaults. Connector endpoints and authentication must remain connection settings, outside `optionSchema`.

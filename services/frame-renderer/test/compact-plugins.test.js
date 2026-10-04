@@ -12,6 +12,8 @@ test('compact forecasts keep every hour and day reachable with taps, including S
   const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});t.after(()=>browser.close());
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-compact-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
   const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},plugins:{weather:{enabled:true,provider:'demo'},vehicle:{enabled:true,provider:'demo'}},screens:{home:{path:'/',title:'Weather',type:'single',panels:[{id:'weather',plugin:'weather',interaction:{type:'modal',screenId:'forecast'}}]},forecast:{path:'/forecast',title:'Forecast',type:'single',presentation:'modal',layout:{padding:4},appearance:{panelPadding:6},panels:[{id:'forecast',plugin:'weather',options:{view:'forecast',hours:12,days:7}}]},vehicle:{path:'/vehicle',title:'Vehicle',type:'single',panels:[{id:'vehicle',plugin:'vehicle',options:{showRange:true}}]}}};
+  config.screens.overview={...config.screens.forecast,path:'/overview',panels:[{id:'forecast',plugin:'weather',options:{view:'forecast',forecastLayout:'overview'}}]};
+  config.screens['overview-home']={...config.screens.home,path:'/overview-home',panels:[{id:'weather',plugin:'weather',interaction:{type:'modal',screenId:'overview'}}]};
   const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
   const app=await createApp({configPath});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(async()=>{app.server.close();app.server.closeAllConnections();await app.dispose();});
   const origin=`http://127.0.0.1:${app.server.address().port}`,page=await browser.newPage({viewport:{width:320,height:240}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -35,6 +37,24 @@ test('compact forecasts keep every hour and day reachable with taps, including S
     assert.equal(await page.locator('.vehicle-widget').evaluate(el=>el.scrollHeight<=el.clientHeight+1&&el.scrollWidth<=el.clientWidth+1),true);
     await page.goto(origin+'/forecast');await page.locator('.weather-temp').waitFor();await capture('weather-'+viewport.width);
     if(viewport.height<500)assert.equal(await page.locator('.weather-widget').getAttribute('data-weather-paged'),'true');
+  }
+  // The overview fits all 24 hours and all seven days in exactly two pages.
+  for(const viewport of [{width:320,height:240},{width:390,height:844},{width:1440,height:960}]){
+    await page.setViewportSize(viewport);await page.goto(origin+'/overview-home');await page.locator('.panel-interaction').click();
+    await page.locator('dialog .weather-hour-chart').waitFor();
+    assert.equal(await page.locator('dialog [data-forecast-time]').count(),24);
+    assert.equal(await page.locator('dialog [data-weather-page]').count(),2);
+    await capture('weather-overview-hours-'+viewport.width);
+    for(const tab of ['1','0']){
+      await page.locator(`dialog [data-weather-page="${tab}"]`).click();
+      assert.equal(await page.locator('dialog [data-forecast-time]').count(),tab==='1'?7:24);
+      if(tab==='1')await capture('weather-overview-days-'+viewport.width);
+      assert.equal(await page.locator('dialog .weather-content').evaluate(el=>el.scrollHeight<=el.clientHeight+1&&el.scrollWidth<=el.clientWidth+1),true);
+      assert.equal(await page.locator('dialog .weather-content').evaluate(el=>{const p=el.getBoundingClientRect();return [...el.querySelectorAll('time,strong,small,.weather-day-icon,.weather-low,.weather-chart-summary')].every(node=>{const r=node.getBoundingClientRect();return r.top>=p.top-1&&r.bottom<=p.bottom+1&&r.left>=p.left-1&&r.right<=p.right+1;});}),true);
+      assert.equal(await page.locator(`dialog [data-weather-page="${tab}"]`).evaluate(el=>el.getBoundingClientRect().height>=44),true);
+
+    }
+    await page.locator('dialog .screen-modal-header button').click();assert.equal(await page.locator('dialog[open]').count(),0);
   }
   // Local pagination is allowed in Studio while provider actions stay blocked.
   await page.goto(origin+'/admin');await page.locator('[data-mode="preview"]').click();const frame=page.frameLocator('#live-preview');await frame.locator('.panel-interaction').click();await frame.locator('dialog [data-weather-step="1"]').click();assert.ok(await frame.locator('dialog [data-forecast-time]').count()>0);

@@ -1,39 +1,71 @@
 {
-  "name": "Ambient Clock",
-  "description": "Time, date and location with optional seconds and a 12-hour clock.",
-  "version": "1.0.0",
+  "name": "Clock Panel",
+  "description": "Show time and date using shared display settings, with optional time zone and location overrides.",
+  "version": "1.1.0",
   "license": "MIT",
-  "category": "Ambient displays",
+  "category": "Dashboard panels",
   "defaultConfig": {},
   "settingsSchema": {
     "type": "object",
     "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General",
+        "description": "Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same."
+      },
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "showSeconds": {
         "type": "boolean",
         "title": "Show seconds",
-        "default": true
+        "default": true,
+        "group": "Display"
       },
       "hour12": {
         "type": "boolean",
         "title": "12-hour clock",
-        "default": false
+        "default": false,
+        "group": "Display"
       },
       "timeZone": {
         "type": "string",
-        "title": "Time zone"
+        "title": "Time zone",
+        "description": "IANA time zone, for example Europe/Madrid or America/New_York. Empty uses the shared display time zone.",
+        "group": "Display"
       },
       "location": {
         "type": "string",
-        "title": "Location label"
+        "title": "Location label",
+        "group": "Display"
       },
       "showDate": {
         "type": "boolean",
         "title": "Show date",
-        "default": true
+        "default": true,
+        "group": "Display"
+      },
+      "locale": {
+        "type": "string",
+        "title": "Language and region",
+        "description": "Leave empty for the browser\u2019s language, or use a locale such as en-GB or fr-FR.",
+        "group": "Display"
+      },
+      "dateStyle": {
+        "type": "string",
+        "title": "Date style",
+        "enum": [
+          "long",
+          "short",
+          "numeric"
+        ],
+        "default": "long",
+        "group": "Display"
       }
     }
   },
@@ -42,30 +74,55 @@
     "properties": {
       "title": {
         "type": "string",
-        "title": "Title"
+        "title": "Display title",
+        "description": "Default heading on the display. A screen panel can override it.",
+        "group": "Display"
       },
       "showSeconds": {
         "type": "boolean",
         "title": "Show seconds",
-        "default": true
+        "default": true,
+        "group": "Display"
       },
       "hour12": {
         "type": "boolean",
         "title": "12-hour clock",
-        "default": false
+        "default": false,
+        "group": "Display"
       },
       "timeZone": {
         "type": "string",
-        "title": "Time zone"
+        "title": "Time zone",
+        "description": "IANA time zone, for example Europe/Madrid or America/New_York. Empty uses the shared display time zone.",
+        "group": "Display"
       },
       "location": {
         "type": "string",
-        "title": "Location label"
+        "title": "Location label",
+        "group": "Display"
       },
       "showDate": {
         "type": "boolean",
         "title": "Show date",
-        "default": true
+        "default": true,
+        "group": "Display"
+      },
+      "locale": {
+        "type": "string",
+        "title": "Language and region",
+        "description": "Leave empty for the browser\u2019s language, or use a locale such as en-GB or fr-FR.",
+        "group": "Display"
+      },
+      "dateStyle": {
+        "type": "string",
+        "title": "Date style",
+        "enum": [
+          "long",
+          "short",
+          "numeric"
+        ],
+        "default": "long",
+        "group": "Display"
       }
     }
   },

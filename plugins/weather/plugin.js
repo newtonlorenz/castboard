@@ -10,7 +10,7 @@ export function createPlugin({ config, context }) {
   return {
     id: 'weather',
     nativeView: nativeViews.weather,
-    assets: ['style.css', 'forecast.js'],
+    assets: ['style.css', 'forecast.js', 'overview.js'],
     styles: ['style.css'],
     name: 'Weather',
     publicConfig: () => ({compact:config.compact===true,  demo: config.provider==='demo', label: config.label || '', title: config.title || 'Weather', view: config.view || 'current', forecastLayout: config.forecastLayout || 'auto', hours: config.hours || 12, days: config.days || 7, refreshSeconds: config.refreshSeconds || 300 }),

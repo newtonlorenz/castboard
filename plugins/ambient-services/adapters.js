@@ -14,7 +14,7 @@ export function displayData(kind,data,timeZone='UTC'){
  if(kind==='calendar')return calendarData(data,timeZone);
  if(kind==='weather')return {...data,temp:data.temp??data.temperatureC,apparentTemp:data.apparentTemp??data.apparentTemperatureC,windspeed:data.windspeed??data.windKph};
  if(kind==='recovery')return {...data,recovery:data.recovery||{score:data.score},sleep:data.sleep||{},strain:data.strain||{}};
- if(kind==='solar')return {...data,usedSolarKw:data.usedSolarKw??Math.max(0,(data.loadKw||0)-(data.gridImportKw||0)),usedGridKw:data.usedGridKw??data.gridImportKw};
+ if(kind==='solar')return {...data,usedSolarKw:data.usedSolarKw??(Number.isFinite(data.loadKw)&&Number.isFinite(data.gridImportKw)?Math.max(0,data.loadKw-data.gridImportKw):null),usedGridKw:data.usedGridKw??data.gridImportKw};
  if(kind==='portfolio')return {...data,summary:data.summary||{baseCurrency:data.positions?.[0]?.currency||'USD',netLiquidation:data.totalValue,dailyPnl:data.dailyChange}};
  return data;
 }

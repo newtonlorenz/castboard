@@ -87,3 +87,5 @@
 
 
 @media (max-width:800px){.briefing-shell{padding-left:12px;padding-right:12px}.briefing-layout{grid-template-columns:minmax(0,1.6fr) minmax(210px,.8fr);gap:10px}}
+
+.news-content{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}.news-content>.briefing-shell{flex:1;min-height:0}.news-panel-list{min-height:0;overflow:auto}.news-panel-list p{padding:16px;overflow-wrap:anywhere}.news-panel-list button:focus-visible,.briefing-controls button:focus-visible,.briefing-categories button:focus-visible{outline:2px solid var(--accent,#86efac);outline-offset:2px}
