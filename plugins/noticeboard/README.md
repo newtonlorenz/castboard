@@ -33,6 +33,7 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Rotate notices automatically | `autoRotate` | boolean | true |  |
 | Show previous and next controls | `showControls` | boolean | true |  |
 | Message when no notices are active | `emptyText` | string; up to 240 characters | No current notices |  |
+| Scroll long notices automatically | `autoScroll` | boolean | false | For screens without touch. Each notice remains visible until its text has scrolled; reading or interacting pauses it. |
 
 ## Panel overrides
 
@@ -46,6 +47,7 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Rotate notices automatically | `autoRotate` | boolean | true |  |
 | Show previous and next controls | `showControls` | boolean | true |  |
 | Message when no notices are active | `emptyText` | string; up to 240 characters | No current notices |  |
+| Scroll long notices automatically | `autoScroll` | boolean | false | For screens without touch. Each notice remains visible until its text has scrolled; reading or interacting pauses it. |
 
 ## Privacy and maintenance
 

@@ -1,7 +1,7 @@
 {
   "name": "Weather & Forecast",
   "description": "Show local conditions and forecasts from Open-Meteo or JSON. Choose location, units and forecast layout.",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "license": "MIT",
   "category": "Display plugins",
   "defaultConfig": {
@@ -44,7 +44,7 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true,
@@ -53,7 +53,7 @@
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true,
@@ -157,7 +157,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Refresh \u00b7 seconds",
+        "title": "Refresh · seconds",
         "minimum": 30,
         "maximum": 3600,
         "description": "How often the display checks for new data. Server caching may reuse the previous response.",
@@ -176,7 +176,7 @@
           "auto": "Fit the panel",
           "paged": "Pages with Previous / Next",
           "full": "Full forecast (scrollable)",
-          "overview": "Two pages \u00b7 24 hours / 7 days"
+          "overview": "Two pages · 24 hours / 7 days"
         },
         "group": "Display"
       },
@@ -195,8 +195,8 @@
           "fahrenheit"
         ],
         "enumLabels": {
-          "celsius": "Celsius \u00b7 \u00b0C",
-          "fahrenheit": "Fahrenheit \u00b7 \u00b0F"
+          "celsius": "Celsius · °C",
+          "fahrenheit": "Fahrenheit · °F"
         },
         "default": "celsius",
         "group": "Display"
@@ -216,6 +216,21 @@
         },
         "default": "kmh",
         "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "group": "Display",
+        "default": false,
+        "description": "Useful on screens without touch. Reading or interacting pauses the timer."
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "group": "Display",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20
       }
     }
   },
@@ -266,7 +281,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Refresh \u00b7 seconds",
+        "title": "Refresh · seconds",
         "minimum": 30,
         "maximum": 3600,
         "description": "How often the display checks for new data. Server caching may reuse the previous response.",
@@ -285,7 +300,7 @@
           "auto": "Fit the panel",
           "paged": "Pages with Previous / Next",
           "full": "Full forecast (scrollable)",
-          "overview": "Two pages \u00b7 24 hours / 7 days"
+          "overview": "Two pages · 24 hours / 7 days"
         },
         "group": "Display"
       },
@@ -304,8 +319,8 @@
           "fahrenheit"
         ],
         "enumLabels": {
-          "celsius": "Celsius \u00b7 \u00b0C",
-          "fahrenheit": "Fahrenheit \u00b7 \u00b0F"
+          "celsius": "Celsius · °C",
+          "fahrenheit": "Fahrenheit · °F"
         },
         "default": "celsius",
         "group": "Display"
@@ -325,6 +340,21 @@
         },
         "default": "kmh",
         "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "group": "Display",
+        "default": false,
+        "description": "Useful on screens without touch. Reading or interacting pauses the timer."
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "group": "Display",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20
       }
     }
   }

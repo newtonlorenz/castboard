@@ -1,0 +1,248 @@
+{
+  "name": "Image Slideshow",
+  "description": "Rotate photos, artwork, instructions or promotional slides. Enter public image addresses or connect a JSON playlist.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display plugins",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General"
+      },
+      "provider": {
+        "type": "string",
+        "title": "Content source",
+        "enum": [
+          "demo",
+          "inline",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "inline": "Enter here",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        },
+        "default": "demo",
+        "group": "Data source"
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON source URL",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Private request headers",
+        "private": true,
+        "advanced": true,
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Source timeout · milliseconds",
+        "minimum": 500,
+        "maximum": 60000,
+        "default": 8000,
+        "advanced": true,
+        "group": "Updates"
+      },
+      "images": {
+        "type": "array",
+        "title": "Image Slideshow items",
+        "group": "Content",
+        "maxItems": 100,
+        "default": [],
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        },
+        "items": {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "title": "Image URL",
+              "maxLength": 4096,
+              "description": "Public HTTP(S) image address, or a same-origin path."
+            },
+            "caption": {
+              "type": "string",
+              "title": "Caption",
+              "maxLength": 240
+            },
+            "alt": {
+              "type": "string",
+              "title": "Image description",
+              "maxLength": 240
+            }
+          }
+        }
+      },
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "default": true,
+        "group": "Display"
+      },
+      "pageSize": {
+        "type": "integer",
+        "title": "Items per page",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+        "description": "0 fits the panel height. Automatic pages also work on screens without touch.",
+        "group": "Display"
+      },
+      "fit": {
+        "type": "string",
+        "title": "Image fit",
+        "enum": [
+          "contain",
+          "cover"
+        ],
+        "enumLabels": {
+          "contain": "Show whole image",
+          "cover": "Fill panel (crop edges)"
+        },
+        "default": "contain",
+        "group": "Display"
+      },
+      "showCaptions": {
+        "type": "boolean",
+        "title": "Show captions",
+        "default": true,
+        "group": "Display"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "default": true,
+        "group": "Display"
+      },
+      "pageSize": {
+        "type": "integer",
+        "title": "Items per page",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+        "description": "0 fits the panel height. Automatic pages also work on screens without touch.",
+        "group": "Display"
+      },
+      "fit": {
+        "type": "string",
+        "title": "Image fit",
+        "enum": [
+          "contain",
+          "cover"
+        ],
+        "enumLabels": {
+          "contain": "Show whole image",
+          "cover": "Fill panel (crop edges)"
+        },
+        "default": "contain",
+        "group": "Display"
+      },
+      "showCaptions": {
+        "type": "boolean",
+        "title": "Show captions",
+        "default": true,
+        "group": "Display"
+      }
+    }
+  },
+  "displayNotes": "Images are loaded by the display browser from their public addresses; source request headers are not forwarded to image hosts. Image mode shows the full slideshow on embedded receivers. Native mode provides a text fallback, not photos. Unavailable images show an error and rotation can continue to the next slide."
+}

@@ -2,6 +2,16 @@
 
 Notable changes are documented here. Castboard follows semantic versioning once releases are published.
 
+## 0.14.0 - 2026-10-05
+
+- Improve five everyday plugins for screens with or without touch: automatic weather pages, adaptive calendar paging with date labels, reading-safe notice scrolling, world clocks and passive news headlines.
+- Keep rotation independent of data refresh; pause while someone reads or interacts and preserve focused controls across refreshes.
+- Add Image Slideshow, Metrics, Status Board, Menu & Price List and Web Page. The library now includes 42 packages. Data packages support sample, entered, HTTP and file content; the embed uses a public page URL.
+- Keep zero and missing values distinct, show status words with colors, validate prices and thresholds, and isolate embedded pages with opt-in scripts/forms.
+- Add generic full-screen examples, a candid plugin evaluation, source contracts, generated configuration guides and browser tests at small, phone, smart-display and TV sizes.
+
+Existing IDs, connections and screen layouts remain compatible. Pictures and embedded pages require browser/image mode for visual output; their native view is a text fallback. Some websites prohibit embedding. No additional physical hardware was tested.
+
 ## 0.13.0 - 2026-10-04
 
 - Clarify names, purposes, categories, settings and per-copy labels across all bundled plugins. News Reader replaces the Office Wire presentation; existing package and instance IDs remain compatible.

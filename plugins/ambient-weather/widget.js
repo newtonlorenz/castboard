@@ -1,4 +1,4 @@
-import {weatherSymbol} from '/widget-kit.js?v=0.13.0';
+import {weatherSymbol} from '/widget-kit.js?v=0.14.0';
 export async function mount({element,context,config}) {
  const {scope}=await import(context.source('runtime').asset('runtime.js'));
  const {document,request,setInterval}=await scope(element,context,"<div class=\"card weather-card\">\n            <div class=\"weather-top\">\n                <div class=\"card-label\">Weather</div>\n                <div class=\"weather-uv\" id=\"w-uv\">UV --</div>\n            </div>\n            <div class=\"weather-main\">\n                <div class=\"weather-icon\" id=\"w-icon\">--</div>\n                <div>\n                    <div class=\"weather-temp\" id=\"w-temp\">--</div>\n                    <div class=\"weather-desc\" id=\"w-desc\">Loading...</div>\n                </div>\n            </div>\n            <div class=\"weather-meta\">\n                <div class=\"weather-chip\" id=\"w-feels\">Feels --</div>\n                <div class=\"weather-chip\" id=\"w-humidity\">RH --</div>\n                <div class=\"weather-chip\" id=\"w-wind\">Wind --</div>\n            </div>\n        </div>",'mission.css');

@@ -1,7 +1,7 @@
 {
   "name": "Calendar Agenda",
   "description": "Show upcoming events from an ICS calendar or JSON source. Choose an event horizon, calendars, locations and update timing.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "MIT",
   "category": "Display plugins",
   "defaultConfig": {
@@ -43,7 +43,7 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true,
@@ -52,7 +52,7 @@
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true,
@@ -112,7 +112,7 @@
       },
       "daysAhead": {
         "type": "integer",
-        "title": "Look ahead \u00b7 days",
+        "title": "Look ahead · days",
         "minimum": 0,
         "maximum": 365,
         "default": 0,
@@ -149,7 +149,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check for updates \u00b7 seconds",
+        "title": "Check for updates · seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
@@ -159,8 +159,54 @@
       "timeZone": {
         "type": "string",
         "title": "Time zone",
-        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen\u2019s time zone.",
+        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone.",
         "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "group": "Display",
+        "default": false,
+        "description": "Useful on screens without touch. Reading or interacting pauses the timer."
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "group": "Display",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20
+      },
+      "layout": {
+        "type": "string",
+        "title": "Agenda layout",
+        "group": "Display",
+        "enum": [
+          "auto",
+          "pages",
+          "scroll"
+        ],
+        "enumLabels": {
+          "auto": "Fit the panel (pages when needed)",
+          "pages": "Pages",
+          "scroll": "Scrollable list"
+        },
+        "default": "auto"
+      },
+      "eventsPerPage": {
+        "type": "integer",
+        "title": "Events per page",
+        "group": "Display",
+        "minimum": 0,
+        "maximum": 20,
+        "default": 0,
+        "description": "0 fits the available height. Increase for a denser agenda."
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "group": "Display",
+        "default": true
       }
     }
   },
@@ -189,7 +235,7 @@
       },
       "daysAhead": {
         "type": "integer",
-        "title": "Look ahead \u00b7 days",
+        "title": "Look ahead · days",
         "minimum": 0,
         "maximum": 365,
         "default": 0,
@@ -226,7 +272,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check for updates \u00b7 seconds",
+        "title": "Check for updates · seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
@@ -236,8 +282,54 @@
       "timeZone": {
         "type": "string",
         "title": "Time zone",
-        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen\u2019s time zone.",
+        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone.",
         "group": "Display"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "group": "Display",
+        "default": false,
+        "description": "Useful on screens without touch. Reading or interacting pauses the timer."
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "group": "Display",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20
+      },
+      "layout": {
+        "type": "string",
+        "title": "Agenda layout",
+        "group": "Display",
+        "enum": [
+          "auto",
+          "pages",
+          "scroll"
+        ],
+        "enumLabels": {
+          "auto": "Fit the panel (pages when needed)",
+          "pages": "Pages",
+          "scroll": "Scrollable list"
+        },
+        "default": "auto"
+      },
+      "eventsPerPage": {
+        "type": "integer",
+        "title": "Events per page",
+        "group": "Display",
+        "minimum": 0,
+        "maximum": 20,
+        "default": 0,
+        "description": "0 fits the available height. Increase for a denser agenda."
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "group": "Display",
+        "default": true
       }
     }
   }

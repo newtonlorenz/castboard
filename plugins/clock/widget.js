@@ -1,14 +1,11 @@
-import { title } from '/widget-kit.js?v=0.13.0';
-
+import { escapeHtml, title } from '/widget-kit.js?v=0.14.0';
+import { clockTimes } from './assets/model.js';
 export function mount({ element, config, context }) {
   element.classList.toggle('clock-compact',config.compact===true);
+  element.classList.toggle('clock-world',Boolean(config.additionalClocks?.length));
   const render = () => {
-    const now = new Date();
-    const zone = config.timeZone || context.app.branding.timeZone;
-    const time = new Intl.DateTimeFormat(config.locale || undefined, { hour: '2-digit', minute: '2-digit', second: config.showSeconds ? '2-digit' : undefined, hour12: config.hour12 === true, timeZone: zone }).format(now);
-    const date = new Intl.DateTimeFormat(config.locale || undefined, { weekday:config.dateStyle==='numeric'?undefined:config.compact || config.dateStyle==='short'?'short':'long',day:'numeric',month:config.dateStyle==='numeric'?'2-digit':config.compact || config.dateStyle==='short'?'short':'long', timeZone: zone }).format(now);
-    element.innerHTML = `${config.compact?'':title(config.title || context.app.branding.name, config.location || context.app.branding.location)}<div class="clock-time">${time}</div>${config.showDate===false?'':`<div class="clock-date">${date}</div>`}`;
+    const [primary, ...others] = clockTimes(config, context.app.branding);
+    element.innerHTML = `${config.compact?'':title(config.title || context.app.branding.name, config.location || context.app.branding.location)}<div class="clock-primary"><div class="clock-time">${escapeHtml(primary.time)}</div>${config.showDate===false?'':`<div class="clock-date">${escapeHtml(primary.date)}</div>`}</div>${others.length ? `<div class="clock-zones">${others.map(zone=>`<section><strong>${escapeHtml(zone.label)}</strong><time>${escapeHtml(zone.time)}</time><span>${escapeHtml(zone.date)}</span></section>`).join('')}</div>` : ''}`;
   };
-  render();
-  context.schedule(render, config.showSeconds ? 1000 : 15000);
+  render(); context.schedule(render, config.showSeconds ? 1000 : 15000);
 }

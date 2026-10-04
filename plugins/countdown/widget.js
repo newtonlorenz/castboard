@@ -1,4 +1,4 @@
-import { escapeHtml, title } from '/widget-kit.js?v=0.13.0';
+import { escapeHtml, title } from '/widget-kit.js?v=0.14.0';
 import { countdownState, countdownText } from './assets/model.js';
 export function mount({element,config,context}) {
   let data = null, error = '';

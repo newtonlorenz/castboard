@@ -23,3 +23,9 @@ Regression tests cover provider-size bounds, supported URL schemes, settings con
 ## Trust and limits
 
 Administrators deliberately select local files, service endpoints and commands. External plugin and hardware packages load trusted server code. This review does not convert those features into a sandbox or certify a private integration service. Do not publish personal feed contents, tokens or account payloads as canonical display data. Physical board behavior needs separate device testing; browser and compile checks verify software behavior only.
+
+## 0.14 universal plugins
+
+The additional data packages reuse bounded HTTP/file readers and private server-side headers. Canonical record projection removes unrecognized source fields; text is escaped before display. Public image and embed addresses reject active schemes and embedded credentials. Images load directly in the display browser and receive no source authentication headers. The Web Page iframe is sandboxed: scripts/forms are opt-in, and same-origin privileges, popups and top-level navigation are never granted. Embedding restrictions remain controlled by the target site. No dependency was added.
+
+Display pages permit configured Web Page origins and HTTP/HTTPS image loads, so local-network pictures work without changing admin restrictions. Studio’s isolated preview permits public HTTP/HTTPS frames for unsaved embed options. Admin retains its same-origin frame policy. A browser test uses a second local origin to verify image loads, script-enabled frame rendering, blocked access to the parent and unchanged admin policy.

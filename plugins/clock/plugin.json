@@ -1,7 +1,7 @@
 {
   "name": "Clock",
   "description": "Show local time, a different time zone, or a clock for any location. Choose date style, language and 12- or 24-hour time.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "MIT",
   "category": "Display plugins",
   "defaultConfig": {},
@@ -75,8 +75,36 @@
       "location": {
         "type": "string",
         "title": "Location label",
-        "description": "Optional label for this clock. Empty uses the screen\u2019s location.",
+        "description": "Optional label for this clock. Empty uses the screen’s location.",
         "group": "Display"
+      },
+      "additionalClocks": {
+        "type": "array",
+        "title": "Other time zones",
+        "group": "Display",
+        "maxItems": 4,
+        "default": [],
+        "description": "Optional world clocks for family, travel or distributed teams. Each includes its local date.",
+        "items": {
+          "type": "object",
+          "required": [
+            "timeZone"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "title": "Place name",
+              "maxLength": 60
+            },
+            "timeZone": {
+              "type": "string",
+              "title": "Time zone",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        }
       }
     }
   },
@@ -143,8 +171,36 @@
       "location": {
         "type": "string",
         "title": "Location label",
-        "description": "Optional label for this clock. Empty uses the screen\u2019s location.",
+        "description": "Optional label for this clock. Empty uses the screen’s location.",
         "group": "Display"
+      },
+      "additionalClocks": {
+        "type": "array",
+        "title": "Other time zones",
+        "group": "Display",
+        "maxItems": 4,
+        "default": [],
+        "description": "Optional world clocks for family, travel or distributed teams. Each includes its local date.",
+        "items": {
+          "type": "object",
+          "required": [
+            "timeZone"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "title": "Place name",
+              "maxLength": 60
+            },
+            "timeZone": {
+              "type": "string",
+              "title": "Time zone",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        }
       }
     }
   }

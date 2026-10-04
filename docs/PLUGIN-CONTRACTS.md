@@ -105,3 +105,45 @@ Treat all provider text as untrusted. First-party widgets escape content before 
 ```
 
 `target` is required and includes an explicit UTC or numeric offset. Optional `title` and `description` are text. Countdown calculations use the absolute instant; the display time zone affects the date label. Once reached, show the configured completion message or count time elapsed. Demo targets are fixed when the plugin starts, two days ahead; restarting creates a new sample target.
+
+## Additional universal content packages (0.14)
+
+These shapes apply to both HTTP and file JSON. Choose Enter here for the corresponding record editor. At most 100 records are accepted; only the documented fields reach displays. `updatedAt` is optional text (up to 100 characters), representing the source update when supplied, otherwise the fetch time. A returned `demo: true` marks sample data.
+
+### Image Slideshow
+
+```json
+{"images":[{"url":"https://example.org/lobby.jpg","caption":"Welcome","alt":"Lobby welcome artwork"}]}
+```
+
+An image URL must use HTTP/HTTPS without embedded credentials, or a same-origin path starting with one `/`. Images are loaded by the display, independently of private JSON-source headers. Caption and alternative text are optional, up to 240 characters. Invalid or unreachable images are reported; automatic rotation can continue. Native mode has a text fallback.
+
+### Metrics
+
+```json
+{"metrics":[{"label":"Room temperature","value":21.5,"unit":"°C","detail":"Meeting room","warningAbove":27,"warningBelow":16},{"label":"Queue","value":0},{"label":"Sensor awaiting data","value":null}]}
+```
+
+`label` is required (up to 100 characters). Values and optional warning thresholds must be finite JSON numbers; missing/null values mean unknown. A value above/below a supplied threshold displays Warning. Unit is optional (30 characters); detail is optional (240). Decimal places are configured on the panel. These are current readings, not historical measurements.
+
+### Status Board
+
+```json
+{"items":[{"name":"Internet","status":"ok","detail":"Router reports online"},{"name":"Workshop printer","status":"warning","detail":"Paper running low"}]}
+```
+
+`name` is required (100 characters). Status is `ok`, `warning`, `error` or `unknown`; omitted means unknown. Detail is optional (240). The panel displays the supplied state and does not perform its own network probes.
+
+### Menu & Price List
+
+```json
+{"items":[{"section":"Drinks","name":"Water","price":0,"available":true},{"section":"Food","name":"Soup","description":"Vegetable soup","price":5.5,"note":"Vegetarian","available":false}]}
+```
+
+`name` is required (100 characters), section is optional (80), description optional (240), note optional (100). Price is a nonnegative finite number; missing/null price uses the configured label. `available` must be boolean when supplied, and defaults to true. Currency is a panel setting; unavailable items can be labeled or hidden.
+
+### Web Page
+
+This package uses a public `url`, not a JSON source. Empty shows a sample embedded page. Scripts and forms are separately opt-in; the iframe has no same-origin privilege. Use a site that permits embedding and does not require access to Castboard credentials. Reload interval defaults to 0 (leave running); optional reloads are postponed during interaction. Native mode gives text guidance; browser/image mode displays the page.
+
+Metrics, Status Board and Menu native summaries are capped at 12 records. Use browser/image mode for the full automatically paged lists.

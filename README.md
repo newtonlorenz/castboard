@@ -80,7 +80,7 @@ with validation before saving and the project guides available directly to AI.
 Start Castboard, then connect `node /absolute/path/to/castboard/src/mcp.js` in your
 MCP client. See the guide for Codex setup, all tools and credential handling.
 
-Use **Plugins** to browse 35 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
+Use **Plugins** to browse 42 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
 
 The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
 
@@ -334,6 +334,8 @@ renderer, receiver library, protocol and hardware requirements.
 
 ## Reusable plugins
 
-The [plugin catalog](docs/PLUGIN-CATALOG.md) describes all 37 bundled display plugins, dashboard panels, source connectors and support packages. Rename installed copies, choose data sources and content filters, and reuse the same source with different panel settings. News Reader replaces the old Office Wire naming while retaining package IDs for existing configurations. Noticeboard and Countdown cover announcements, welcome screens and event timing.
+The [plugin catalog](docs/PLUGIN-CATALOG.md) describes all 42 bundled display plugins, dashboard panels, source connectors and support packages. Rename installed copies, choose data sources and content filters, and reuse the same source with different panel settings. News Reader replaces the old Office Wire naming while retaining package IDs for existing configurations. Noticeboard and Countdown cover announcements, welcome screens and event timing.
 
 Try [sample layouts for households and shared spaces](examples/community/README.md). Each package guide is generated from its settings so names, accepted values and defaults stay current.
+
+For screens of different sizes and purposes, see the [ten universal examples](examples/universal/README.md) and [plugin evaluation](docs/UNIVERSAL-PLUGINS.md). They include automatic forecast/agenda pages, world clocks, passive headlines, notices, image slideshows, metrics, service states, menus and embedded pages.

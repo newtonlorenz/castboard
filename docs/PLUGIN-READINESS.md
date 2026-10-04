@@ -1,11 +1,13 @@
 # Plugin release readiness
 
-Castboard 0.13.0 covers all 37 bundled packages. Existing IDs stay stable; names shown in admin and per-copy defaults can change. Private aliases and installation collectors remain outside the public tree; their reusable counterparts and contracts ship here.
+Castboard 0.14.0 covers all 42 bundled packages. Existing IDs stay stable; names shown in admin and per-copy defaults can change. Private aliases and installation collectors remain outside the public tree; their reusable counterparts and contracts ship here.
+
+See the [universal plugin evaluation](UNIVERSAL-PLUGINS.md) for the five improvements, five additions and their limits.
 
 ## Evidence
 
-- All 37 manifests include meaningful names, descriptions, licence, categories, per-copy names and settings. Generated package guides and catalog are checked by `npm run check`.
-- Every display package installs with its required dependencies and mounts at 320×240, 390×844 and 1440×960 using sample data. The gallery also checks horizontal bounds, new date/message editors, news reading and external-label escaping.
+- All 42 manifests include meaningful names, descriptions, licence, categories, per-copy names and settings. Generated package guides and catalog are checked by `npm run check`.
+- Every display package installs with its required dependencies and mounts at 320×240, 390×844 and 1440×960; the ten universal panels are also checked at 1024×600 and 1920×1080 using sample data. The gallery also checks horizontal bounds, new date/message editors, news reading and external-label escaping.
 - Unit checks cover news selection, source credential privacy, display default forwarding, independent companion sources, units, missing/zero measurements, local file bounds, scheduled notices and countdown state. The full local suite passes with browser tests enabled separately.
 - Browser checks cover Studio navigation/action isolation, receiver scoping, package configuration, camera failure/recovery and closing, forecast pages, compact layouts and plugin settings. Representative demonstration screenshots were inspected; long announcements intentionally scroll on short displays.
 - Clean-install initialization was run twice; the second run preserved configuration bytes. Both starter and shared-space sample configurations load without external services.
@@ -53,6 +55,11 @@ Castboard 0.13.0 covers all 37 bundled packages. Existing IDs stay stable; names
 | [Markets & Portfolio](../plugins/stocks/README.md) | demo | Browser + image + native |
 | [Vehicle Status](../plugins/vehicle/README.md) | demo | Browser + image + native |
 | [Weather & Forecast](../plugins/weather/README.md) | demo | Browser + image + native |
+| [Image Slideshow](../plugins/image-slideshow/README.md) | demo / inline / HTTP / file | Browser + image + native text fallback |
+| [Metrics](../plugins/metrics/README.md) | demo / inline / HTTP / file | Browser + image + native |
+| [Status Board](../plugins/status-board/README.md) | demo / inline / HTTP / file | Browser + image + native |
+| [Menu & Price List](../plugins/menu/README.md) | demo / inline / HTTP / file | Browser + image + native |
+| [Web Page](../plugins/web-page/README.md) | Public embed URL | Browser + image; native text fallback |
 
 ## Compatibility and limits
 

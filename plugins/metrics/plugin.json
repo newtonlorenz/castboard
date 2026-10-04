@@ -1,0 +1,235 @@
+{
+  "name": "Metrics",
+  "description": "Show any numeric readings: temperature, attendance, production, costs or custom totals. Enter values or connect a JSON source.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display plugins",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General"
+      },
+      "provider": {
+        "type": "string",
+        "title": "Content source",
+        "enum": [
+          "demo",
+          "inline",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "inline": "Enter here",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        },
+        "default": "demo",
+        "group": "Data source"
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON source URL",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Private request headers",
+        "private": true,
+        "advanced": true,
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Source timeout · milliseconds",
+        "minimum": 500,
+        "maximum": 60000,
+        "default": 8000,
+        "advanced": true,
+        "group": "Updates"
+      },
+      "metrics": {
+        "type": "array",
+        "title": "Metrics items",
+        "group": "Content",
+        "maxItems": 100,
+        "default": [],
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        },
+        "items": {
+          "type": "object",
+          "required": [
+            "label"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "title": "Name",
+              "maxLength": 100
+            },
+            "value": {
+              "type": "number",
+              "title": "Value"
+            },
+            "unit": {
+              "type": "string",
+              "title": "Unit",
+              "maxLength": 30
+            },
+            "detail": {
+              "type": "string",
+              "title": "Description",
+              "maxLength": 240
+            },
+            "warningAbove": {
+              "type": "number",
+              "title": "Warn above"
+            },
+            "warningBelow": {
+              "type": "number",
+              "title": "Warn below"
+            }
+          }
+        }
+      },
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "default": true,
+        "group": "Display"
+      },
+      "pageSize": {
+        "type": "integer",
+        "title": "Items per page",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+        "description": "0 fits the panel height. Automatic pages also work on screens without touch.",
+        "group": "Display"
+      },
+      "precision": {
+        "type": "integer",
+        "title": "Decimal places",
+        "minimum": 0,
+        "maximum": 4,
+        "default": 1,
+        "group": "Display"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "default": true,
+        "group": "Display"
+      },
+      "pageSize": {
+        "type": "integer",
+        "title": "Items per page",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+        "description": "0 fits the panel height. Automatic pages also work on screens without touch.",
+        "group": "Display"
+      },
+      "precision": {
+        "type": "integer",
+        "title": "Decimal places",
+        "minimum": 0,
+        "maximum": 4,
+        "default": 1,
+        "group": "Display"
+      }
+    }
+  },
+  "displayNotes": "Missing readings appear as unknown, and zero is a real value. Optional per-reading upper/lower thresholds mark warnings with words. This panel shows current readings, not historical charts."
+}

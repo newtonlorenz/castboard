@@ -1,4 +1,4 @@
-import { escapeHtml, getPluginData, schedule } from '/widget-kit.js?v=0.13.0';
+import { escapeHtml, getPluginData, schedule } from '/widget-kit.js?v=0.14.0';
 
 function timeLabel(value, timeZone) {
   const date = new Date(value);
