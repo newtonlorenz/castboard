@@ -1,0 +1,201 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787
+  },
+  "branding": {
+    "name": "Sample displays",
+    "timeZone": "UTC"
+  },
+  "plugins": {
+    "clock": {
+      "enabled": true
+    },
+    "weather": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "calendar": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "noticeboard": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "news": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "image-slideshow": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "metrics": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "status-board": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "menu": {
+      "enabled": true,
+      "provider": "demo"
+    },
+    "web-page": {
+      "enabled": true
+    }
+  },
+  "defaultScreen": "clock",
+  "screens": {
+    "clock": {
+      "path": "/",
+      "title": "Clock",
+      "type": "single",
+      "panels": [
+        {
+          "id": "clock",
+          "plugin": "clock",
+          "options": {
+            "additionalClocks": [
+              {
+                "label": "London",
+                "timeZone": "Europe/London"
+              },
+              {
+                "label": "Tokyo",
+                "timeZone": "Asia/Tokyo"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "weather": {
+      "path": "/weather",
+      "title": "Weather",
+      "type": "single",
+      "panels": [
+        {
+          "id": "weather",
+          "plugin": "weather",
+          "options": {
+            "view": "forecast",
+            "forecastLayout": "overview",
+            "autoRotate": true,
+            "rotationSeconds": 20
+          }
+        }
+      ]
+    },
+    "calendar": {
+      "path": "/calendar",
+      "title": "Calendar",
+      "type": "single",
+      "panels": [
+        {
+          "id": "calendar",
+          "plugin": "calendar",
+          "options": {
+            "autoRotate": true,
+            "rotationSeconds": 20,
+            "maxEvents": 20
+          }
+        }
+      ]
+    },
+    "noticeboard": {
+      "path": "/noticeboard",
+      "title": "Noticeboard",
+      "type": "single",
+      "panels": [
+        {
+          "id": "noticeboard",
+          "plugin": "noticeboard",
+          "options": {
+            "autoScroll": true,
+            "autoRotate": true
+          }
+        }
+      ]
+    },
+    "news": {
+      "path": "/news",
+      "title": "News",
+      "type": "single",
+      "panels": [
+        {
+          "id": "news",
+          "plugin": "news",
+          "options": {
+            "view": "headline",
+            "autoRotate": true,
+            "showControls": false,
+            "showTicker": false
+          }
+        }
+      ]
+    },
+    "image-slideshow": {
+      "path": "/image-slideshow",
+      "title": "Image Slideshow",
+      "type": "single",
+      "panels": [
+        {
+          "id": "image-slideshow",
+          "plugin": "image-slideshow",
+          "options": {}
+        }
+      ]
+    },
+    "metrics": {
+      "path": "/metrics",
+      "title": "Metrics",
+      "type": "single",
+      "panels": [
+        {
+          "id": "metrics",
+          "plugin": "metrics",
+          "options": {}
+        }
+      ]
+    },
+    "status-board": {
+      "path": "/status-board",
+      "title": "Status Board",
+      "type": "single",
+      "panels": [
+        {
+          "id": "status-board",
+          "plugin": "status-board",
+          "options": {}
+        }
+      ]
+    },
+    "menu": {
+      "path": "/menu",
+      "title": "Menu",
+      "type": "single",
+      "panels": [
+        {
+          "id": "menu",
+          "plugin": "menu",
+          "options": {}
+        }
+      ]
+    },
+    "web-page": {
+      "path": "/web-page",
+      "title": "Web Page",
+      "type": "single",
+      "panels": [
+        {
+          "id": "web-page",
+          "plugin": "web-page",
+          "options": {}
+        }
+      ]
+    }
+  }
+}

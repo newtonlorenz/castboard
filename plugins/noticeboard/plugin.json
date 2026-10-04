@@ -1,7 +1,7 @@
 {
   "name": "Noticeboard",
   "description": "Display announcements, instructions and welcome messages. Enter notices here or connect JSON; optionally schedule each notice.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "category": "Display plugins",
   "contract": "noticeboard/1",
@@ -40,7 +40,7 @@
         "format": "uri",
         "title": "JSON source URL",
         "group": "Data source",
-        "description": "HTTP or HTTPS endpoint matching this plugin\u2019s documented data format.",
+        "description": "HTTP or HTTPS endpoint matching this plugin’s documented data format.",
         "showWhen": {
           "provider": [
             "http-json"
@@ -67,7 +67,7 @@
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Source timeout \u00b7 milliseconds",
+        "title": "Source timeout · milliseconds",
         "minimum": 100,
         "maximum": 60000,
         "default": 8000,
@@ -133,7 +133,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check source \u00b7 seconds",
+        "title": "Check source · seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
@@ -141,7 +141,7 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per notice \u00b7 seconds",
+        "title": "Time per notice · seconds",
         "minimum": 5,
         "maximum": 600,
         "default": 20,
@@ -165,6 +165,13 @@
         "default": "No current notices",
         "maxLength": 240,
         "group": "Display"
+      },
+      "autoScroll": {
+        "type": "boolean",
+        "title": "Scroll long notices automatically",
+        "group": "Display",
+        "default": false,
+        "description": "For screens without touch. Each notice remains visible until its text has scrolled; reading or interacting pauses it."
       }
     }
   },
@@ -179,7 +186,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check source \u00b7 seconds",
+        "title": "Check source · seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
@@ -187,7 +194,7 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per notice \u00b7 seconds",
+        "title": "Time per notice · seconds",
         "minimum": 5,
         "maximum": 600,
         "default": 20,
@@ -211,6 +218,13 @@
         "default": "No current notices",
         "maxLength": 240,
         "group": "Display"
+      },
+      "autoScroll": {
+        "type": "boolean",
+        "title": "Scroll long notices automatically",
+        "group": "Display",
+        "default": false,
+        "description": "For screens without touch. Each notice remains visible until its text has scrolled; reading or interacting pauses it."
       }
     }
   }

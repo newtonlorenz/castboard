@@ -28,6 +28,7 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Date format | `dateStyle` | Full weekday and month, Short weekday and month, Numeric date | long |  |
 | Language and date locale | `locale` | string | — | For example en-GB, en-US, es-ES or de-DE. Empty uses the display language. |
 | Location label | `location` | string | — | Optional label for this clock. Empty uses the screen’s location. |
+| Other time zones | `additionalClocks` | array; up to 4 items | [] | Optional world clocks for family, travel or distributed teams. Each includes its local date. |
 
 ## Panel overrides
 
@@ -44,6 +45,7 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Date format | `dateStyle` | Full weekday and month, Short weekday and month, Numeric date | long |  |
 | Language and date locale | `locale` | string | — | For example en-GB, en-US, es-ES or de-DE. Empty uses the display language. |
 | Location label | `location` | string | — | Optional label for this clock. Empty uses the screen’s location. |
+| Other time zones | `additionalClocks` | array; up to 4 items | [] | Optional world clocks for family, travel or distributed teams. Each includes its local date. |
 
 ## Privacy and maintenance
 

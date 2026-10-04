@@ -95,3 +95,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
  .screen-modal-header h2{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .screen-modal-header h2{font-size:16px}.screen-modal .screen-modal-content{height:calc(100dvh - 64px);min-height:0}
 }
+
+/* Content-first panels: the list scrolls within its page, never under controls. */
+.record-display{display:flex;flex-direction:column;gap:8px}.record-content{flex:1;min-height:0;overflow:auto;overflow-wrap:anywhere}.record-content>p{font-size:16px}.display-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0;font-size:14px}.display-pages button{min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer}.display-pages button:disabled{opacity:.45;cursor:default}.display-pages button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}

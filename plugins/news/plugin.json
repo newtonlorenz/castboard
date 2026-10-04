@@ -1,7 +1,7 @@
 {
   "name": "News & Briefings",
   "description": "Show news from RSS, Atom, Markdown or JSON. Choose feeds, filter stories and control reading and update timing.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "MIT",
   "category": "Display plugins",
   "defaultConfig": {
@@ -45,7 +45,7 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache \u00b7 milliseconds",
+        "title": "Response cache · milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true,
@@ -54,7 +54,7 @@
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout \u00b7 milliseconds",
+        "title": "Request timeout · milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true,
@@ -168,7 +168,7 @@
       },
       "refreshMinutes": {
         "type": "integer",
-        "title": "Feed refresh \u00b7 minutes",
+        "title": "Feed refresh · minutes",
         "minimum": 1,
         "maximum": 1440,
         "showWhen": {
@@ -246,7 +246,7 @@
       },
       "maxAgeHours": {
         "type": "integer",
-        "title": "Maximum story age \u00b7 hours",
+        "title": "Maximum story age · hours",
         "minimum": 0,
         "maximum": 8760,
         "default": 0,
@@ -274,8 +274,8 @@
           "source-order": "Keep source order",
           "newest": "Newest first",
           "oldest": "Oldest first",
-          "title": "Headline A\u2013Z",
-          "source": "Source A\u2013Z"
+          "title": "Headline A–Z",
+          "source": "Source A–Z"
         },
         "description": "RSS defaults to newest first. Other providers keep their source order.",
         "group": "Content"
@@ -286,18 +286,20 @@
         "enum": [
           "compact",
           "list",
-          "wire"
+          "wire",
+          "headline"
         ],
         "enumLabels": {
-          "compact": "Rotating headline",
+          "compact": "Headline strip",
           "list": "Headline list",
-          "wire": "Reader with headline sidebar"
+          "wire": "Reader with headline sidebar",
+          "headline": "Full-panel headline (passive display)"
         },
         "group": "Display"
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per story \u00b7 seconds",
+        "title": "Time per story · seconds",
         "minimum": 1,
         "maximum": 300,
         "default": 18,
@@ -323,12 +325,19 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check for updates \u00b7 seconds",
+        "title": "Check for updates · seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
         "description": "How often the display checks for data. Feed refresh and response cache control upstream requests.",
         "group": "Updates"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show story controls",
+        "group": "Display",
+        "default": true,
+        "description": "Hide for a passive display; automatic rotation still works."
       }
     }
   },
@@ -347,12 +356,14 @@
         "enum": [
           "compact",
           "list",
-          "wire"
+          "wire",
+          "headline"
         ],
         "enumLabels": {
-          "compact": "Rotating headline",
+          "compact": "Headline strip",
           "list": "Headline list",
-          "wire": "Reader with headline sidebar"
+          "wire": "Reader with headline sidebar",
+          "headline": "Full-panel headline (passive display)"
         },
         "group": "Display"
       },
@@ -365,7 +376,7 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per story \u00b7 seconds",
+        "title": "Time per story · seconds",
         "minimum": 1,
         "maximum": 300,
         "default": 18,
@@ -391,12 +402,19 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check for updates \u00b7 seconds",
+        "title": "Check for updates · seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
         "description": "How often the display checks for data. Feed refresh and response cache control upstream requests.",
         "group": "Updates"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show story controls",
+        "group": "Display",
+        "default": true,
+        "description": "Hide for a passive display; automatic rotation still works."
       }
     }
   }

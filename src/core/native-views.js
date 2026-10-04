@@ -1,3 +1,4 @@
+import {clockTimes} from '../../plugins/clock/model.js';
 import {displayForecast} from '../../plugins/weather/forecast.js';
 import {calendarEvents} from '../../plugins/calendar/events.js';
 // Optional, deliberately small views for microcontrollers. Browser widgets keep
@@ -11,8 +12,8 @@ const media = (name, {data, options}) => ({...view(options.title || name, [line(
 });
 export const nativeViews = {
   clock({ options, branding, now = new Date() }) {
-    const timeZone = options.timeZone || branding.timeZone || 'UTC';
-    return view(options.compact?'':options.title || 'Clock', [line(new Intl.DateTimeFormat(options.locale || 'en', { timeZone, hour: '2-digit', minute: '2-digit', ...(options.showSeconds ? { second: '2-digit' } : {}), hour12: options.hour12 === true }).format(now), options.compact?'small':'metric'), ...(options.showDate===false?[]:[line(new Intl.DateTimeFormat(options.locale || 'en', options.dateStyle==='numeric'?{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}:{timeZone,weekday:options.compact||options.dateStyle==='short'?'short':'long',month:'short',day:'numeric'}).format(now),options.compact?'small':'body')]),...(options.location?[line(options.location,'muted')]:[])]);
+    const [primary, ...others] = clockTimes(options, branding, now);
+    return view(options.compact?'':options.title || 'Clock', [line(primary.time,options.compact?'small':'metric'), ...(options.showDate===false?[]:[line(primary.date,options.compact?'small':'body')]), ...(options.location?[line(options.location,'muted')]:[]), ...others.flatMap(zone=>[line(`${zone.label}  ${zone.time}`),line(zone.date,'muted')])]);
   },
   weather({ data, options, branding = {}, now = new Date() }) {
     data=displayForecast(data,options);

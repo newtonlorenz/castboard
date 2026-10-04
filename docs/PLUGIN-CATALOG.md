@@ -34,15 +34,20 @@ The library separates complete display plugins, companion dashboard panels, data
 | Clock | Show local time, a different time zone, or a clock for any location. Choose date style, language and 12- or 24-hour time. | Display plugins | [`clock`](../plugins/clock/README.md) |
 | Countdown | Count down to an event, deadline or opening time. Choose a target date and show a completion message or time elapsed. | Display plugins | [`countdown`](../plugins/countdown/README.md) |
 | Focus Agenda | Show the current or next calendar event, with optional wellbeing context and your own empty-state message. | Display plugins | [`focus`](../plugins/focus/README.md) |
+| Image Slideshow | Rotate photos, artwork, instructions or promotional slides. Enter public image addresses or connect a JSON playlist. | Display plugins | [`image-slideshow`](../plugins/image-slideshow/README.md) |
+| Menu & Price List | Display a cafe menu, shop price list, services or available products. Enter items or connect a JSON inventory. | Display plugins | [`menu`](../plugins/menu/README.md) |
+| Metrics | Show any numeric readings: temperature, attendance, production, costs or custom totals. Enter values or connect a JSON source. | Display plugins | [`metrics`](../plugins/metrics/README.md) |
 | News & Briefings | Show news from RSS, Atom, Markdown or JSON. Choose feeds, filter stories and control reading and update timing. | Display plugins | [`news`](../plugins/news/README.md) |
 | Noticeboard | Display announcements, instructions and welcome messages. Enter notices here or connect JSON; optionally schedule each notice. | Display plugins | [`noticeboard`](../plugins/noticeboard/README.md) |
 | Recovery & Wellbeing | Show a wellbeing score from a JSON source. Adjust score thresholds, detail visibility and update timing. | Display plugins | [`recovery`](../plugins/recovery/README.md) |
 | Energy Monitor | Show generation, consumption and grid flow from Fronius or JSON. Choose watts or kilowatts, labels and precision. | Display plugins | [`solar`](../plugins/solar/README.md) |
 | Sonos Player | Show playback and optional controls through a compatible Sonos service. Choose artwork, device labels and update timing. | Display plugins | [`sonos`](../plugins/sonos/README.md) |
 | Spotify Player | Show Spotify playback from the local player CLI or JSON. Choose artwork, device labels and playback controls. | Display plugins | [`spotify`](../plugins/spotify/README.md) |
+| Status Board | Show the reported state of services, devices, rooms or processes. Enter states or connect JSON from your monitoring system. | Display plugins | [`status-board`](../plugins/status-board/README.md) |
 | Markets & Portfolio | Show a ticker watchlist from Alpha Vantage or portfolio positions from JSON. Choose currency, rows and display mode. | Display plugins | [`stocks`](../plugins/stocks/README.md) |
 | Vehicle Status | Show battery, charging and range from Home Assistant or JSON. Choose entities, units, labels and visible measurements. | Display plugins | [`vehicle`](../plugins/vehicle/README.md) |
 | Weather & Forecast | Show local conditions and forecasts from Open-Meteo or JSON. Choose location, units and forecast layout. | Display plugins | [`weather`](../plugins/weather/README.md) |
+| Web Page | Show an existing website or public dashboard in a panel. The site must permit embedding. Best used in browser or image mode. | Display plugins | [`web-page`](../plugins/web-page/README.md) |
 
 For reusable home, lobby and event layouts, see [the sample screens](../examples/community/README.md). For input formats, see [source contracts](PLUGIN-CONTRACTS.md). For failure recovery and privacy, see each package guide.
 

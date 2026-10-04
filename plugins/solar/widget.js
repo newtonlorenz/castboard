@@ -1,4 +1,4 @@
-import { escapeHtml, formatNumber, getPluginData, schedule, title, unavailable } from '/widget-kit.js?v=0.13.0';
+import { escapeHtml, formatNumber, getPluginData, schedule, title, unavailable } from '/widget-kit.js?v=0.14.0';
 
 export function mount({ element, config, context }) {
   element.classList.toggle('solar-compact',config.compact===true);

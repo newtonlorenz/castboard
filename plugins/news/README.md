@@ -41,12 +41,13 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Maximum story age · hours | `maxAgeHours` | integer; min 0; max 8760 | 0 | 0 keeps all dates. Stories without a publication date remain available. |
 | Remove duplicate stories | `deduplicate` | boolean | true | Merge matching article URLs, including links with tracking parameters. |
 | Story order | `sortOrder` | Keep source order, Newest first, Oldest first, Headline A–Z, Source A–Z | — | RSS defaults to newest first. Other providers keep their source order. |
-| Layout | `view` | Rotating headline, Headline list, Reader with headline sidebar | — |  |
+| Layout | `view` | Headline strip, Headline list, Reader with headline sidebar, Full-panel headline (passive display) | — |  |
 | Time per story · seconds | `rotationSeconds` | integer; min 1; max 300 | 18 |  |
 | Rotate stories automatically | `autoRotate` | boolean | true |  |
 | Show story summary | `showSummary` | boolean | true |  |
 | Show headline ticker | `showTicker` | boolean | true |  |
 | Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 60 | How often the display checks for data. Feed refresh and response cache control upstream requests. |
+| Show story controls | `showControls` | boolean | true | Hide for a passive display; automatic rotation still works. |
 
 ## Panel overrides
 
@@ -55,13 +56,14 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Setting | Key | Accepted values | Default | Notes |
 | --- | --- | --- | --- | --- |
 | Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
-| Layout | `view` | Rotating headline, Headline list, Reader with headline sidebar | — |  |
+| Layout | `view` | Headline strip, Headline list, Reader with headline sidebar, Full-panel headline (passive display) | — |  |
 | Stories to show | `maxStories` | integer; min 1; max 200 | — |  |
 | Time per story · seconds | `rotationSeconds` | integer; min 1; max 300 | 18 |  |
 | Rotate stories automatically | `autoRotate` | boolean | true |  |
 | Show story summary | `showSummary` | boolean | true |  |
 | Show headline ticker | `showTicker` | boolean | true |  |
 | Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 60 | How often the display checks for data. Feed refresh and response cache control upstream requests. |
+| Show story controls | `showControls` | boolean | true | Hide for a passive display; automatic rotation still works. |
 
 ## Privacy and maintenance
 

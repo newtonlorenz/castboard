@@ -1,4 +1,4 @@
-import { escapeHtml, title, unavailable } from '/widget-kit.js?v=0.13.0';
+import { escapeHtml, title, unavailable } from '/widget-kit.js?v=0.14.0';
 import { normalizeVehicle, displayNumber, vehicleStatus } from './assets/model.js';
 export function mount({element,config,context}) {
   element.classList.add('vehicle-widget');element.classList.toggle('vehicle-compact',config.compact===true);

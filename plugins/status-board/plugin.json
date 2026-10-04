@@ -1,0 +1,213 @@
+{
+  "name": "Status Board",
+  "description": "Show the reported state of services, devices, rooms or processes. Enter states or connect JSON from your monitoring system.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display plugins",
+  "defaultConfig": {
+    "provider": "demo"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General"
+      },
+      "provider": {
+        "type": "string",
+        "title": "Content source",
+        "enum": [
+          "demo",
+          "inline",
+          "http-json",
+          "file-json"
+        ],
+        "enumLabels": {
+          "demo": "Sample data",
+          "inline": "Enter here",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)"
+        },
+        "default": "demo",
+        "group": "Data source"
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON source URL",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        }
+      },
+      "headers": {
+        "type": "object",
+        "title": "Private request headers",
+        "private": true,
+        "advanced": true,
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        }
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Source timeout · milliseconds",
+        "minimum": 500,
+        "maximum": 60000,
+        "default": 8000,
+        "advanced": true,
+        "group": "Updates"
+      },
+      "items": {
+        "type": "array",
+        "title": "Status Board items",
+        "group": "Content",
+        "maxItems": 100,
+        "default": [],
+        "showWhen": {
+          "provider": [
+            "inline"
+          ]
+        },
+        "items": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "title": "Service or device name",
+              "maxLength": 100
+            },
+            "status": {
+              "type": "string",
+              "title": "Status",
+              "enum": [
+                "ok",
+                "warning",
+                "error",
+                "unknown"
+              ],
+              "default": "unknown"
+            },
+            "detail": {
+              "type": "string",
+              "title": "Details",
+              "maxLength": 240
+            }
+          }
+        }
+      },
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "default": true,
+        "group": "Display"
+      },
+      "pageSize": {
+        "type": "integer",
+        "title": "Items per page",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+        "description": "0 fits the panel height. Automatic pages also work on screens without touch.",
+        "group": "Display"
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 15,
+        "maximum": 3600,
+        "default": 60,
+        "group": "Updates"
+      },
+      "autoRotate": {
+        "type": "boolean",
+        "title": "Change pages automatically",
+        "default": true,
+        "group": "Display"
+      },
+      "rotationSeconds": {
+        "type": "integer",
+        "title": "Time per page · seconds",
+        "minimum": 5,
+        "maximum": 600,
+        "default": 20,
+        "group": "Display"
+      },
+      "showControls": {
+        "type": "boolean",
+        "title": "Show page controls",
+        "default": true,
+        "group": "Display"
+      },
+      "pageSize": {
+        "type": "integer",
+        "title": "Items per page",
+        "minimum": 0,
+        "maximum": 30,
+        "default": 0,
+        "description": "0 fits the panel height. Automatic pages also work on screens without touch.",
+        "group": "Display"
+      }
+    }
+  },
+  "displayNotes": "States are reported by your configured source or entered manually. This plugin does not independently probe services. An omitted state is Unknown; fetching a record is not proof that a service is healthy."
+}

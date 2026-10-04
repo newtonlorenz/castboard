@@ -37,6 +37,11 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Exclude calendars | `excludeSources` | array; up to 50 items | — | One calendar/source name per line, matched without regard to case. |
 | Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 60 | How often the display requests data. The response cache can reduce upstream requests. |
 | Time zone | `timeZone` | string | — | An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone. |
+| Change pages automatically | `autoRotate` | boolean | false | Useful on screens without touch. Reading or interacting pauses the timer. |
+| Time per page · seconds | `rotationSeconds` | integer; min 5; max 600 | 20 |  |
+| Agenda layout | `layout` | Fit the panel (pages when needed), Pages, Scrollable list | auto |  |
+| Events per page | `eventsPerPage` | integer; min 0; max 20 | 0 | 0 fits the available height. Increase for a denser agenda. |
+| Show page controls | `showControls` | boolean | true |  |
 
 ## Panel overrides
 
@@ -54,6 +59,11 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Exclude calendars | `excludeSources` | array; up to 50 items | — | One calendar/source name per line, matched without regard to case. |
 | Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 60 | How often the display requests data. The response cache can reduce upstream requests. |
 | Time zone | `timeZone` | string | — | An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone. |
+| Change pages automatically | `autoRotate` | boolean | false | Useful on screens without touch. Reading or interacting pauses the timer. |
+| Time per page · seconds | `rotationSeconds` | integer; min 5; max 600 | 20 |  |
+| Agenda layout | `layout` | Fit the panel (pages when needed), Pages, Scrollable list | auto |  |
+| Events per page | `eventsPerPage` | integer; min 0; max 20 | 0 | 0 fits the available height. Increase for a denser agenda. |
+| Show page controls | `showControls` | boolean | true |  |
 
 ## Privacy and maintenance
 

@@ -39,6 +39,8 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Compact layout | `compact` | boolean | false | Use the layout designed for small screens. |
 | Temperature unit | `temperatureUnit` | Celsius · °C, Fahrenheit · °F | celsius |  |
 | Wind speed unit | `windUnit` | Kilometres per hour, Miles per hour, Metres per second | kmh |  |
+| Change pages automatically | `autoRotate` | boolean | false | Useful on screens without touch. Reading or interacting pauses the timer. |
+| Time per page · seconds | `rotationSeconds` | integer; min 5; max 600 | 20 |  |
 
 ## Panel overrides
 
@@ -56,6 +58,8 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Compact layout | `compact` | boolean | false | Use the layout designed for small screens. |
 | Temperature unit | `temperatureUnit` | Celsius · °C, Fahrenheit · °F | celsius |  |
 | Wind speed unit | `windUnit` | Kilometres per hour, Miles per hour, Metres per second | kmh |  |
+| Change pages automatically | `autoRotate` | boolean | false | Useful on screens without touch. Reading or interacting pauses the timer. |
+| Time per page · seconds | `rotationSeconds` | integer; min 5; max 600 | 20 |  |
 
 ## Privacy and maintenance
 

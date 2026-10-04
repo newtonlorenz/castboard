@@ -1,4 +1,4 @@
-import { escapeHtml, getPluginData, schedule, title, unavailable } from '/widget-kit.js?v=0.13.0';
+import { escapeHtml, getPluginData, schedule, title, unavailable } from '/widget-kit.js?v=0.14.0';
 
 export function mount({ element, config, context }) {
   const load = async () => {

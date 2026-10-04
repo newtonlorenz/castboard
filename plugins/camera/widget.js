@@ -1,4 +1,4 @@
-import {title} from '/widget-kit.js?v=0.13.0';
+import {title} from '/widget-kit.js?v=0.14.0';
 
 export function mount({element,config,context}) {
   element.classList.add('camera-widget');

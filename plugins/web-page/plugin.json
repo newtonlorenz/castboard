@@ -1,0 +1,107 @@
+{
+  "name": "Web Page",
+  "description": "Show an existing website or public dashboard in a panel. The site must permit embedding. Best used in browser or image mode.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "category": "Display plugins",
+  "defaultConfig": {},
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "title": "Name in admin",
+        "maxLength": 100,
+        "group": "General"
+      },
+      "url": {
+        "type": "string",
+        "title": "Page URL",
+        "maxLength": 4096,
+        "group": "Data source",
+        "description": "HTTP(S) address of a public page that permits embedding. Empty shows the sample. This address is sent to displays; use a public or purpose-made display link."
+      },
+      "allowScripts": {
+        "type": "boolean",
+        "title": "Allow page scripts",
+        "default": false,
+        "group": "Content",
+        "description": "Enable for dashboards that need JavaScript. Embedded content remains isolated from Castboard."
+      },
+      "allowForms": {
+        "type": "boolean",
+        "title": "Allow page forms",
+        "default": false,
+        "group": "Content"
+      },
+      "showFooter": {
+        "type": "boolean",
+        "title": "Show embedding note and open link",
+        "default": true,
+        "group": "Display"
+      },
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 0,
+        "maximum": 3600,
+        "default": 0,
+        "group": "Updates",
+        "description": "0 leaves the page running. Set a positive interval to reload passive pages; reading or interacting postpones reloads."
+      }
+    }
+  },
+  "optionSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Display title",
+        "maxLength": 120,
+        "group": "Display"
+      },
+      "refreshSeconds": {
+        "type": "integer",
+        "title": "Check source · seconds",
+        "minimum": 0,
+        "maximum": 3600,
+        "default": 0,
+        "group": "Updates",
+        "description": "0 leaves the page running. Set a positive interval to reload passive pages; reading or interacting postpones reloads."
+      },
+      "url": {
+        "type": "string",
+        "title": "Page URL",
+        "maxLength": 4096,
+        "group": "Data source",
+        "description": "HTTP(S) address of a public page that permits embedding. Empty shows the sample. This address is sent to displays; use a public or purpose-made display link."
+      },
+      "allowScripts": {
+        "type": "boolean",
+        "title": "Allow page scripts",
+        "default": false,
+        "group": "Content",
+        "description": "Enable for dashboards that need JavaScript. Embedded content remains isolated from Castboard."
+      },
+      "allowForms": {
+        "type": "boolean",
+        "title": "Allow page forms",
+        "default": false,
+        "group": "Content"
+      },
+      "showFooter": {
+        "type": "boolean",
+        "title": "Show embedding note and open link",
+        "default": true,
+        "group": "Display"
+      }
+    }
+  },
+  "displayNotes": "Some sites block embedding or require a login. Castboard cannot override that restriction. Scripts and forms are opt-in; embedded content never receives same-origin privileges, top-level navigation or popup access. Pages that need cookies/storage may require a purpose-made public display link. Image mode captures the frame; native mode is a text fallback."
+}

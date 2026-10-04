@@ -41,11 +41,13 @@ const CONTENT_TYPES = {
   '.webp': 'image/webp',
 };
 
-function securityHeaders(res) {
+function securityHeaders(res, displayContent = null) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; media-src 'self'; frame-src 'self'; frame-ancestors 'self'");
+  const images=displayContent ? 'http: https:' : 'https:';
+  const frames=displayContent?.join(' ') || '';
+  res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${images}; connect-src 'self'; media-src 'self'; frame-src 'self'${frames ? ' '+frames : ''}; frame-ancestors 'self'`);
 }
 
 async function sendFile(res, filePath, cache = false) {
@@ -172,6 +174,14 @@ export async function createApp(options = {}) {
         url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
       } catch {
         return jsonResponse(res, 400, { error: { code: 'INVALID_REQUEST_TARGET', message: 'Request target is invalid' } });
+      }
+      const displayPage=url.pathname==='/' || url.pathname==='/admin-preview' || /^\/device-view\/[a-z][a-z0-9-]*$/.test(url.pathname) || Object.values(runtimeConfig.screens).some(screen=>screen.path===url.pathname);
+      if(displayPage && req.method==='GET') {
+        const origins=new Set();
+        const allow=value=>{try{const target=new URL(value);if(['http:','https:'].includes(target.protocol) && !target.username && !target.password)origins.add(target.origin);}catch{}};
+        for(const plugin of plugins.filter(plugin=>plugin.type==='web-page'))allow(plugin.publicConfig().url);
+        for(const screen of Object.values(runtimeConfig.screens))for(const panel of screen.panels || [])if(byId.get(panel.plugin)?.type==='web-page')allow(panel.options?.url);
+        securityHeaders(res,url.pathname==='/admin-preview'?['http:','https:']:[...origins]);
       }
       const publicHostname = runtimeConfig.server.publicUrl ? new URL(runtimeConfig.server.publicUrl).hostname : null;
       const allowedHosts = [...(runtimeConfig.server.allowedHosts || []), ...(publicHostname ? [publicHostname] : [])];

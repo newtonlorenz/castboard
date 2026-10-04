@@ -1,0 +1,3 @@
+.image-slideshow{display:flex;flex-direction:column;gap:8px;padding:12px}.image-slideshow figure{position:relative;flex:1;min-height:0;min-width:0;margin:0;display:flex;flex-direction:column;gap:8px}.image-slideshow img{display:block;min-height:0;min-width:0;flex:1;width:100%;height:100%}.image-slideshow figcaption{font-size:clamp(14px,2cqw,24px);color:var(--muted);overflow-wrap:anywhere}.slideshow-message{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:12px;font-size:16px;pointer-events:none}.slideshow-message:empty{display:none}.image-slideshow nav{flex-shrink:0}
+
+.image-slideshow [hidden]{display:none!important}

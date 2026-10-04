@@ -5,3 +5,7 @@
 
 
 .clock-compact{justify-content:center;gap:3px}.clock-compact .clock-time{font-size:1.5em;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}.clock-compact .clock-date{font-size:.75em;line-height:1.1}
+
+.clock-primary{min-width:0}.clock-time{font-size:clamp(24px,13cqw,96px);line-height:1.08;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}.clock-date{margin-top:8px;font-size:clamp(13px,3cqw,24px);overflow-wrap:anywhere}
+.clock-world{gap:12px;overflow:auto}.clock-world .clock-primary{margin-block:auto}.clock-zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:12px}.clock-zones section{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:8px;min-width:0}.clock-zones strong{font-size:14px;overflow-wrap:anywhere}.clock-zones time{font-size:clamp(20px,4cqw,32px);font-variant-numeric:tabular-nums}.clock-zones span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+@container(max-height:300px){.clock-world{gap:6px}.clock-world .clock-time{font-size:clamp(24px,10cqw,52px)}.clock-zones{gap:8px}.clock-zones section{padding-top:4px}}

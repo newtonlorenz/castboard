@@ -2,8 +2,8 @@ import { validateInteraction } from '/interaction-model.js';
 import { displayKinds, displayKind, preferredDisplay, rememberDisplay } from '/display-guide.js';
 import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
-import { schemaFields } from '/schema-fields.js?v=0.13.0';
-import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.13.0';
+import { schemaFields } from '/schema-fields.js?v=0.14.0';
+import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.14.0';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
