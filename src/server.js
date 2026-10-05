@@ -15,11 +15,11 @@ import { publicAsset, extensionMetadata, validateSchema } from './core/extension
 import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
 import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
 import { discoverCastProtocols } from './core/cast-protocol-registry.js';
+import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
 import { createNativeScenes } from './core/native-scene.js';
 import { adapterCatalog, adapterFor, adapterOptions, discoverDisplayAdapters, encodeAdapterResult, safeAdapterContext, validateAdapterDevices } from './core/display-adapters.js';
 import { installDisplayPackage, MAX_PACKAGE_BYTES, removeDisplayPackage, unpackDisplayPackage, zipFiles } from './core/display-packages.js';
-import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -131,6 +131,7 @@ export async function createApp(options = {}) {
     reads.set(key, entry);
     return entry.pending;
   };
+  context.action = (id, payload, request = {}) => runAction(id, payload, request);
   let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
@@ -223,7 +224,7 @@ export async function createApp(options = {}) {
       }
       if (url.pathname === '/api/admin/devices') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Display management requires admin access'}});
-        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),adapters:adapterCatalog(displayAdapters,runtimeConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.server.publicUrl || ''});
+        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),adapters:adapterCatalog(displayAdapters,runtimeConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.embedded?.publicUrl || runtimeConfig.server.publicUrl || ''});
         if (req.method === 'GET') return jsonResponse(res,200,payload());
         if (req.method !== 'POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
         if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Display changes require JSON'}});
@@ -555,6 +556,7 @@ export async function createApp(options = {}) {
       if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
       if(req.method==='GET'&&url.pathname==='/admin/devices'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'devices.html'));
       if(req.method==='GET'&&/^\/devices\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
+      if(req.method==='GET'&&url.pathname==='/connection-model.js'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'connection-model.js'));
       if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
       if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);

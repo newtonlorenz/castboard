@@ -22,9 +22,11 @@ test('image and native receivers open the same modal; images accept valid touche
   const app=await createApp({loadedConfig:{config,rawConfig:structuredClone(config),configPath,configDir:dir}});
   app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();});
   const origin=`http://127.0.0.1:${app.server.address().port}`;
-  const renderer=createFrameRenderer({browser,appOrigin:origin});t.after(()=>renderer.dispose());
+  const bridgePaths=[];app.server.prependListener('request',req=>{if(req.headers['x-castboard-bridge']==='fixture-bridge')bridgePaths.push(req.url);});
+  const renderer=createFrameRenderer({browser,appOrigin:origin,bridgeToken:'fixture-bridge'});t.after(()=>renderer.dispose());
   const input={id:'image',token:key,width:480,height:320,format:'rgb565',revision:'test'};
   const before=await renderer.render(input);assert.equal(before.buffer.length,480*320*2);
+  assert.ok(bridgePaths.includes('/device-view/image'));assert.ok(bridgePaths.some(route=>route.startsWith('/api/devices/image/bootstrap')));
   const touched=await renderer.render({...input,event:{frameId:before.frameId,eventId:'touch0001',x:80,y:80}});
   assert.notEqual(touched.frameId,before.frameId);
   const duplicate=await renderer.render({...input,event:{frameId:before.frameId,eventId:'touch0001',x:80,y:80}});
@@ -161,7 +163,7 @@ test('new embedded screens save and connect through Displays while Cast setup st
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(origin+'/admin');await page.locator('#screen-list button').first().waitFor();
   await page.locator('#add-screen').click();await page.locator('#new-screen-title').fill('Desk display');await page.locator('#new-screen-device').selectOption('embedded');
-  assert.match(await page.locator('#new-device-help').textContent(),/use Displays/);
+  assert.match(await page.locator('#new-device-help').textContent(),/open Displays/);
   await page.locator('#create-screen').click();await page.locator('#plugin-list button').filter({hasText:'Clock'}).first().click();
   await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-status').textContent==='All changes saved');
   const saved=JSON.parse(await fs.readFile(configPath));assert.equal(saved.screens['desk-display'].panels.length,1);

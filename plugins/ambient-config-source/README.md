@@ -1,8 +1,8 @@
-# Shared Display Settings
+# Legacy Shared Settings
 
-Provide shared location and display settings to companion panels.
+Compatibility package for older configurations. New displays and sources own their settings independently.
 
-Package ID: `ambient-config-source`. Category: Data connectors. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
+Package ID: `ambient-config-source`. Category: Support. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
 ## Set up
 
@@ -10,7 +10,7 @@ Install from **Plugins → Library**. Select the installed copy, give it a name,
 
 This package uses source connections listed below. Admin installs the required packages and connects them automatically. The [dashboard panel guide](../../docs/AMBIENT-PLUGINS.md) explains bridge routes and canonical source adapters.
 
-This is a source package. Connect it through a display plugin’s **Source connections**; it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
+This is a rendering support package. Companion displays install it automatically as an internal dependency. it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
 
 ## Connection settings
 
@@ -19,11 +19,11 @@ This is a source package. Connect it through a display plugin’s **Source conne
 | Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
 | Data route | `route` | string | /api/config | Route exposed by the shared service, such as /api/weather. Only supported routes can be used. |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `services` | [ambient-services](../ambient-services/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| services (`services`) | Legacy / package-specific | [ambient-services](../ambient-services/README.md) |
 
 Compatible copies can replace these connections in admin.
 

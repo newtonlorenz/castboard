@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { extensionDirectories, EXTENSION_ID } from './extensions.js';
+import {validateConnectionSchema} from './plugin-connections.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -11,6 +12,13 @@ export async function readPluginManifest(directory) {
   try { manifest = JSON.parse(await fs.readFile(path.join(directory, 'plugin.json'), 'utf8')); }
   catch (error) { if (error.code === 'ENOENT') return {}; throw new Error(`Invalid plugin.json in ${path.basename(directory)}`); }
   if (!object(manifest) || (manifest.settingsSchema && !object(manifest.settingsSchema))) throw new Error(`Invalid plugin manifest: ${path.basename(directory)}`);
+  if(manifest.internal!==undefined&&typeof manifest.internal!=='boolean')throw new Error(`Plugin ${path.basename(directory)} internal must be boolean`);
+  validateConnectionSchema(manifest.connectionSchema, `Plugin ${path.basename(directory)}`);
+  for (const key of ['packageDependencies', 'internalBindings']) {
+    if (manifest[key] !== undefined && (!Array.isArray(manifest[key]) || manifest[key].some(value => typeof value !== 'string' || !EXTENSION_ID.test(value)) || new Set(manifest[key]).size !== manifest[key].length)) throw new Error(`Plugin ${path.basename(directory)} ${key} must contain unique extension IDs`);
+  }
+  if (manifest.internalBindings?.some(alias => Object.hasOwn(manifest.connectionSchema || {}, alias))) throw new Error(`Plugin ${path.basename(directory)} cannot declare an internal dependency as an editable connection`);
+
   return manifest;
 }
 
@@ -33,7 +41,7 @@ export function pluginUsage(config, id) {
   for (const [screenId, screen] of Object.entries(config.screens || {})) for (const panel of screen.panels || []) {
     if (panel.plugin === id || panel.source === id || Object.values(panel.bindings || {}).includes(id)) usage.push({ kind: 'panel', screenId, screenTitle: screen.title || screenId, panelId: panel.id, title: panel.options?.title || panel.options?.label || panel.id });
   }
-  for (const [instanceId, settings] of Object.entries(config.plugins || {})) if (settings.enabled !== false && Object.values(settings.bindings || {}).includes(id)) usage.push({kind:'plugin',id:instanceId,title:instanceId});
+  for (const [instanceId, settings] of Object.entries(config.plugins || {})) if (settings.enabled !== false && Object.values(settings.bindings || {}).includes(id)) usage.push({kind:'plugin',id:instanceId,title:settings.displayName||instanceId});
   return usage;
 }
 
@@ -44,13 +52,15 @@ export function privateField(key, schema, value) {
 export function pluginInstances(rawConfig, packages, plugins) {
   return Object.entries(rawConfig.plugins || {}).map(([id, config]) => {
     const type = config.type || id, pkg = packages.find(item => item.id === type), active = plugins.find(item => item.id === id);
-    const settings = {}, protectedFields = [];
+    const settings = {}, defaultSettings = {}, protectedFields = [];
     for (const [key, schema] of Object.entries(pkg?.settingsSchema?.properties || {})) {
+      const fallback=active?.defaultConfig?.[key] ?? pkg?.defaultConfig?.[key] ?? schema.default;
+      if(fallback!==undefined&&!privateField(key,schema,fallback))defaultSettings[key]=clone(fallback);
       if (!Object.hasOwn(config, key)) continue;
       if (privateField(key, schema, config[key])) protectedFields.push(key);
       else settings[key] = clone(config[key]);
     }
-    return { id, type, name: active?.name || pkg?.name || id, enabled: config.enabled !== false, hasData:Boolean(active?.getData),hasAction:Boolean(active?.action),contract:active?.contract, hasWidget: pkg?.hasWidget || active?.hasWidget || false, settings, protectedFields, bindings: clone(config.bindings || {}), usedBy: pluginUsage(rawConfig, id), managed: Boolean(pkg?.settingsSchema), settingsSchema: pkg?.settingsSchema || {type:'object',properties:{}}, version: active?.version || pkg?.version || '1.0.0' };
+    return { id, type, internal:pkg?.internal===true, name: active?.name || pkg?.name || id, enabled: config.enabled !== false, hasData:Boolean(active?.getData),hasAction:Boolean(active?.action),hasStream:Boolean(active?.stream),contract:active?.contract, hasWidget: pkg?.hasWidget || active?.hasWidget || false, settings, defaultSettings, protectedFields, bindings: clone(config.bindings || {}), connectionSchema: clone(pkg?.connectionSchema || active?.connectionSchema || {}), internalBindings: clone(pkg?.internalBindings || []), usedBy: pluginUsage(rawConfig, id), managed: Boolean(pkg?.settingsSchema), settingsSchema: pkg?.settingsSchema || {type:'object',properties:{}}, version: active?.version || pkg?.version || '1.0.0' };
   });
 }
 
@@ -67,6 +77,9 @@ export function changePluginConfig(rawConfig, packages, operation) {
       if (!pkg) throw new Error(`Package is not in the library: ${type}`);
       if (installing.has(type)) throw new Error('Plugin dependencies contain a cycle');
       if (!pkg.managed) throw new Error('This package needs a plugin.json manifest before it can be installed in admin');
+      for (const dependency of pkg.packageDependencies || []) {
+        if (!packages.some(item => item.id === dependency)) throw new Error(`Required package is not in the library: ${dependency}`);
+      }
       installing.add(type);
       const bindings = {};
       for (const dependency of [...new Set([...(pkg.dependencies || []), ...Object.values(pkg.defaultBindings || {})])]) {

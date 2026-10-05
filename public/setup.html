@@ -2,34 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light"><title>Castboard · Connections</title>
+  <meta name="color-scheme" content="light"><title>Castboard · Display setup</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
   <link rel="stylesheet" href="/admin.css?v=0.14.0"><link rel="stylesheet" href="/setup.css?v=0.14.0">
 </head>
 <body class="admin-app connections-page">
 <a class="skip-link" href="#main-content">Skip to content</a>
-<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Screen workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Screens</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/setup" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3h-3"/></svg><span>Connections</span></a><a href="/admin/devices"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 17h6"/></svg><span>Displays</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>screen workspace</span></div></aside>
+<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Screen workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Screens</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/setup" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3h-3"/></svg><span>Delivery</span></a><a href="/admin/devices"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 17h6"/></svg><span>Displays</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>screen workspace</span></div></aside>
   <header class="topbar">
-    <div class="workspace-title">Connections</div>
+    <div class="workspace-title">Display setup</div>
     <div class="topbar-actions"><a class="button secondary" href="/">Open screen</a><button id="refresh" class="button primary" type="button">Refresh checks</button></div>
   </header>
   <main id="main-content" class="connections">
-    <div class="page-heading"><h1>Connections</h1><p>Put your screens on display and check their data connections.</p></div>
+    <div class="page-heading"><h1>Display setup</h1><p>Choose where each screen appears and manage how it is delivered.</p></div>
     <div id="overall" class="overall" role="status"><strong>Loading configuration…</strong></div>
     <section class="connection-section" aria-labelledby="screens-heading">
       <div class="section-head"><div><h2 id="screens-heading">Your displays</h2><p>Choose your device to see how to connect it. A screen is your dashboard; a display is the device showing it.</p></div><button id="refresh-displays" class="button secondary" type="button">Refresh displays</button></div>
       <div id="delivery-status" class="delivery-status" role="status" aria-live="polite"></div>
       <div id="screen-list" class="delivery-list"></div>
     </section>
-    <section class="connection-section" aria-labelledby="plugins-heading">
-      <div class="section-head"><div><h2 id="plugins-heading">Data connections</h2><p>Use Test to check a connection, or Configure to change its settings.</p></div><label class="field search"><span>Find a plugin</span><input id="connection-search" type="search" placeholder="Search plugins"></label></div>
-      <div class="connection-columns" aria-hidden="true"><span>Plugin</span><span>Configuration</span><span>Check</span></div>
-      <div id="plugin-list" class="connection-list"></div>
-    </section>
     <section class="connection-section" aria-labelledby="server-heading"><div class="section-head"><div><h2 id="server-heading">Server tools</h2><p>Optional tools are only needed by the features that use them.</p></div></div><div id="runtime-cards" class="runtime-list"></div></section>
     <p class="configuration-help">Install and configure data sources in <a href="/admin/plugins">Plugins</a>. Changes apply when you save.</p>
   </main>
-  <dialog id="token-dialog" aria-labelledby="token-title"><form id="token-form"><header><h2 id="token-title">Admin access</h2></header><p class="dialog-note">Enter your admin token to view connections. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" aria-describedby="token-error" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
+  <dialog id="token-dialog" aria-labelledby="token-title"><form id="token-form"><header><h2 id="token-title">Admin access</h2></header><p class="dialog-note">Enter your admin token to manage display delivery. It is kept for this browser tab.</p><label class="field"><span>Token</span><input id="admin-token" aria-describedby="token-error" type="password" required autocomplete="off"></label><p id="token-error" class="field-error" role="alert"></p><footer><button class="button primary" type="submit">Continue</button></footer></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/setup.js?v=0.14.0"></script>
 </body>

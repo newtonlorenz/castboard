@@ -29,7 +29,7 @@ A source needs `getData` and no browser widget. A view needs `widget.js` and can
 {"id":"forecast","plugin":"summary","source":"south-weather","bindings":{"weather":"south-weather"},"options":{"title":"South"}}
 ```
 
-Server context provides `configDir`, `root`, `logger`, `instanceId`, `bindings`, `getPlugin(id)` and `read(id,{url,req})`. Use `read` to benefit from in-flight request deduplication, optional `cacheMs` and output validation. Cache entries are capped at 256; successful actions invalidate that instance's reads. Caching is disabled by default. Restart for changes to provider configuration or extension code; editor design saves preserve integration clients and state.
+Server context provides `configDir`, `root`, `logger`, `instanceId`, `bindings`, `getPlugin(id)`, `read(id,{url,req})` and `action(id,payload,request)`. Use `read` to benefit from in-flight request deduplication, optional `cacheMs` and output validation. Cache entries are capped at 256; successful actions invalidate that instance's reads. Caching is disabled by default. Plugin settings saved through admin are validated and applied live. Restart after editing provider configuration files manually or changing extension code. Editor design saves preserve integration clients and state.
 
 ## Contracts and schemas
 
@@ -84,3 +84,26 @@ A browser renderer may export `editor.add(screen, panel)`. Studio calls it with 
 ### Editable record lists
 
 Plugin settings arrays with an object `items` schema containing scalar properties render as labeled rows in admin. `required`, scalar bounds and enums apply to each row. Optional `itemLabel`, `addLabel` and `emptyLabel` provide task-specific wording. `maxItems` limits additions. For a legacy string-or-record format, use `items.anyOf` with string and object alternatives and `stringItemProperty` to identify the corresponding record property (for example `url`). The editor retains unknown record fields. Arbitrary nested structures retain the JSON fallback. Server schema validation supports `anyOf`, `minItems` and `maxItems`.
+
+
+## Owned settings and shared inputs
+
+Each configured instance owns its provider settings, credentials and refresh
+policy. A display may provide its own data or select an independently configured
+source when sharing is useful. Sources are plugin instances; there is no separate
+data-connection configuration object. Manage them in Plugins and select them in
+Studio. Screen delivery and hardware belong in Delivery and Displays.
+
+Declare named inputs with `connectionSchema`, including their contracts and
+`data`, `action` or `stream` capabilities. Validation rejects missing, disabled,
+incompatible and cyclic active connections. Use `internalBindings` for runtime
+and theme assets; these stay out of the shared-source controls. Use
+`packageDependencies` when a factory imports another package's code without
+installing a configured copy. An installed instance dependency is a different
+requirement. See [plugin ownership and manifest fields](PLUGINS.md).
+
+New companion displays install without the old catch-all service or shared
+settings package. Those packages remain under Support for existing configurations.
+The [ambient example](../examples/ambient/castboard.config.json) demonstrates
+independent bundled providers; the flexible example demonstrates an external
+source contract shared by different views.

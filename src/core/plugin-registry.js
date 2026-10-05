@@ -3,6 +3,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { extensionDirectories, validateSchema } from './extensions.js';
 import { readPluginManifest, privateField } from './plugin-admin.js';
+import {validatePluginConnections} from './plugin-connections.js';
 
 const VALID_ID = /^[a-z][a-z0-9-]*$/;
 const OPTIONAL_HOOKS = ['publicConfig', 'getData', 'action', 'stream', 'handleRequest', 'dispose', 'nativeView'];
@@ -65,8 +66,7 @@ export async function discoverPlugins({ pluginsDir, config, context, reuse = [] 
     try { await fs.access(widgetPath); } catch { hasWidget = false; }
     plugins.push({ ...metadata, ...plugin, name:pluginConfig.displayName || metadata.name || plugin.name, optionSchema:metadata.optionSchema || plugin.optionSchema, _configSignature:JSON.stringify(pluginConfig), id: instanceId, type, bindings: pluginConfig.bindings || {}, directory: path.dirname(modulePath), hasWidget });
   }
-  const instances = new Map(plugins.map(plugin => [plugin.id, plugin]));
-  for (const plugin of plugins) for (const [alias, id] of Object.entries(plugin.bindings)) if (!instances.has(id)) throw new Error(`Plugin ${plugin.id} binding ${alias} references missing instance: ${id}`);
+  validatePluginConnections(plugins, config);
   validatePanels(config, plugins);
   return plugins;
   }catch(error){await Promise.allSettled(created.map(plugin=>plugin.dispose?.()));throw error;}

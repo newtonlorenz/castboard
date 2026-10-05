@@ -225,7 +225,7 @@ The same `http-json` and `file-json` providers work for weather, solar, recovery
 
 Enabled first-party plugins validate their provider and required connection settings during startup. JSON, ICS, and Markdown provider bodies are limited to 1 MiB each, and HTTP timeouts cover both headers and body reads.
 
-Run `npm run doctor` or open `/setup` after changing provider or target configuration. Provider and delivery changes require a Castboard restart; visual screen changes saved in Studio apply without one.
+Run `npm run doctor` or open `/setup` after changing provider or target configuration. Settings saved in Plugins, Studio or Delivery apply immediately. Restart after editing the configuration file manually, changing the listener address, changing environment variables or updating extension code.
 
 ### Camera stream
 

@@ -1,6 +1,6 @@
-# Wellbeing Adapter
+# Recovery Connection
 
-Provide recovery, sleep and strain data to dashboard panels from an upstream plugin or shared service.
+Configure recovery data independently, or reuse a compatible shared provider.
 
 Package ID: `ambient-recovery-source`. Category: Data connectors. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
@@ -8,26 +8,32 @@ Package ID: `ambient-recovery-source`. Category: Data connectors. MIT licensed. 
 
 Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-Available sources: **Shared data service** (`services`), **Connected plugin** (`plugin`).
+Available sources: **Sample data** (`demo`), **Web endpoint (JSON)** (`http-json`), **Local file (JSON)** (`file-json`), **Shared provider** (`plugin`), **Legacy shared service** (`services`).
 
-See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
+Start with **Sample data** to try the layout without an external service. HTTP and file JSON must match the [canonical contracts](../../docs/PLUGIN-CONTRACTS.md). File paths are relative to the Castboard configuration. JSON files and HTTP responses are limited to 1 MiB. See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
 
-This is a source package. Connect it through a display plugin’s **Source connections**; it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
+This is a source package. Select it through a display plugin’s **Shared sources**; it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
 
 ## Connection settings
 
 | Setting | Key | Accepted values | Default | Notes |
 | --- | --- | --- | --- | --- |
 | Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
-| Data source | `provider` | Shared data service, Connected plugin | services | Choose the compatible data service or connected plugin that supplies this copy. |
-| Data route | `route` | string | /api/whoop | Route exposed by the shared service, such as /api/weather. Only supported routes can be used. |
+| Data source | `provider` | Sample data, Web endpoint (JSON), Local file (JSON), Shared provider, Legacy shared service | demo | Configure this connection directly, or deliberately reuse a compatible provider. |
+| Response cache · milliseconds | `cacheMs` | integer; min 0; max 3600000 | — | How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval. |
+| Request timeout · milliseconds | `timeoutMs` | integer; min 500; max 120000 | — | Maximum wait for an upstream response before showing an unavailable state. |
+| JSON endpoint | `url` | string | — | Endpoint returning the documented JSON data format for this plugin. |
+| JSON file path | `path` | string | — | Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path. |
+| Request headers | `headers` | object | — | Optional request headers as a JSON object. Saved values are hidden and never sent to displays. |
+| Data route | `route` | string | — | Compatibility route for an existing legacy shared service. New connections use their own provider settings. |
+| Time zone | `timeZone` | string | — | Leave empty to use the application time zone. |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `upstream` | [recovery](../recovery/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Shared recovery provider (`upstream`) | recovery@1 | Choose when needed |
+| Legacy service (`services`) | Legacy / package-specific | Choose when needed |
 
 Compatible copies can replace these connections in admin.
 

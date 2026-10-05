@@ -1,5 +1,5 @@
-import { validateInteraction } from '/interaction-model.js';
 import { displayKinds, displayKind, preferredDisplay, rememberDisplay } from '/display-guide.js';
+import { validateInteraction } from '/interaction-model.js';
 import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
 import { schemaFields } from '/schema-fields.js?v=0.14.0';
@@ -432,13 +432,18 @@ function renderPanelInspector() {
   $('#panel-title').closest('label').hidden = Boolean(optionSchema?.properties?.title);
   setInput('#panel-id', panel.id);
   setInput('#panel-plugin', panel.plugin);
-  const viewContract = state.catalog.plugins.find(plugin => plugin.id === panel.plugin)?.inputContract;
+  const view = state.catalog.plugins.find(plugin => plugin.id === panel.plugin);
+  const viewContract = view?.inputContract || view?.contract;
+  $('#panel-source-field').hidden = !viewContract && !panel.source;
   const sources = (state.catalog.sources || []).filter(source => !viewContract || source.contract === viewContract);
   $(viewContract || panel.source ? '#panel-source-main' : '#panel-source-advanced').append($('#panel-source-field'));
   $('#panel-source').replaceChildren(...[{ id: '', name: 'Plugin default' }, ...sources].map(source => {
     const option = document.createElement('option'); option.value = source.id; option.textContent = source.id ? `${source.name} (${source.id})` : source.name; return option;
   }));
   setInput('#panel-source', panel.source || '');
+  const providerId=panel.source || view?.defaultSource || panel.plugin;
+  $('#manage-source').hidden=!viewContract;
+  $('#manage-source').href=`/admin/plugins?plugin=${encodeURIComponent(providerId)}`;
   setInput('#panel-title', panel.options?.title || '');
   setInput('#panel-view', panel.options?.view || '');
   $('#panel-fit-content').checked = panel.options?.fitContent === true;
@@ -1451,6 +1456,8 @@ function bindEvents() {
   $('#panel-source').addEventListener('change', () => {
     if ($('#panel-source').value) currentPanel().source = $('#panel-source').value;
     else delete currentPanel().source;
+    const providerId=currentPanel().source || state.catalog.plugins.find(plugin=>plugin.id===currentPanel().plugin)?.defaultSource || currentPanel().plugin;
+    $('#manage-source').href=`/admin/plugins?plugin=${encodeURIComponent(providerId)}`;
     markDirty('Data source changed');
   });
 

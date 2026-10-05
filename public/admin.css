@@ -38,7 +38,6 @@ body.admin-app{padding-left:176px}::selection{background:#c6dfcd;color:#163b2b}i
 @media(max-width:800px){:is(#draft-conflict-dialog,#plugin-conflict-dialog) button{min-height:44px}}
 .topbar-center{font-size:11px}
 @media(max-width:800px){.admin-app button,.admin-app .topbar .button,.studio-page .topbar-actions .button,.studio-page .color-field button{min-height:44px}.admin-app .field :is(input:not([type=checkbox]),select),.studio-page .toolbar-meta select{min-height:44px}.studio-page summary{min-height:44px;padding-block:12px}.studio-page .field:has(input[type=checkbox]){min-height:44px}}
-.canvas-frame.preview #design-surface{display:none!important}
 
 /* Device setup keeps the dashboard link secondary to the user's hardware. */
 #screen-dialog{max-width:520px;max-height:90dvh;overflow:auto}
@@ -50,3 +49,4 @@ body.admin-app{padding-left:176px}::selection{background:#c6dfcd;color:#163b2b}i
 .screen-address-settings .field-help{margin-bottom:12px}
 #screen-dialog footer{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 @media(max-width:800px){#screen-dialog button,#screen-dialog input,#screen-dialog select{min-height:44px}}
+.canvas-frame.preview #design-surface{display:none!important}

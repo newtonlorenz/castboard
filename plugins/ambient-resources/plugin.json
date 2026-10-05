@@ -1,7 +1,7 @@
 {
   "name": "Camera Resources",
   "description": "Provide camera lists, snapshots and detections to camera panels from sample data or a compatible service.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "MIT",
   "category": "Data connectors",
   "defaultConfig": {

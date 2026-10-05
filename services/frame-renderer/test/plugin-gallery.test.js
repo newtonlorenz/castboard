@@ -9,7 +9,7 @@ import {createApp} from '../../../src/server.js';
 import {pluginLibrary,changePluginConfig} from '../../../src/core/plugin-admin.js';
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 test('every bundled display installs with dependencies and mounts using sample data',{skip:process.env.CASTBOARD_BROWSER_TESTS!=='1',timeout:180000},async t=>{
- const {chromium}=await import('playwright');const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
+ const {chromium}=await import('playwright');const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});t.after(()=>browser.close());
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-gallery-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
  let config={server:{host:'127.0.0.1',port:8787},branding:{name:'Sample displays',timeZone:'UTC'},plugins:{},defaultScreen:'home',screens:{home:{path:'/',title:'Home',type:'single',panels:[]}}};
  const catalog=await pluginLibrary({pluginsDir:path.join(root,'plugins'),config,configDir:dir});

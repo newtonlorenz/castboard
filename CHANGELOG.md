@@ -2,6 +2,14 @@
 
 Notable changes are documented here. Castboard follows semantic versioning once releases are published.
 
+## Unreleased
+
+- Give bundled integrations independent provider settings and credentials, with optional typed shared sources. Add an independent camera detection source.
+- Manage providers and connections in Plugins, link Studio panels to their source settings, hide internal dependencies and simplify display setup.
+- Validate connection contracts, required capabilities and dependency cycles; route forwarded actions through validation and cache invalidation.
+- Improve briefing parsing and configurable sources, preserve camera refresh preferences and support authenticated renderer bridges.
+- Document plugin ownership and compatibility, and expand connection, source isolation and embedded display regression coverage.
+
 ## 0.14.0 - 2026-10-05
 
 - Improve five everyday plugins for screens with or without touch: automatic weather pages, adaptive calendar paging with date labels, reading-safe notice scrolling, world clocks and passive news headlines.

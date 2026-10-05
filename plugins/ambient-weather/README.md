@@ -28,15 +28,11 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Show wind | `showWind` | boolean | true |  |
 | Show UV index | `showUv` | boolean | true |  |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `weather` | [ambient-weather-source](../ambient-weather-source/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Weather (`weather`) | weather-source@1 | [ambient-weather-source](../ambient-weather-source/README.md) |
 
 Compatible copies can replace these connections in admin.
 

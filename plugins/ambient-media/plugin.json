@@ -1,7 +1,7 @@
 {
   "name": "Speaker Controls",
   "description": "Show speaker playback and optional controls using the connected speaker source.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "MIT",
   "category": "Dashboard panels",
   "defaultConfig": {},
@@ -65,19 +65,38 @@
   "defaultBindings": {
     "runtime": "ambient-runtime",
     "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
     "media": "ambient-media-source",
-    "resources": "ambient-resources",
     "launch": "ambient-launch-source"
   },
   "dependencies": [
     "ambient-runtime",
     "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
     "ambient-media-source",
-    "ambient-resources",
     "ambient-launch-source"
-  ]
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "media": {
+      "title": "Speakers",
+      "contract": "media@1",
+      "capabilities": [
+        "data",
+        "action"
+      ],
+      "required": true,
+      "description": "The speaker source owns its service address, credentials and playback controls."
+    },
+    "launch": {
+      "title": "Open links on a display",
+      "contract": "link-launch@1",
+      "capabilities": [
+        "action"
+      ],
+      "required": false,
+      "description": "Optional launcher for links opened on a Cast display."
+    }
+  }
 }

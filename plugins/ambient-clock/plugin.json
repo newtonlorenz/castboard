@@ -1,6 +1,6 @@
 {
   "name": "Clock Panel",
-  "description": "Show time and date using shared display settings, with optional time zone and location overrides.",
+  "description": "Show time and date with this clock\u2019s own time zone, location and date-format settings. Existing shared settings remain supported.",
   "version": "1.1.0",
   "license": "MIT",
   "category": "Dashboard panels",
@@ -128,14 +128,14 @@
   },
   "defaultBindings": {
     "runtime": "ambient-runtime",
-    "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services"
+    "theme": "ambient-theme"
   },
   "dependencies": [
     "ambient-runtime",
-    "ambient-theme",
-    "ambient-config-source",
-    "ambient-services"
+    "ambient-theme"
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
   ]
 }

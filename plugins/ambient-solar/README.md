@@ -24,15 +24,11 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Decimal places | `precision` | integer; min 0; max 3 | — | Decimal places shown for power values. |
 | Power unit | `powerUnit` | kw, w | kw |  |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `solar` | [ambient-solar-source](../ambient-solar-source/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Solar (`solar`) | solar-source@1 | [ambient-solar-source](../ambient-solar-source/README.md) |
 
 Compatible copies can replace these connections in admin.
 

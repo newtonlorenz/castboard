@@ -89,15 +89,26 @@
   "defaultBindings": {
     "runtime": "ambient-runtime",
     "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
     "solar": "ambient-solar-source"
   },
   "dependencies": [
     "ambient-runtime",
     "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
     "ambient-solar-source"
-  ]
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "solar": {
+      "title": "Solar",
+      "contract": "solar-source@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": true,
+      "description": "Select a configured source. Its account and update settings stay with that source."
+    }
+  }
 }

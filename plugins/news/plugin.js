@@ -46,7 +46,7 @@ export function createPlugin({ config, context }) {
 
   async function readFeeds() {
     const results = await Promise.allSettled(feeds.map(async feed => {
-      const { response, text } = await fetchText(feed.url, { headers: { ...(config.headers || {}), Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml' } }, config.timeoutMs || 8000);
+      const { response, text } = await fetchText(feed.url, { headers: { ...(config.headers || {}), Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml' } }, config.timeoutMs || 8000, 2 * 1024 * 1024);
       if (!response.ok) throw new Error(`RSS feed returned HTTP ${response.status}`);
       return parseFeed(text, feed).slice(0,config.maxStoriesPerFeed || 200);
     }));

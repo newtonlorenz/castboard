@@ -9,7 +9,6 @@ const deviceChoices = new Map();
 const requestedDevice = new URL(location.href).searchParams.get('device');
 if (selectedScreen && displayKinds.some(kind => kind.id === requestedDevice)) deviceChoices.set(selectedScreen, requestedDevice);
 const displayDrafts = new Map();
-const checks = new Map();
 let token = sessionStorage.getItem('castboard-admin-token') || '';
 
 async function request(path, init = {}) {
@@ -56,28 +55,15 @@ function command(value) {
 function runtimeRow(title, status, detail, extra = '') {
   return `<article class="runtime-row"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(detail)}</p><span class="pill ${status === 'Installed' || status === 'Running' ? '' : 'demo'}">${escapeHtml(status)}</span><div class="runtime-extra">${extra}</div></article>`;
 }
-function renderModules() {
-  const search = $('#connection-search').value.toLowerCase();
-  const plugins = report.plugins.filter(plugin => `${plugin.name} ${plugin.id} ${plugin.provider}`.toLowerCase().includes(search));
-  $('#plugin-list').innerHTML = plugins.map(plugin => {
-    const check = checks.get(plugin.id);
-    const labels = {ready:'Configured', custom:'Plugin settings', adapter:'Adapter', demo:'Demo data', blocked:'Tool missing'};
-    return `<article class="connection-row"><div><h3>${escapeHtml(plugin.name)}</h3><span class="provider">${escapeHtml(plugin.id)} · ${escapeHtml(plugin.provider)} · ${plugin.usedBy ? `${plugin.usedBy} screen${plugin.usedBy === 1 ? '' : 's'}` : 'Not on a screen'}</span></div><div class="connection-description"><div class="connection-state"><span class="pill ${escapeHtml(plugin.status)}">${escapeHtml(labels[plugin.status] || plugin.label)}</span></div><p>${escapeHtml(plugin.detail)}</p></div><div class="card-actions"><a class="button" href="/admin/plugins?plugin=${encodeURIComponent(plugin.id)}">Configure</a>${plugin.canTest ? `<button type="button" data-test-plugin="${escapeHtml(plugin.id)}" aria-label="Test ${escapeHtml(plugin.name)} (${escapeHtml(plugin.id)})" ${check?.pending ? 'disabled' : ''}>${check?.pending ? 'Testing…' : 'Test'}</button>` : ''}</div><div role="status" class="test-result ${check ? check.ok ? 'ok' : check.pending ? '' : 'bad' : ''}" data-result="${escapeHtml(plugin.id)}">${escapeHtml(check?.message || '')}</div></article>`;
-  }).join('') || '<p class="no-results">No plugins match this search.</p>';
-  bindDynamicActions();
-}
 function render(nextReport) {
   report = nextReport;
-  const blocked = report.plugins.filter(plugin => plugin.status === 'blocked').length;
-  const demos = report.plugins.filter(plugin => plugin.status === 'demo').length;
-  $('#overall').className = `overall ${blocked ? 'attention' : ''}`;
-  $('#overall').innerHTML = `<strong>${report.plugins.length} plugins · ${report.screens.length} screen${report.screens.length === 1 ? '' : 's'}</strong><span>${blocked ? `${blocked} plugins need a server tool. ` : ''}${demos ? `${demos} ${demos === 1 ? 'uses' : 'use'} demo data. ` : ''}Connections have not been tested by this configuration check.</span>`;
+  $('#overall').className = 'overall';
+  $('#overall').innerHTML = `<strong>${report.screens.length} screen${report.screens.length === 1 ? '' : 's'}</strong><span>Configure each integration and test its service in Plugins.</span>`;
   $('#runtime-cards').innerHTML = [
     runtimeRow('Castboard', 'Running', report.urls.local, report.config.usingExample ? command('cp castboard.config.example.json castboard.config.json') : ''),
     runtimeRow('Google Cast', report.tools.catt.installed ? 'Installed' : 'Optional · missing', report.tools.catt.version || 'Install catt to discover and cast to Google Cast devices.', report.tools.catt.installed ? '' : command(report.tools.catt.install)),
-    runtimeRow('Spotify playback', report.tools.spotifyPlayer.installed ? 'Installed' : 'Optional · missing', report.tools.spotifyPlayer.installed ? report.tools.spotifyPlayer.version : 'Install spotify_player only if you use its playback plugin.', report.tools.spotifyPlayer.installed ? command(report.tools.spotifyPlayer.authenticate) : `${command('brew install spotify_player')}${command('cargo install spotify_player --locked')}`),
   ].join('');
-  renderModules();
+  bindDynamicActions();
 }
 
 function bindDynamicActions() {
@@ -85,37 +71,18 @@ function bindDynamicActions() {
     await copyText(button.dataset.copy);
     toast('Copied');
   }));
-  document.querySelectorAll('[data-test-plugin]').forEach(button => button.addEventListener('click', async () => {
-    const id = button.dataset.testPlugin;
-    if (checks.get(id)?.pending) return;
-    checks.set(id, {pending:true,message:'Testing…'}); renderCheck(id);
-    try {
-      const payload = await request('/api/admin/setup/test-plugin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pluginId:id}) });
-      const message = `${payload.message}${payload.latencyMs !== undefined ? ` · ${payload.latencyMs} ms` : ''}`;
-      checks.set(id, {ok:payload.ok,message});
-    } catch (error) { checks.set(id, {ok:false,message:error.message}); }
-    finally { renderCheck(id); }
-  }));
-}
-
-// Filtering replaces rows while a test is running; finish against the current row.
-function renderCheck(id) {
-  const check=checks.get(id),button=$(`[data-test-plugin="${CSS.escape(id)}"]`),result=$(`[data-result="${CSS.escape(id)}"]`);
-  if(button){button.disabled=Boolean(check?.pending);button.textContent=check?.pending?'Testing…':'Test';}
-  if(result){result.className=`test-result ${check?.pending?'':check?.ok?'ok':'bad'}`;result.textContent=check?.message||'';}
 }
 
 async function load() {
   $('#overall').className = 'overall loading';
-  $('#overall').innerHTML = '<strong>Checking configuration…</strong><span>Reading plugins, screens and server tools.</span>';
+  $('#overall').innerHTML = '<strong>Checking configuration…</strong><span>Reading screens and delivery tools.</span>';
   $('#refresh').disabled = true;
   try { render(await request('/api/admin/setup')); }
-  catch (error) { $('#overall').className = 'overall attention'; $('#overall').innerHTML = `<strong>Could not load connections</strong><span>${escapeHtml(error.message)} Use Refresh checks to retry.</span>`; }
+  catch (error) { $('#overall').className = 'overall attention'; $('#overall').innerHTML = `<strong>Could not load display setup</strong><span>${escapeHtml(error.message)} Use Refresh checks to retry.</span>`; }
   finally { $('#refresh').disabled = false; }
 }
 
 $('#refresh').addEventListener('click', () => { load(); if (!deliveryBusy) loadDelivery(); });
-$('#connection-search').addEventListener('input', () => {if (report) renderModules();});
 $('#token-form').addEventListener('submit', async event => {event.preventDefault(); token = $('#admin-token').value.trim(); $('#token-error').textContent=''; $('#admin-token').removeAttribute('aria-invalid'); sessionStorage.setItem('castboard-admin-token',token); $('#token-dialog').close(); await Promise.all([load(), loadDelivery()]);});
 function rememberDisplayDrafts() {
   document.querySelectorAll('.delivery-screen').forEach(article => {
@@ -133,7 +100,7 @@ function renderDelivery() {
     const devicePicker = `<label class="field device-picker"><span>What kind of device?</span><select data-device-kind aria-describedby="device-help-${escapeHtml(screen.id)}">${displayKinds.map(item => `<option value="${item.id}" ${item.id === kind ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}</select></label><p id="device-help-${escapeHtml(screen.id)}" class="device-guidance">${escapeHtml(guide.detail)}</p>`;
     const browserLink = screen.displayUrl ? `<div class="display-link"><span>${escapeHtml(screen.displayUrl)}</span><button class="button secondary" type="button" data-display-copy="${escapeHtml(screen.id)}">Copy link</button></div><p class="field-help">Open this link on the device, using a browser that can reach this server.</p>` : `<p class="delivery-note">${escapeHtml(screen.linkMessage)}</p>`;
     const targets = screen.targets.map(target => `<li class="display-target"><div><strong>${escapeHtml(target.name)}</strong><small>${escapeHtml(target.protocol === 'google-cast' ? 'Google Cast' : target.protocol === 'url' ? 'Browser display' : target.protocol)}</small></div><div class="display-actions"><button class="button secondary" type="button" data-send="${target.index}" ${target.canSend ? '' : 'disabled'}>Send screen</button><button class="button quiet" type="button" data-remove="${target.index}" aria-label="Remove ${escapeHtml(target.name)}">Remove</button></div><div class="remove-confirm" data-confirm="${target.index}" hidden><p>Remove this display from ${escapeHtml(screen.title)}? It will keep showing its current screen.</p><button class="button danger" type="button" data-confirm-remove="${target.index}">Remove display</button><button class="button secondary" type="button" data-keep="${target.index}">Keep display</button></div>${!target.canSend ? `<p class="target-note">${target.protocol === 'url' ? 'Choose Tablet, TV or computer with a browser above to get the screen link.' : !screen.displayUrl && screen.linkMessage.startsWith('This server') ? 'Set a reachable display URL before sending.' : 'Enable this delivery method in the server configuration.'}</p>` : ''}</li>`).join('');
-    return `<article class="delivery-screen" data-screen="${escapeHtml(screen.id)}"><div class="delivery-summary"><div><h3>${escapeHtml(screen.title)}</h3><p>${screen.targets.length ? `${screen.targets.length} saved display${screen.targets.length === 1 ? '' : 's'}` : 'No saved connections'}</p></div><div class="display-actions"><a class="button secondary" href="${escapeHtml(screen.path)}" target="_blank" rel="noopener">Open screen</a><button type="button" class="button ${expanded ? 'secondary' : 'primary'}" data-delivery-select="${escapeHtml(screen.id)}" aria-expanded="${expanded}" aria-controls="delivery-${escapeHtml(screen.id)}">${expanded ? 'Close settings' : 'Set up display'}</button></div></div><div id="delivery-${escapeHtml(screen.id)}" class="delivery-editor" ${expanded ? '' : 'hidden'}>${devicePicker}<section class="device-browser" ${kind === 'cast' || kind === 'embedded' ? 'hidden' : ''}><h4>${kind === 'echo' ? 'Open in Silk on your Echo Show' : 'Open on your device'}</h4>${browserLink}${kind === 'echo' ? '<p class="field-help">Ask Alexa to open Silk, then enter this link. Browser availability and behaviour depend on your model. This does not set Castboard as the device’s home screen.</p>' : ''}</section><section class="device-embedded" ${kind === 'embedded' ? '' : 'hidden'}><h4>Connect your embedded display</h4><p class="delivery-note">In Displays, add your board, choose its adapter and assign this screen. Save the one-time connection key and install compatible receiver firmware using your board’s instructions.</p><a class="button primary" href="/admin/devices">Open Displays</a><p class="field-help">Set the resolution and image or native mode to match your receiver. Hardware plugins supply display settings; the board still needs its own firmware and driver.</p></section><details class="add-display" ${kind === 'cast' ? 'open' : 'hidden'}><summary>Connect a Google Cast display</summary>${!screen.displayUrl ? `<p class="delivery-note">${escapeHtml(screen.linkMessage)}</p>` : ''}<p>Find a display on your network, or enter its device name or IP address. Adding it saves the connection; Send screen starts casting.</p><button class="button secondary" type="button" data-discover>Find displays</button><div class="discovery-results" role="status" aria-live="polite"></div><form class="display-form"><label class="field"><span>Display name</span><input name="name" required maxlength="100" placeholder="e.g. Reception" autocomplete="off"></label><label class="field"><span>Device name or IP address</span><input name="device" required maxlength="200" placeholder="e.g. Reception TV" autocomplete="off"></label><button type="submit" class="button primary" ${delivery.castEnabled ? '' : 'disabled'}>Add display</button>${delivery.castEnabled ? '' : '<p class="field-error">Google Cast is disabled in the server configuration.</p>'}</form></details><h4>Saved connections</h4>${targets ? `<ul class="display-targets">${targets}</ul>` : '<p class="delivery-empty">No saved connections. Browser displays only need the link; they do not need to be added here.</p>'}<p class="delivery-feedback" role="status" aria-live="polite"></p></div></article>`;
+    return `<article class="delivery-screen" data-screen="${escapeHtml(screen.id)}"><div class="delivery-summary"><div><h3>${escapeHtml(screen.title)}</h3><p>${screen.targets.length ? `${screen.targets.length} saved display${screen.targets.length === 1 ? '' : 's'}` : 'No saved connections'}</p></div><div class="display-actions"><a class="button secondary" href="${escapeHtml(screen.path)}" target="_blank" rel="noopener">Open screen</a><button type="button" class="button ${expanded ? 'secondary' : 'primary'}" data-delivery-select="${escapeHtml(screen.id)}" aria-expanded="${expanded}" aria-controls="delivery-${escapeHtml(screen.id)}">${expanded ? 'Close settings' : 'Set up display'}</button></div></div><div id="delivery-${escapeHtml(screen.id)}" class="delivery-editor" ${expanded ? '' : 'hidden'}>${devicePicker}<section class="device-browser" ${kind === 'cast' || kind === 'embedded' ? 'hidden' : ''}><h4>${kind === 'echo' ? 'Open in Silk on your Echo Show' : 'Open on your device'}</h4>${browserLink}${kind === 'echo' ? '<p class="field-help">Ask Alexa to open Silk, then enter this link. Browser availability and behaviour depend on your model. This does not set Castboard as the device’s home screen.</p>' : ''}</section><section class="device-embedded" ${kind === 'embedded' ? '' : 'hidden'}><h4>Connect your embedded display</h4><p class="delivery-note">Open Displays to assign this screen to an existing receiver, or add one with its hardware, resolution and connection settings.</p><a class="button primary" href="/admin/devices">Manage displays</a><p class="delivery-note">New hardware needs compatible firmware and a display adapter. Existing receivers keep their connection keys when you change their assigned screen.</p></section><details class="add-display" ${kind === 'cast' ? 'open' : 'hidden'}><summary>Connect a Google Cast display</summary>${!screen.displayUrl ? `<p class="delivery-note">${escapeHtml(screen.linkMessage)}</p>` : ''}<p>Find a display on your network, or enter its device name or IP address. Adding it saves the connection; Send screen starts casting.</p><button class="button secondary" type="button" data-discover>Find displays</button><div class="discovery-results" role="status" aria-live="polite"></div><form class="display-form"><label class="field"><span>Display name</span><input name="name" required maxlength="100" placeholder="e.g. Reception" autocomplete="off"></label><label class="field"><span>Device name or IP address</span><input name="device" required maxlength="200" placeholder="e.g. Reception TV" autocomplete="off"></label><button type="submit" class="button primary" ${delivery.castEnabled ? '' : 'disabled'}>Add display</button>${delivery.castEnabled ? '' : '<p class="field-error">Google Cast is disabled in the server configuration.</p>'}</form></details><h4>Saved connections</h4>${targets ? `<ul class="display-targets">${targets}</ul>` : '<p class="delivery-empty">No saved connections. Browser displays only need the link; they do not need to be added here.</p>'}<p class="delivery-feedback" role="status" aria-live="polite"></p></div></article>`;
   }).join('') || '<p class="no-results">Create a screen in <a href="/admin">Screens</a> to connect a display.</p>';
   document.querySelectorAll('.delivery-screen').forEach(article => {
     const draft = displayDrafts.get(article.dataset.screen);

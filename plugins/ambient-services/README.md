@@ -1,8 +1,8 @@
-# Shared Service Connector
+# Legacy Service Connector
 
-Connect dashboard adapters to sample data or a compatible service endpoint. Credentials stay on the server.
+Compatibility package for older configurations. New displays and sources own their settings independently.
 
-Package ID: `ambient-services`. Category: Data connectors. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
+Package ID: `ambient-services`. Category: Support. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
 ## Set up
 
@@ -12,7 +12,7 @@ Available sources: **Sample data** (`demo`), **Web endpoint (JSON)** (`http-json
 
 Start with **Sample data** to try the layout without an external service. HTTP and file JSON must match the [canonical contracts](../../docs/PLUGIN-CONTRACTS.md). File paths are relative to the Castboard configuration. JSON files and HTTP responses are limited to 1 MiB. See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
 
-This is a source package. Connect it through a display plugin’s **Source connections**; it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
+This is a rendering support package. Companion displays install it automatically as an internal dependency. it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
 
 ## Connection settings
 

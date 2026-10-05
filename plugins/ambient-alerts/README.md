@@ -23,15 +23,12 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Refresh · seconds | `refreshSeconds` | integer; min 1; max 3600 | — | How often the display checks for new data. Server caching may reuse the previous response. |
 | Detections to show | `maxAlerts` | integer; min 1; max 20 | 5 |  |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `resources` | [ambient-resources](../ambient-resources/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Camera detections (`alerts`) | camera-alerts@1 | [ambient-alerts-source](../ambient-alerts-source/README.md) |
+| Detection images and clips (`resources`) | camera-resources@1 | [ambient-resources](../ambient-resources/README.md) |
 
 Compatible copies can replace these connections in admin.
 

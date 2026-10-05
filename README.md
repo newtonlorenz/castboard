@@ -82,7 +82,7 @@ MCP client. See the guide for Codex setup, all tools and credential handling.
 
 Use **Plugins** to browse 42 bundled packages, install independent copies, configure providers and protected credentials, connect sources, test data and see screen usage. Changes apply when you save. Every bundled plugin includes editable settings, display options where relevant, documentation and MIT licence metadata. Library also discovers trusted packages installed locally; it does not download code from a hosted marketplace.
 
-The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md).
+The Ambient collection includes eleven richer displays with independent sources and shared styling. Try its [demo configuration](examples/ambient/castboard.config.json), or see [plugin setup and sharing](docs/PLUGINS.md) and the [integration ownership model](docs/INTEGRATION-ARCHITECTURE.md).
 
 ![Plugin management with contextual settings](public/assets/castboard-plugins.png)
 
