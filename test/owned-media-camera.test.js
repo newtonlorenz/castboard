@@ -14,7 +14,7 @@ test('speaker source owns credentials and translates toggle without unrelated se
  const plugin=mediaSource({config:{provider:'http-json',baseUrl,headers:{Authorization:'speaker-account'}}});
  assert.equal(plugin.contract,'media@1');assert.equal((await plugin.getData()).raw,undefined);
  await plugin.action({action:'toggle'});
- assert.deepEqual(requests.map(item=>item.path),['/api/sonos/status','/api/sonos/status','/api/sonos/pause?']);
+ assert.deepEqual(requests.map(item=>{const url=new URL(item.path,'http://fixture');return url.pathname+url.search;}),['/api/sonos/status','/api/sonos/status','/api/sonos/pause']);
  assert.equal(requests.at(-1).method,'POST');assert.equal(requests.every(item=>item.auth==='speaker-account'),true);
  await assert.rejects(plugin.action({action:'volume',value:101}),/Volume/);
  assert.equal(requests.length,3);
