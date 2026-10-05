@@ -176,7 +176,7 @@ test('new embedded screens save and connect through Displays while Cast setup st
   const picker=setup.locator('[data-screen="desk-display"] [data-device-kind]');
   await picker.selectOption('cast');await setup.locator('[data-screen="desk-display"] [data-discover]').waitFor();
   assert.equal(await setup.locator('.device-embedded:visible').count(),0);assert.equal(await setup.locator('.device-browser:visible').count(),0);
-  await picker.selectOption('embedded');await setup.getByRole('link',{name:'Open Displays'}).click();
+  await picker.selectOption('embedded');await setup.getByRole('link',{name:'Manage displays'}).click();
   await setup.waitForURL(origin+'/admin/devices');await setup.locator('#first-device').waitFor();
   assert.deepEqual(errors,[]);
 });
