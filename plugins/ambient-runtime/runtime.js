@@ -57,12 +57,14 @@ export async function scope(element, context, markup, skin) {
     const body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body || {};
     if (url.pathname.startsWith('/api/sonos/')) {
       const action = url.pathname.split('/').at(-1);
-      return markData(await (method === 'GET' ? context.source('media').data({ view: action }) : context.source('media').action(action, { ...Object.fromEntries(url.searchParams), ...body })));
+      const media=context.panel.source && context.plugin.config.sourceAlias==='media' ? context : context.source('media');
+      return markData(await (method === 'GET' ? media.data({ view: action }) : media.action(action, { ...Object.fromEntries(url.searchParams), ...body })));
     }
+    if (/^\/api\/briefings\/[a-z0-9-]+$/.test(url.pathname) && context.plugin.config.briefingQueries===true) return markData(await context.data({briefing:url.pathname.split('/').at(-1)}));
     if (url.pathname === '/api/link/launch') return context.source('launch').action('launch', { url: url.searchParams.get('url') });
     if (url.pathname === '/clearcam/health' || url.pathname === '/camera/api/cameras') return context.source('resources').data({ path: url.pathname });
-    const aliases = { '/api/config': 'config', '/api/calendar': 'calendar', '/api/dashboard/portfolio': 'portfolio', '/api/weather': 'weather', '/api/solar': 'solar', '/api/whoop': 'recovery' };
-    if (aliases[url.pathname]) { const alias=aliases[url.pathname]; return markData(await (context.panel.source && context.plugin.config.sourceAlias===alias ? context.data() : context.source(alias).data())); }
+    const aliases = { '/api/camera-alerts': 'alerts', '/api/config': 'config', '/api/calendar': 'calendar', '/api/dashboard/portfolio': 'portfolio', '/api/weather': 'weather', '/api/solar': 'solar', '/api/whoop': 'recovery' };
+    if (aliases[url.pathname] && (aliases[url.pathname]!=='alerts' || context.bindings.alerts || context.plugin.config.sourceAlias==='alerts')) { const alias=aliases[url.pathname]; return markData(await (context.panel.source && context.plugin.config.sourceAlias===alias ? context.data() : context.source(alias).data())); }
     if(method==='POST')return context.source('services').action('request',{route:url.pathname+url.search,body});
     return markData(await context.source('services').data({ route: url.pathname + url.search }));
   }

@@ -1,9 +1,9 @@
 {
-  "name": "Shared Display Settings",
-  "description": "Provide shared location and display settings to companion panels.",
+  "name": "Legacy Shared Settings",
+  "description": "Compatibility package for older configurations. New displays and sources own their settings independently.",
   "version": "1.1.0",
   "license": "MIT",
-  "category": "Data connectors",
+  "category": "Support",
   "defaultConfig": {
     "route": "/api/config"
   },
@@ -30,5 +30,6 @@
         "group": "Data source"
       }
     }
-  }
+  },
+  "internal": true
 }

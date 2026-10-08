@@ -4,33 +4,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Castboard · Screens</title>
+  <title>Castboard · Dashboards</title>
   <link rel="icon" type="image/svg+xml" href="/assets/castboard-logo.svg">
   <link rel="stylesheet" href="/admin.css?v=0.14.0">
 </head>
 <body class="admin-app studio-page">
 <a class="skip-link" href="#main-content">Skip to content</a>
-<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Screen workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Screens</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/setup"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3h-3"/></svg><span>Connections</span></a><a href="/admin/devices"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 17h6"/></svg><span>Displays</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>screen workspace</span></div></aside>
+<aside class="app-rail"><a class="brand" href="/admin" aria-label="Castboard home"><img class="brand-mark" src="/assets/castboard-logo.svg" alt=""><span><strong>Castboard</strong><small>Dashboard workspace</small></span></a><nav class="app-nav" aria-label="Administration"><a href="/admin" aria-current="page"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>Dashboards</span></a><a href="/admin/plugins"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4H5v4H2v6h3v4h6v-3h6v3h4v-7h-4V8h4V3h-7v4H9Z"/></svg><span>Plugins</span></a><a href="/admin/devices"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 17h6"/></svg><span>Displays</span></a></nav><div class="rail-footer"><span class="rail-mark" aria-hidden="true"></span><span>Open-source<br>dashboard workspace</span></div></aside>
   <header class="topbar">
-    <div class="workspace-title">Screen Studio</div>
+    <div class="workspace-title">Dashboard Studio</div>
+    <label class="studio-switch"><span>Dashboard</span><select id="quick-screen" aria-label="Switch dashboard"></select></label>
     <div class="topbar-center">
       <span class="status-dot" aria-hidden="true"></span>
       <span id="save-status">Loading design…</span>
     </div>
     <div class="topbar-actions">
       <button id="undo" title="Undo (⌘/Ctrl Z)" class="button secondary" type="button" disabled>Undo</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" class="button secondary" type="button" disabled>Redo</button><button id="discard" class="button secondary" type="button" disabled>Discard</button>
-      <button id="open-screen" class="button secondary" type="button">Open screen</button>
+      <a id="manage-screen-displays" class="button secondary" href="/admin/devices">Show on display</a>
+      <button id="open-screen" class="button secondary" type="button">Open dashboard</button>
       <button id="save-design" class="button primary" type="button" disabled>Save changes</button>
     </div>
   </header>
 
   <div id="notice" class="notice" role="status" hidden></div>
-  <nav class="mobile-tools" aria-label="Editor tools"><button data-tool="screens" aria-pressed="false">Screens &amp; panels</button><button data-tool="canvas" aria-pressed="true">Canvas</button><button data-tool="settings" aria-pressed="false">Settings</button></nav>
-  <main id="main-content" class="studio" data-tool="canvas" aria-label="Castboard screen designer">
+  <nav class="mobile-tools" aria-label="Editor tools"><button data-tool="screens" aria-pressed="false">Dashboards &amp; panels</button><button data-tool="canvas" aria-pressed="true">Canvas</button><button data-tool="settings" aria-pressed="false">Settings</button></nav>
+  <main id="main-content" class="studio" data-tool="canvas" aria-label="Castboard dashboard designer">
     <aside class="sidebar screens-sidebar">
       <div class="section-heading">
-        <div><h1>Your screens</h1></div>
-        <button id="add-screen" class="icon-button" type="button" title="Add screen" aria-label="Add screen">Add</button>
+        <div><h1>Your dashboards</h1></div>
+        <button id="add-screen" class="icon-button" type="button" title="Add dashboard" aria-label="Add dashboard">Add</button>
       </div>
       <div id="screen-list" class="screen-list" role="list"></div>
 
@@ -47,7 +49,7 @@
     </aside>
 
     <section class="workspace">
-      <div class="canvas-heading"><h2 id="canvas-title">Screen preview</h2><span id="canvas-dimensions">Arrange and style your panels</span></div><div class="workspace-toolbar">
+      <div class="canvas-heading"><h2 id="canvas-title">Dashboard preview</h2><span id="canvas-dimensions">Arrange and style your panels</span></div><div class="workspace-toolbar">
         <div class="segmented" aria-label="Canvas mode">
           <button type="button" class="active" data-mode="design">Edit</button>
           <button type="button" data-mode="preview">Preview</button>
@@ -69,8 +71,8 @@
       <div id="canvas-stage" class="canvas-stage">
         <div id="canvas-frame" class="canvas-frame">
           <div id="empty-canvas" class="empty-canvas" hidden><h3>Add your first panel</h3><p>Choose a clock, weather, news or another installed plugin.</p><button id="add-first-panel" class="button primary" type="button">Choose a plugin</button></div>
-          <div id="design-surface" class="design-surface" aria-label="Editable screen layout"></div>
-          <iframe id="live-preview" title="Unsaved screen preview"></iframe>
+          <div id="design-surface" class="design-surface" aria-label="Editable dashboard layout"></div>
+          <iframe id="live-preview" title="Unsaved dashboard preview"></iframe>
         </div>
       </div>
       <div class="canvas-help">
@@ -81,7 +83,7 @@
 
     <aside class="sidebar inspector-sidebar">
       <div class="inspector-tabs" role="tablist" aria-label="Inspector">
-        <button type="button" role="tab" class="active" data-inspector="screen">Screen</button>
+        <button type="button" role="tab" class="active" data-inspector="screen">Dashboard</button>
         <button type="button" role="tab" data-inspector="panel">Panel</button>
       </div>
 
@@ -90,10 +92,10 @@
 
           <label class="field"><span>Title</span><input id="screen-title" data-screen="title" autocomplete="off"></label>
           <button id="set-up-display" class="button secondary full" type="button">Set up a display</button>
-          <p id="display-setup-help" class="field-help">Add panels, save your screen, then connect your device.</p>
-          <details class="screen-address-settings"><summary>Screen link settings</summary><p class="field-help">Castboard generates a link for each screen. Only change its ending if you need a different address; existing bookmarks will need updating.</p><label class="field"><span>Link ending</span><input id="screen-path" data-screen="path" autocomplete="off" aria-describedby="screen-path-help"></label><p id="screen-path-help" class="field-help">For example, /screens/kitchen is the part after your Castboard server address. It is not your device’s address.</p></details>
+          <p id="display-setup-help" class="field-help">Add panels, save your dashboard, then connect your device.</p>
+          <details class="screen-address-settings"><summary>Dashboard link settings</summary><p class="field-help">Castboard generates a link for each dashboard. Only change its ending if you need a different address; existing bookmarks will need updating.</p><label class="field"><span>Link ending</span><input id="screen-path" data-screen="path" autocomplete="off" aria-describedby="screen-path-help"></label><p id="screen-path-help" class="field-help">For example, /screens/kitchen is the part after your Castboard server address. It is not your device’s address.</p></details>
           <label class="field"><span>Layout</span><select id="screen-type" data-screen="type"></select></label>
-          <label class="field"><span>Use as</span><select id="screen-presentation"><option value="screen">Screen</option><option value="modal">Modal</option></select></label>
+          <label class="field"><span>Use as</span><select id="screen-presentation"><option value="screen">Dashboard</option><option value="modal">Modal</option></select></label>
           <div id="screen-viewport-fields" class="field-grid">
             <label class="field"><span>Preferred width</span><input id="screen-width" type="number" min="160" max="4096" placeholder="Auto"></label>
             <label class="field"><span>Preferred height</span><input id="screen-height" type="number" min="160" max="4096" placeholder="Auto"></label>
@@ -172,13 +174,13 @@
           </div>
         </details>
 
-        <details class="danger-zone"><summary>Screen actions</summary>
+        <details class="danger-zone"><summary>Dashboard actions</summary>
 
           <div class="button-row">
             <button id="duplicate-screen" class="button secondary" type="button">Duplicate</button>
             <button id="delete-screen" class="button danger" type="button">Delete</button>
           </div>
-          <button id="set-default" class="button secondary full" type="button">Set as default screen</button>
+          <button id="set-default" class="button secondary full" type="button">Set as default dashboard</button>
         </details>
       </div>
 
@@ -188,11 +190,11 @@
         </div>
         <div id="panel-fields" hidden>
           <h2 id="selected-module-name" class="module-heading"></h2><a id="manage-plugin" class="manage-plugin" href="/admin/plugins">Plugin settings</a>
-          <div id="panel-source-main"><label id="panel-source-field" class="field"><span>Data source</span><select id="panel-source"></select></label></div>
+          <div id="panel-source-main"><label id="panel-source-field" class="field"><span>Shared source</span><select id="panel-source"></select><a id="manage-source" class="hint" href="/admin/plugins">Configure source</a></label></div>
           <div id="extension-option-fields" class="field-grid" hidden></div>
           <button id="reset-plugin-options" class="button secondary full" type="button">Use plugin defaults</button>
           <details id="panel-interactions" open><summary>On tap</summary>
-            <label class="field"><span>Behaviour</span><select id="interaction-type"><option value="">Plugin controls only</option><option value="modal">Open modal</option><option value="screen">Go to screen</option><option value="back">Go back</option><option value="close">Close modal</option><option value="action">Run plugin action</option></select></label>
+            <label class="field"><span>Behaviour</span><select id="interaction-type"><option value="">Plugin controls only</option><option value="modal">Open modal</option><option value="screen">Go to dashboard</option><option value="back">Go back</option><option value="close">Close modal</option><option value="action">Run plugin action</option></select></label>
             <div id="interaction-destination" hidden>
               <label class="field"><span>Destination</span><select id="interaction-screen"></select></label>
               <div class="button-row"><button id="interaction-edit" class="button secondary" type="button">Edit destination</button><button id="interaction-create" class="button secondary" type="button">New modal</button></div>
@@ -240,7 +242,7 @@
 
           <details><summary>Appearance</summary>
 
-            <p class="section-note">Leave a field empty to inherit the screen theme.</p>
+            <p class="section-note">Leave a field empty to inherit the dashboard theme.</p>
             <label class="field"><span>Font</span><select data-panel-appearance="fontFamily">
               <option value="">Inherit</option><option value="sans">Sans serif</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="mono">Monospace</option>
             </select></label>
@@ -287,15 +289,15 @@
 
   <dialog id="screen-dialog" aria-labelledby="new-screen-heading" aria-describedby="new-screen-intro">
     <form method="dialog" id="screen-form">
-      <header><div><h2 id="new-screen-heading">Add a screen</h2></div><button value="cancel" formnovalidate class="dialog-close" aria-label="Close">Close</button></header>
+      <header><div><h2 id="new-screen-heading">Add a dashboard</h2></div><button value="cancel" formnovalidate class="dialog-close" aria-label="Close">Close</button></header>
       <p id="new-screen-intro">Create a dashboard, add your panels, then connect a device. One dashboard can appear on several displays.</p>
-      <label class="field"><span>Screen name</span><input id="new-screen-title" required autocomplete="off" placeholder="Kitchen display"></label>
+      <label class="field"><span>Dashboard name</span><input id="new-screen-title" required autocomplete="off" placeholder="Kitchen display"></label>
       <label class="field"><span>Where will you show it?</span><select id="new-screen-device" aria-describedby="new-device-help"></select></label>
       <p id="new-device-help" class="device-guidance" role="status"></p>
       <details id="new-screen-advanced"><summary>Layout and link settings</summary>
         <label class="field"><span>Layout</span><select id="new-screen-type" aria-describedby="new-layout-help"></select><small id="new-layout-help"></small></label>
         <p>These are filled in for you. The link ending identifies this dashboard on your Castboard server; it is not a device address.</p>
-        <label class="field"><span>Screen ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off"></label>
+        <label class="field"><span>Dashboard ID</span><input id="new-screen-id" required pattern="[a-z][a-z0-9-]*" autocomplete="off"></label>
         <label class="field"><span>Link ending (generated automatically)</span><input id="new-screen-path" required pattern="/.*" autocomplete="off"></label>
       </details>
       <p id="new-screen-error" class="field-error" role="alert"></p>
@@ -306,14 +308,14 @@
   <dialog id="token-dialog" aria-labelledby="token-title">
     <form method="dialog" id="token-form">
       <header><div><h2 id="token-title">Admin access</h2></div></header>
-      <p class="dialog-note">Enter your admin token to edit screens. It is kept for this browser tab.</p>
+      <p class="dialog-note">Enter your admin token to edit dashboards. It is kept for this browser tab.</p>
       <label class="field"><span>Token</span><input id="admin-token" aria-describedby="token-error" type="password" required autocomplete="off"></label>
       <p id="token-error" class="field-error" role="alert"></p>
       <footer><button id="submit-token" value="default" class="button primary">Continue</button></footer>
     </form>
   </dialog>
 
-  <dialog id="draft-conflict-dialog" aria-labelledby="draft-conflict-title"><form id="draft-conflict-form"><h2 id="draft-conflict-title">Choose which changes to keep</h2><p>These settings changed in both your draft and the saved screen. Other changes will be kept automatically. Nothing is saved yet.</p><div id="draft-conflicts"></div><footer><button id="cancel-draft-review" type="button" class="button secondary">Keep editing</button><button type="submit" class="button primary">Update my draft</button></footer></form></dialog>
+  <dialog id="draft-conflict-dialog" aria-labelledby="draft-conflict-title"><form id="draft-conflict-form"><h2 id="draft-conflict-title">Choose which changes to keep</h2><p>These settings changed in both your draft and the saved dashboard. Other changes will be kept automatically. Nothing is saved yet.</p><div id="draft-conflicts"></div><footer><button id="cancel-draft-review" type="button" class="button secondary">Keep editing</button><button type="submit" class="button primary">Update my draft</button></footer></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/admin.js?v=0.14.0"></script>
 </body>

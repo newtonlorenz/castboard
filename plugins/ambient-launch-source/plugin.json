@@ -1,7 +1,7 @@
 {
   "name": "Display Link Launcher",
   "description": "Open links on a configured cast device through the local cast command.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "MIT",
   "category": "Data connectors",
   "defaultConfig": {},

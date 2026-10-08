@@ -7,11 +7,11 @@ import {createPlugin} from '../plugins/camera/plugin.js';
 
 async function serve(t,handler){const server=http.createServer(handler);server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>{server.close();server.closeAllConnections();});return `http://127.0.0.1:${server.address().port}`;}
 const jpeg=Buffer.from([255,216,0,1,2,255,217]);
-test('camera extracts one MJPEG part across chunk boundaries and closes the stream',async t=>{
-  let closed=false;
-  const url=await serve(t,(req,res)=>{res.setHeader('Content-Type','multipart/x-mixed-replace; boundary=frame');req.once('close',()=>{closed=true;});res.write('--fra');setTimeout(()=>res.write(Buffer.concat([Buffer.from('me\r\nContent-Type: image/jpeg\r\nContent-Length: '+jpeg.length+'\r\n\r\n'),jpeg])),5);});
+test('camera extracts one MJPEG part across chunk boundaries and closes the stream',{timeout:2000},async t=>{
+  let closed;
+  const url=await serve(t,(req,res)=>{res.setHeader('Content-Type','multipart/x-mixed-replace; boundary=frame');closed=new Promise(resolve=>req.once('close',resolve));req.on('error',()=>{});res.write('--fra');setTimeout(()=>res.write(Buffer.concat([Buffer.from('me\r\nContent-Type: image/jpeg\r\nContent-Length: '+jpeg.length+'\r\n\r\n'),jpeg])),5);});
   const result=await fetchSnapshot(url);assert.deepEqual(result.data,jpeg);assert.equal(result.contentType,'image/jpeg');
-  await new Promise(resolve=>setTimeout(resolve,20));assert.equal(closed,true);
+  await closed;
 });
 test('camera supports snapshots and multipart boundaries without Content-Length',async t=>{
   const url=await serve(t,(req,res)=>{if(req.url==='/image'){res.writeHead(200,{'Content-Type':'image/jpeg'});res.end(jpeg);return;}res.writeHead(200,{'Content-Type':'multipart/x-mixed-replace; boundary="frame"'});res.end(Buffer.concat([Buffer.from('--frame\r\nContent-Type: image/jpeg\r\n\r\n'),jpeg,Buffer.from('\r\n--frame\r\n')]));});

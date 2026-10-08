@@ -9,6 +9,68 @@ import { createApp } from '../../../src/server.js';
 import { deviceTokenHash } from '../../../src/core/devices.js';
 
 const enabled=process.env.CASTBOARD_BROWSER_TESTS==='1';
+test('Displays lists Cast and embedded receivers; dashboard switching, recasting and assignments work', {skip:!enabled,timeout:60000}, async t => {
+  const {chromium}=await import('playwright');
+  const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});
+  t.after(()=>browser.close());
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-display-workflow-'));
+  t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const calls=path.join(dir,'calls.jsonl'),executable=path.join(dir,'receiver.mjs');
+  await fs.writeFile(executable,`#!${process.execPath}\nimport fs from 'node:fs';\nfs.appendFileSync(${JSON.stringify(calls)},JSON.stringify(process.argv.slice(2))+'\\n');\n`);
+  await fs.chmod(executable,0o700);
+  const receiver={name:'Kitchen Nest',device:'Fixture kitchen',protocol:'google-cast'};
+  const key='test-key-for-dashboard-assignment-only';
+  const config={server:{host:'127.0.0.1',port:8787,publicUrl:'http://display.test'},branding:{timeZone:'UTC'},plugins:{clock:{enabled:true}},
+    casting:{protocols:{'google-cast':{enabled:true,executable,attempts:1,resetDelayMs:0}}},
+    screens:{home:{title:'Home',path:'/',type:'single',panels:[{id:'clock',plugin:'clock'}],targets:[receiver]},news:{title:'News',path:'/news',type:'single',panels:[{id:'news-clock',plugin:'clock'}],targets:[receiver,{name:'Office Nest',device:'Fixture office'}]}},
+    devices:{esp:{name:'Kitchen ESP32',screenId:'home',mode:'native',width:800,height:480,format:'rgb565',refreshMs:5000,enabled:true,touch:true,allowActions:false,options:{keep:'saved'},tokenHash:deviceTokenHash(key)}}};
+  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
+  const app=await createApp({configPath});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  t.after(()=>{app.server.closeAllConnections();app.server.close();return app.dispose();});
+  const origin=`http://127.0.0.1:${app.server.address().port}`;
+  const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(origin+'/admin');await page.locator('#quick-screen option').nth(1).waitFor({state:'attached'});
+  await page.locator('#screen-title').fill('Draft home');await page.locator('#screen-title').press('Tab');
+  await page.getByLabel('Switch dashboard',{exact:true}).selectOption('news');
+  assert.equal(await page.locator('#canvas-title').innerText(),'News');
+  await page.getByLabel('Switch dashboard',{exact:true}).selectOption('home');
+  assert.equal(await page.locator('#screen-title').inputValue(),'Draft home');
+  assert.equal(await page.locator('#save-design').isEnabled(),true);
+  // A fresh tab avoids discarding the Studio draft while exercising receiver controls.
+  const displays=await browser.newPage({viewport:{width:1440,height:960}});
+  displays.on('pageerror',error=>errors.push(error.message));
+  await displays.goto(origin+'/admin/devices?screen=news');
+  await displays.getByRole('heading',{name:'Kitchen Nest',exact:true}).waitFor();
+  assert.equal(await displays.locator('.cast-row').count(),2); // shared Kitchen target appears once
+  assert.equal(await displays.getByRole('heading',{name:'Kitchen ESP32',exact:true}).count(),1);
+  const kitchen=displays.locator('.cast-row').filter({hasText:'Kitchen Nest'});
+  assert.equal(await kitchen.locator('select').inputValue(),'news');
+  await kitchen.getByRole('button',{name:'Cast',exact:true}).click();
+  await kitchen.getByRole('status').filter({hasText:'Dashboard sent'}).waitFor();
+  assert.deepEqual(JSON.parse((await fs.readFile(calls,'utf8')).trim()),['-d','Fixture kitchen','cast_site','http://display.test/news']);
+  await kitchen.getByRole('button',{name:'Recast',exact:true}).click();
+  await kitchen.getByRole('status').filter({hasText:'Dashboard sent'}).waitFor();
+  const commands=(await fs.readFile(calls,'utf8')).trim().split('\n').map(line=>JSON.parse(line));
+  assert.deepEqual(commands.slice(-2),[['-d','Fixture kitchen','stop'],['-d','Fixture kitchen','cast_site','http://display.test/news']]);
+  await displays.getByLabel('Dashboard for Kitchen ESP32').selectOption('news');
+  await displays.locator('[data-assign="esp"]').click();
+  await displays.locator('#toast').filter({hasText:'Dashboard assigned'}).waitFor();
+  const saved=JSON.parse(await fs.readFile(configPath,'utf8'));
+  assert.deepEqual(saved.devices.esp,{...config.devices.esp,screenId:'news'});
+  const response=await fetch(origin+'/api/devices/esp/bootstrap',{headers:{Authorization:`Bearer ${key}`}});
+  assert.equal(response.status,200);assert.equal((await response.json()).defaultScreen,'news');
+  assert.deepEqual(saved.screens,config.screens);
+  if(process.env.CASTBOARD_CAPTURE_DIR){await fs.mkdir(process.env.CASTBOARD_CAPTURE_DIR,{recursive:true});await displays.screenshot({path:path.join(process.env.CASTBOARD_CAPTURE_DIR,'displays-desktop.png'),fullPage:true});}
+  await displays.setViewportSize({width:390,height:844});
+  assert.equal(await displays.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  assert.equal(await kitchen.getByRole('button',{name:'Recast',exact:true}).isVisible(),true);
+  if(process.env.CASTBOARD_CAPTURE_DIR)await displays.screenshot({path:path.join(process.env.CASTBOARD_CAPTURE_DIR,'displays-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.getByLabel('Switch dashboard',{exact:true}).isVisible(),true);
+  assert.deepEqual(errors,[]);
+});
+
 test('image and native receivers open the same modal; images accept valid touches once', {skip:!enabled,timeout:60000}, async t=>{
   const {chromium}=await import('playwright');
   const {createFrameRenderer}=await import('../renderer.js');
@@ -22,9 +84,11 @@ test('image and native receivers open the same modal; images accept valid touche
   const app=await createApp({loadedConfig:{config,rawConfig:structuredClone(config),configPath,configDir:dir}});
   app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>{app.server.close();app.server.closeAllConnections();});
   const origin=`http://127.0.0.1:${app.server.address().port}`;
-  const renderer=createFrameRenderer({browser,appOrigin:origin});t.after(()=>renderer.dispose());
+  const bridgePaths=[];app.server.prependListener('request',req=>{if(req.headers['x-castboard-bridge']==='fixture-bridge')bridgePaths.push(req.url);});
+  const renderer=createFrameRenderer({browser,appOrigin:origin,bridgeToken:'fixture-bridge'});t.after(()=>renderer.dispose());
   const input={id:'image',token:key,width:480,height:320,format:'rgb565',revision:'test'};
   const before=await renderer.render(input);assert.equal(before.buffer.length,480*320*2);
+  assert.ok(bridgePaths.includes('/device-view/image'));assert.ok(bridgePaths.some(route=>route.startsWith('/api/devices/image/bootstrap')));
   const touched=await renderer.render({...input,event:{frameId:before.frameId,eventId:'touch0001',x:80,y:80}});
   assert.notEqual(touched.frameId,before.frameId);
   const duplicate=await renderer.render({...input,event:{frameId:before.frameId,eventId:'touch0001',x:80,y:80}});
@@ -161,7 +225,7 @@ test('new embedded screens save and connect through Displays while Cast setup st
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(origin+'/admin');await page.locator('#screen-list button').first().waitFor();
   await page.locator('#add-screen').click();await page.locator('#new-screen-title').fill('Desk display');await page.locator('#new-screen-device').selectOption('embedded');
-  assert.match(await page.locator('#new-device-help').textContent(),/use Displays/);
+  assert.match(await page.locator('#new-device-help').textContent(),/open Displays/);
   await page.locator('#create-screen').click();await page.locator('#plugin-list button').filter({hasText:'Clock'}).first().click();
   await page.locator('#save-design').click();await page.waitForFunction(()=>document.querySelector('#save-status').textContent==='All changes saved');
   const saved=JSON.parse(await fs.readFile(configPath));assert.equal(saved.screens['desk-display'].panels.length,1);
@@ -174,7 +238,7 @@ test('new embedded screens save and connect through Displays while Cast setup st
   const picker=setup.locator('[data-screen="desk-display"] [data-device-kind]');
   await picker.selectOption('cast');await setup.locator('[data-screen="desk-display"] [data-discover]').waitFor();
   assert.equal(await setup.locator('.device-embedded:visible').count(),0);assert.equal(await setup.locator('.device-browser:visible').count(),0);
-  await picker.selectOption('embedded');await setup.getByRole('link',{name:'Open Displays'}).click();
+  await picker.selectOption('embedded');await setup.getByRole('link',{name:'Manage displays'}).click();
   await setup.waitForURL(origin+'/admin/devices');await setup.locator('#first-device').waitFor();
   assert.deepEqual(errors,[]);
 });

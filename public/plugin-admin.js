@@ -1,3 +1,4 @@
+import {connectionVisible, compatibleSource, editableConnections} from '/connection-model.js';
 import { recordListField } from '/record-list-field.js';
 import { mergeDraft, resolveDraft, sameValue, safePluginDraft, protectedSetting } from '/draft-model.js';
 const $=selector=>document.querySelector(selector);
@@ -46,7 +47,7 @@ function renderList(){
  const search=$('#plugin-search').value.toLowerCase(),category=$('#plugin-category').value;
  $('.plugin-workspace').classList.toggle('library-mode',collection==='library');
  const missing=[...drafts].filter(([id])=>!data.instances.some(item=>item.id===id)).map(([id,draft])=>({...draft.base,id,missing:true,usedBy:[],enabled:false}));
- const entries=(collection==='installed'?[...data.instances,...missing]:data.packages).filter(item=>`${item.name} ${item.id} ${item.type||''} ${item.category||pkgFor(item.type)?.category||''}`.toLowerCase().includes(search)&&(!category||categoryName(item)===category)).sort((a,b)=>Number(Boolean(b.hasWidget))-Number(Boolean(a.hasWidget))||a.name.localeCompare(b.name));
+ const entries=(collection==='installed'?[...data.instances,...missing]:data.packages).filter(item=>!item.internal||category==='Support'||item.id===selected).filter(item=>`${item.name} ${item.id} ${item.type||''} ${item.category||pkgFor(item.type)?.category||''}`.toLowerCase().includes(search)&&(!category||categoryName(item)===category)).sort((a,b)=>Number(Boolean(b.hasWidget))-Number(Boolean(a.hasWidget))||a.name.localeCompare(b.name));
  $('#show-installed').setAttribute('aria-pressed',String(collection==='installed'));$('#show-library').setAttribute('aria-pressed',String(collection==='library'));$('#show-installed').classList.toggle('active',collection==='installed');$('#show-library').classList.toggle('active',collection==='library');
  $('#plugin-roster').innerHTML=entries.map(item=>{
   const pkg=collection==='installed'?pkgFor(item.type):item;
@@ -57,7 +58,8 @@ function renderList(){
  for(const button of document.querySelectorAll('[data-install]'))button.onclick=()=>{if(canLeave())void mutate({action:'install',id:nextCopyId(button.dataset.install),type:button.dataset.install});};
 }
 function showRelevantFields(instance){
- const values={...pkgFor(instance.type)?.defaultConfig,...instance.settings,...edits};
+ renderConnections(instance,pkgFor(instance.type));
+ const values={...pkgFor(instance.type)?.defaultConfig,...instance.defaultSettings,...instance.settings,...edits};
  for(const label of document.querySelectorAll('[data-setting]')){
   const field=instance.settingsSchema.properties[label.dataset.setting];
   label.hidden=Boolean(field.showWhen&&!Object.entries(field.showWhen).every(([key,allowed])=>allowed.includes(values[key])));
@@ -66,10 +68,35 @@ function showRelevantFields(instance){
  for(const group of document.querySelectorAll('.advanced-plugin-settings,.plugin-settings-group')){group.hidden=![...group.querySelectorAll('[data-setting]')].some(label=>!label.hidden);
  }
 }
+function renderConnections(instance,pkg){
+ const container=$('#source-fields');container.replaceChildren();
+ const settings={...pkg?.defaultConfig,...instance.defaultSettings,...instance.settings,...edits};
+ for(const {alias,input,declared}of editableConnections(instance,pkg)){
+  if(!connectionVisible(input,settings))continue;
+  const label=document.createElement('label');label.className='field';
+  const text=document.createElement('span');text.textContent=input.title||alias;
+  const select=document.createElement('select');select.required=Boolean(input.required);
+  const compatible=data.instances.filter(item=>item.id!==instance.id&&compatibleSource(input,item));
+  const selectedId=(sourceEdits||instance.bindings)[alias]||'';
+  select.innerHTML='<option value="">'+(input.required?'Choose a source':'Not connected')+'</option>'+compatible.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} (${escapeHtml(item.id)})</option>`).join('');
+  if(selectedId&&!compatible.some(item=>item.id===selectedId)){
+   const option=document.createElement('option');option.value=selectedId;option.textContent=`${selectedId} · unavailable or incompatible`;select.append(option);
+  }
+  select.value=selectedId;
+  const link=document.createElement('a');link.className='hint';link.textContent='Configure this source';
+  const updateLink=()=>{link.hidden=!select.value;link.href=`/admin/plugins?plugin=${encodeURIComponent(select.value)}`;};updateLink();
+  select.onchange=()=>{sourceEdits||={...instance.bindings};if(select.value)sourceEdits[alias]=select.value;else delete sourceEdits[alias];updateLink();changed();};
+  label.append(text,select);
+  if(input.description){const help=document.createElement('small');help.textContent=input.description;label.append(help);}
+  label.append(link);
+  if(input.legacy||!declared){let advanced=container.querySelector('details');if(!advanced){advanced=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Legacy connections';advanced.append(summary);container.append(advanced);}advanced.append(label);}else container.append(label);
+ }
+ $('#source-section').hidden=!container.children.length;
+}
 function settingField(key,field,instance){
  const protectedField=protectedSetting(key,field,instance.settings[key],instance.protectedFields);
  const lineList=field.type==='array'&&field.items?.type==='string'&&!protectedField;
- const value=Object.hasOwn(edits,key)?edits[key]:clears.has(key)?'':protectedField?'':instance.settings[key]??pkgFor(instance.type)?.defaultConfig?.[key]??field.default??'';
+ const value=Object.hasOwn(edits,key)?edits[key]:clears.has(key)?'':protectedField?'':instance.settings[key]??instance.defaultSettings?.[key]??pkgFor(instance.type)?.defaultConfig?.[key]??field.default??'';
  const recordSchema=field.items?.anyOf?.find(item=>item.type==='object')||field.items;
  if(!protectedField&&field.type==='array'&&recordSchema?.type==='object'&&recordSchema.properties&&Object.values(recordSchema.properties).every(item=>['string','number','integer','boolean'].includes(item.type)))return recordListField(key,{...field,items:recordSchema},value,next=>{edits[key]=next;clears.delete(key);changed();});
  const label=document.createElement('label');label.className=`field${field.type==='boolean'?' boolean-field':''}${protectedField?' secret-field':''}`;label.dataset.setting=key;
@@ -115,11 +142,11 @@ function renderDetail(){
  if(!instance){detail.innerHTML='<div class="detail-empty"><h2>Choose a plugin</h2><p>Select an installed plugin to edit its settings, or browse the library to add something new.</p></div>';return;}
  restoreEdits(instance);
  const pkg=pkgFor(instance.type),usage=instance.usedBy;
- detail.innerHTML=`<header class="detail-heading"><div class="detail-icon">${packageIcon(instance)}</div><div><h2>${escapeHtml(instance.name)}</h2><p>${escapeHtml(categoryName(instance))} · v${escapeHtml(instance.version)}</p></div><span class="plugin-status ${instance.enabled?'enabled':''}">${instance.enabled?'Enabled':'Disabled'}</span></header><p class="detail-description">${escapeHtml(pkg?.description||'Settings for this installed plugin.')}</p><div class="detail-actions"><button class="button" id="test-plugin" ${!instance.hasData?'hidden':''} ${!instance.enabled?'disabled':''}>Test connection</button>${instance.hasWidget&&instance.enabled?'<button class="button primary" id="choose-screen" type="button">Add to a screen</button>':''}</div><div id="screen-choice" hidden><label class="field"><span>Screen</span><select id="plugin-screen">${data.screens.map(screen=>`<option value="${escapeHtml(screen.id)}" ${screen.type==='single'&&screen.panelCount?'disabled':''}>${escapeHtml(screen.title)}${screen.type==='single'&&screen.panelCount?' · full':''}</option>`).join('')}</select></label><button id="screen-editor-link" class="button primary" type="button">Add panel</button><p class="hint">Opens a draft in Screen Studio. Save there to update the display.</p></div><p id="test-result" role="status"></p><div id="plugin-recovery" class="plugin-recovery" role="status" hidden></div><form id="plugin-form"><h3 class="settings-heading">Settings</h3><div id="settings-fields"></div><section id="source-section" hidden><h3>Source connections</h3><div id="source-fields"></div></section><section><h3>Used by</h3>${usage.length?`<ul class="usage-list">${usage.map(use=>`<li>${use.kind==='panel'?`<a href="/admin?screen=${encodeURIComponent(use.screenId)}&panel=${encodeURIComponent(use.panelId)}">${escapeHtml(use.screenTitle)}</a> · ${escapeHtml(use.title)}`:`Plugin ${escapeHtml(use.title)}`}</li>`).join('')}</ul>`:'<p class="hint">No panels or plugins use this copy yet.</p>'}</section><p id="plugin-save-state" class="saved-state" role="status">All changes saved</p><p id="save-error" class="field-error" role="alert"></p><footer><button id="save-plugin" class="button primary" type="submit" disabled>Save settings</button><button class="button" id="reset-settings" type="button" disabled>Reset draft</button>${pkg?.managed?'<button class="button" id="new-copy" type="button">New copy…</button>':''}<button class="button" id="toggle-plugin" type="button" ${usage.length&&instance.enabled?'disabled':''}>${instance.enabled?'Disable':'Enable'}</button><button id="remove-plugin" class="button danger" type="button" ${usage.length?'disabled':''}>Remove</button></footer>${usage.length?'<p class="hint">Remove its panels and source connections before disabling or removing this plugin.</p>':''}</form>`;
+ detail.innerHTML=`<header class="detail-heading"><div class="detail-icon">${packageIcon(instance)}</div><div><h2>${escapeHtml(instance.name)}</h2><p>${escapeHtml(categoryName(instance))} · v${escapeHtml(instance.version)}</p></div><span class="plugin-status ${instance.enabled?'enabled':''}">${instance.enabled?'Enabled':'Disabled'}</span></header><p class="detail-description">${escapeHtml(pkg?.description||'Settings for this installed plugin.')}</p><div class="detail-actions"><button class="button" id="test-plugin" ${!instance.hasData?'hidden':''} ${!instance.enabled?'disabled':''}>Test connection</button>${instance.hasWidget&&instance.enabled?'<button class="button primary" id="choose-screen" type="button">Add to a dashboard</button>':''}</div><div id="screen-choice" hidden><label class="field"><span>Dashboard</span><select id="plugin-screen">${data.screens.map(screen=>`<option value="${escapeHtml(screen.id)}" ${screen.type==='single'&&screen.panelCount?'disabled':''}>${escapeHtml(screen.title)}${screen.type==='single'&&screen.panelCount?' · full':''}</option>`).join('')}</select></label><button id="screen-editor-link" class="button primary" type="button">Add panel</button><p class="hint">Opens a draft in Dashboard Studio. Save there to update the display.</p></div><p id="test-result" role="status"></p><div id="plugin-recovery" class="plugin-recovery" role="status" hidden></div><form id="plugin-form"><h3 class="settings-heading">Settings</h3><div id="settings-fields"></div><section id="source-section" hidden><h3>Shared sources</h3><div id="source-fields"></div></section><section><h3>Used by</h3>${usage.length?`<ul class="usage-list">${usage.map(use=>`<li>${use.kind==='panel'?`<a href="/admin?screen=${encodeURIComponent(use.screenId)}&panel=${encodeURIComponent(use.panelId)}">${escapeHtml(use.screenTitle)}</a> · ${escapeHtml(use.title)}`:`<a href="/admin/plugins?plugin=${encodeURIComponent(use.id)}">${escapeHtml(use.title)}</a>`}</li>`).join('')}</ul>`:'<p class="hint">No panels or plugins use this copy yet.</p>'}</section><p id="plugin-save-state" class="saved-state" role="status">All changes saved</p><p id="save-error" class="field-error" role="alert"></p><footer><button id="save-plugin" class="button primary" type="submit" disabled>Save settings</button><button class="button" id="reset-settings" type="button" disabled>Reset draft</button>${pkg?.managed?'<button class="button" id="new-copy" type="button">New copy…</button>':''}<button class="button" id="toggle-plugin" type="button" ${usage.length&&instance.enabled?'disabled':''}>${instance.enabled?'Disable':'Enable'}</button><button id="remove-plugin" class="button danger" type="button" ${usage.length?'disabled':''}>Remove</button></footer>${usage.length?'<p class="hint">Remove its panels and source connections before disabling or removing this plugin.</p>':''}</form>`;
  const fields=$('#settings-fields'),advanced=document.createElement('details');advanced.className='advanced-plugin-settings';const advancedTitle=document.createElement('summary');advancedTitle.textContent='Advanced connection settings';advanced.append(advancedTitle);const groups=new Map();for(const [key,field]of Object.entries(instance.settingsSchema.properties||{})){if(field.advanced){advanced.append(settingField(key,field,instance));continue;}const name=field.group||'General';if(!groups.has(name))groups.set(name,[]);groups.get(name).push([key,field]);}for(const name of ['General','Data source','Content','Display','Updates',...groups.keys()]){if(!groups.has(name))continue;const group=document.createElement('section');group.className='plugin-settings-group';const heading=document.createElement('h4');heading.textContent=name;group.append(heading);for(const [key,field]of groups.get(name))group.append(settingField(key,field,instance));groups.delete(name);fields.append(group);}if(advanced.children.length>1)fields.append(advanced);
- if(!fields.children.length)fields.innerHTML='<p class="settings-empty">This plugin has no connection settings. Its display options are in the screen editor.</p>';
- const aliases=[...new Set([...Object.keys(pkg?.defaultBindings||{}),...Object.keys(instance.bindings)])];
- if(aliases.length){$('#source-section').hidden=false;for(const alias of aliases){const label=document.createElement('label');label.className='field';const text=document.createElement('span');text.textContent=({runtime:'Display runtime',theme:'Theme',config:'Shared configuration',services:'Data services',upstream:'Data source'})[alias]||alias.replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());const input=document.createElement('select');input.innerHTML='<option value="">Not connected</option>'+data.instances.filter(item=>{const expected=data.instances.find(source=>source.id===instance.bindings[alias])||data.instances.find(source=>source.type===pkg?.defaultBindings?.[alias]);return item.enabled&&item.id!==instance.id&&(!expected||(expected.contract?item.contract===expected.contract:expected.hasData?item.hasData:expected.hasAction?item.hasAction:item.type===expected.type));}).map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} (${escapeHtml(item.id)})</option>`).join('');input.value=(sourceEdits||instance.bindings)[alias]||'';input.onchange=()=>{sourceEdits||={...instance.bindings};if(input.value)sourceEdits[alias]=input.value;else delete sourceEdits[alias];changed();};label.append(text,input);$('#source-fields').append(label);}}
+ if(!fields.children.length)fields.innerHTML='<p class="settings-empty">This plugin has no connection settings. Its display options are in the dashboard editor.</p>';
+ renderConnections(instance,pkg);
+
  showRelevantFields(instance);
  const stored=drafts.get(instance.id);
  if(stored){
@@ -136,7 +163,7 @@ function renderDetail(){
   $('#screen-editor-link').disabled=!choices.length;
   $('#screen-editor-link').onclick=add;
   $('#choose-screen').onclick=()=>{if(choices.length===1)return add();$('#screen-choice').hidden=!$('#screen-choice').hidden;if(!$('#screen-choice').hidden)$('#plugin-screen').focus();};
-  if(!choices.length){$('#choose-screen').disabled=true;$('#screen-choice').hidden=false;$('#screen-choice .hint').textContent='Your single-panel screens are full. Add a screen or change a layout in Screen Studio.';}
+  if(!choices.length){$('#choose-screen').disabled=true;$('#screen-choice').hidden=false;$('#screen-choice .hint').textContent='Your single-panel dashboards are full. Add a dashboard or change a layout in Dashboard Studio.';}
  }
  $('#plugin-form').addEventListener('invalid',event=>{for(let el=event.target.parentElement;el;el=el.parentElement)if(el.tagName==='DETAILS')el.open=true;},true);
  $('#plugin-form').onsubmit=async event=>{event.preventDefault();if(!event.target.reportValidity())return;captureDraft();const omitted=(drafts.get(instance.id)?.omitted||[]).filter(key=>!Object.hasOwn(edits,key)&&!clears.has(key));if(omitted.length){$('#save-error').textContent='Re-enter the protected values above, or choose to keep their saved values.';return;}await mutate({action:'configure',id:instance.id,settings:{...edits},clear:[...clears],...(sourceEdits?{bindings:sourceEdits}:{})});};

@@ -172,3 +172,20 @@ test('display saves preserve environment-backed renderer credentials',async t=>{
  const response=await fetch(base+'/api/admin/devices',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({revision:report.revision,action:'update',id:'desk',device:{mode:'frame'}})});
  assert.equal(response.status,200);const saved=await fs.readFile(configPath,'utf8');assert.equal(JSON.parse(saved).embedded.rendererToken,'${RENDERER_KEY}');assert.equal(saved.includes(secret),false);assert.equal(JSON.parse(saved).devices.desk.mode,'frame');
 });
+
+// Browser/Cast delivery and embedded receivers may retain separate gateways.
+test('embedded connection URLs reject credentials and preserve the browser base URL', async t => {
+  const config=configFixture();
+  config.server.publicUrl='http://browser-gateway.test';
+  config.embedded={publicUrl:'http://embedded-gateway.test:8896'};
+  validateDevices(config);
+  for(const publicUrl of ['file:///tmp/key','http://user:secret@example.test','http://example.test/?key=secret','http://example.test/path']) assert.throws(()=>validateDevices({...config,embedded:{publicUrl}}));
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-device-url-'));
+  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));
+  const app=await createApp({configPath});
+  app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  t.after(async()=>{app.server.closeAllConnections();app.server.close();await app.dispose();await fs.rm(dir,{recursive:true,force:true});});
+  const report=await(await fetch(`http://127.0.0.1:${app.server.address().port}/api/admin/devices`)).json();
+  assert.equal(report.publicUrl,config.embedded.publicUrl);
+  assert.equal(app.config.server.publicUrl,'http://browser-gateway.test');
+});

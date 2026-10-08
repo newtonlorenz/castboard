@@ -1,4 +1,5 @@
 import os from 'node:os';
+import { createHash } from 'node:crypto';
 import { configRevision } from './admin-config.js';
 
 const fail = (message, statusCode = 422) => Object.assign(new Error(message), { statusCode, code: 'INVALID_DELIVERY' });
@@ -43,25 +44,28 @@ export function deliveryReport(config, rawConfig, addresses) {
           const target = typeof entry === 'string' ? { name: entry } : entry;
           const protocol = targetProtocol(config, screen, target);
           const configured = config.casting?.protocols?.[protocol];
-          return { index, name: target.name || `Display ${index + 1}`, protocol, canSend: !!link && !!configured && configured.enabled !== false && protocol !== 'url' };
+          const id = createHash('sha256').update(JSON.stringify([protocol, target.address || target.device || target.endpoint || target.name])).digest('hex').slice(0, 24);
+          return { id, index, name: target.name || `Display ${index + 1}`, protocol, canSend: !!link && !!configured && configured.enabled !== false && protocol !== 'url' };
         }),
       };
     }),
   };
 }
 
-export function deliveryTarget(config, screenId, index) {
-  if (typeof screenId !== 'string' || !Object.hasOwn(config.screens, screenId)) throw fail('This screen no longer exists. Refresh and choose another screen.', 404);
+export function deliveryTarget(config, screenId, index, targetScreenId = screenId) {
+  if (typeof screenId !== 'string' || !Object.hasOwn(config.screens, screenId)) throw fail('This dashboard no longer exists. Refresh and choose another dashboard.', 404);
   const screen = config.screens[screenId];
-  if (!Number.isInteger(index) || index < 0 || index >= (screen.targets || []).length) throw fail('This display no longer exists. Refresh and choose another display.', 404);
-  const entry = screen.targets[index];
+  if (typeof targetScreenId !== 'string' || !Object.hasOwn(config.screens, targetScreenId)) throw fail('This display connection no longer exists. Refresh and try again.', 404);
+  const connection = config.screens[targetScreenId];
+  if (!Number.isInteger(index) || index < 0 || index >= (connection.targets || []).length) throw fail('This display no longer exists. Refresh and choose another display.', 404);
+  const entry = connection.targets[index];
   const target = typeof entry === 'string' ? { name: entry, device: entry } : entry;
-  return { screenId, screenType: screen.type, target, protocol: targetProtocol(config, screen, target), url: screenDisplayUrl(config, screen) };
+  return { screenId, screenType: screen.type, target, protocol: targetProtocol(config, connection, target), url: screenDisplayUrl(config, screen) };
 }
 
 export function changeDelivery(rawConfig, body) {
   const next = structuredClone(rawConfig);
-  if (typeof body.screenId !== 'string' || !Object.hasOwn(next.screens, body.screenId)) throw fail('This screen no longer exists. Refresh and choose another screen.', 404);
+  if (typeof body.screenId !== 'string' || !Object.hasOwn(next.screens, body.screenId)) throw fail('This dashboard no longer exists. Refresh and choose another dashboard.', 404);
   const screen = next.screens[body.screenId];
   if (body.action === 'add') {
     const name = typeof body.name === 'string' ? body.name.trim() : '';

@@ -1,12 +1,12 @@
 import sharp from 'sharp';
 import {createHash} from 'node:crypto';
 const fail=message=>Object.assign(new Error(message),{statusCode:422});
-export async function renderNativeImage(input,appOrigin) {
+export async function renderNativeImage(input,appOrigin,bridgeToken) {
   const {id,token,source,width,height,params={}}=input;
   if(!/^[a-z][a-z0-9-]{0,63}$/.test(id || '') || !/^[a-z][a-z0-9-]*$/.test(source || '') || !/^[A-Za-z0-9_-]{32,128}$/.test(token || '') || !Number.isInteger(width) || !Number.isInteger(height) || width<1 || height<1 || width>1920 || height>1920 || width*height>1920*1080 || !params || typeof params!=='object' || Array.isArray(params) || JSON.stringify(params).length>1024)throw fail('Invalid native image request');
   const url=new URL(`/api/devices/${id}/plugins/${source}/stream`,appOrigin);
   for(const [key,value] of Object.entries(params))if(/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(key) && ['string','number','boolean'].includes(typeof value))url.searchParams.set(key,String(value));else throw fail('Invalid image parameter');
-  const response=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'image/jpeg,image/png'},redirect:'error',signal:AbortSignal.timeout(12000)});
+  const response=await fetch(url,{headers:{...(bridgeToken?{'X-Castboard-Bridge':bridgeToken}:{}),Authorization:`Bearer ${token}`,Accept:'image/jpeg,image/png'},redirect:'error',signal:AbortSignal.timeout(12000)});
   if(!response.ok || !/^image\/(jpeg|png)(?:;|$)/i.test(response.headers.get('content-type') || '')){await response.body?.cancel();throw fail('The plugin did not return a snapshot');}
   const maxBytes=2*1024*1024,reader=response.body.getReader(),chunks=[];let total=0;
   try {for(;;){const {value,done}=await reader.read();if(done)break;total+=value.length;if(total>maxBytes)throw fail('Snapshot exceeds 2 MiB');chunks.push(Buffer.from(value));}}

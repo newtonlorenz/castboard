@@ -222,5 +222,6 @@
         "group": "Updates"
       }
     }
-  }
+  },
+  "contract": "solar@1"
 }

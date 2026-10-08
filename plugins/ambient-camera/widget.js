@@ -12,12 +12,14 @@ export async function mount({element,context,config}) {
 
     // ===== UTILITY: Time formatting =====
 
- dashConfig = await context.source('config').data().catch(()=>({}));
+ // Retain explicit legacy shared settings; new panels own camera selection.
+ try { dashConfig = await context.source('config').data(); } catch { dashConfig = {}; }
+ try { if((await context.source('resources').data({path:'/camera/api/cameras'})).demo)dashConfig.demo=true; } catch {}
     // ===== OUTDOOR CAMERA =====
 
     async function loadOutdoorCamera() {
-        var cameraConfig = {...(dashConfig.camera || {}),...(config.cameraName?{name:config.cameraName}:{})};
-        var clearcamConfig = {...(dashConfig.clearcam || {}),...(config.frameRefreshMs?{refreshMs:config.frameRefreshMs}:{})};
+        var cameraConfig = {...(dashConfig.camera || {}),...(config.cameraName?{name:config.cameraName}:{}),...(config.preferredId?{preferredId:config.preferredId}:{})};
+        var clearcamConfig = {enabled:true,...(dashConfig.clearcam || {}),...(config.enableAISnapshots!==undefined?{enabled:config.enableAISnapshots}:{}),...(config.frameRefreshMs?{refreshMs:config.frameRefreshMs}:{}),...(config.clearcamCameraName?{cameraName:config.clearcamCameraName}:{})};
         var cameraName = cameraConfig.name || 'Camera';
         if(dashConfig.demo){document.getElementById('outdoor-camera-status').textContent='Choose a camera source';document.getElementById('outdoor-camera-name').textContent='Demo camera';document.getElementById('outdoor-camera-frame').hidden=true;return;}
         var preferredId = cameraConfig.preferredId || '';

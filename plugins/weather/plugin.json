@@ -44,7 +44,7 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache · milliseconds",
+        "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true,
@@ -53,7 +53,7 @@
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout · milliseconds",
+        "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true,
@@ -157,7 +157,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Refresh · seconds",
+        "title": "Refresh \u00b7 seconds",
         "minimum": 30,
         "maximum": 3600,
         "description": "How often the display checks for new data. Server caching may reuse the previous response.",
@@ -176,7 +176,7 @@
           "auto": "Fit the panel",
           "paged": "Pages with Previous / Next",
           "full": "Full forecast (scrollable)",
-          "overview": "Two pages · 24 hours / 7 days"
+          "overview": "Two pages \u00b7 24 hours / 7 days"
         },
         "group": "Display"
       },
@@ -195,8 +195,8 @@
           "fahrenheit"
         ],
         "enumLabels": {
-          "celsius": "Celsius · °C",
-          "fahrenheit": "Fahrenheit · °F"
+          "celsius": "Celsius \u00b7 \u00b0C",
+          "fahrenheit": "Fahrenheit \u00b7 \u00b0F"
         },
         "default": "celsius",
         "group": "Display"
@@ -226,7 +226,7 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per page · seconds",
+        "title": "Time per page \u00b7 seconds",
         "group": "Display",
         "minimum": 5,
         "maximum": 600,
@@ -281,7 +281,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Refresh · seconds",
+        "title": "Refresh \u00b7 seconds",
         "minimum": 30,
         "maximum": 3600,
         "description": "How often the display checks for new data. Server caching may reuse the previous response.",
@@ -300,7 +300,7 @@
           "auto": "Fit the panel",
           "paged": "Pages with Previous / Next",
           "full": "Full forecast (scrollable)",
-          "overview": "Two pages · 24 hours / 7 days"
+          "overview": "Two pages \u00b7 24 hours / 7 days"
         },
         "group": "Display"
       },
@@ -319,8 +319,8 @@
           "fahrenheit"
         ],
         "enumLabels": {
-          "celsius": "Celsius · °C",
-          "fahrenheit": "Fahrenheit · °F"
+          "celsius": "Celsius \u00b7 \u00b0C",
+          "fahrenheit": "Fahrenheit \u00b7 \u00b0F"
         },
         "default": "celsius",
         "group": "Display"
@@ -350,12 +350,13 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per page · seconds",
+        "title": "Time per page \u00b7 seconds",
         "group": "Display",
         "minimum": 5,
         "maximum": 600,
         "default": 20
       }
     }
-  }
+  },
+  "contract": "weather@1"
 }

@@ -22,7 +22,7 @@ test('camera snapshots, live stream, manual refresh and native images retain sco
     const frame=()=>res.write(Buffer.concat([Buffer.from(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${jpeg.length}\r\n\r\n`),jpeg,Buffer.from('\r\n')]));frame();const timer=setInterval(frame,250);timer.unref();req.once('close',()=>{clearInterval(timer);streams--;});
   }));
   let origin,corrupt=false;
-  const worker=await listen(http.createServer(async(req,res)=>{try{let body='';for await(const chunk of req)body+=chunk;const frame=await renderNativeImage(JSON.parse(body),origin);res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':corrupt?3:frame.buffer.length,'X-Frame-Id':frame.frameId,'X-Frame-Format':'rgb565'});res.end(corrupt?Buffer.alloc(3):frame.buffer);}catch{res.writeHead(503);res.end();}}));
+  const worker=await listen(http.createServer(async(req,res)=>{try{let body='';for await(const chunk of req)body+=chunk;const frame=await renderNativeImage(JSON.parse(body),origin,'native-image-bridge');res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':corrupt?3:frame.buffer.length,'X-Frame-Id':frame.frameId,'X-Frame-Format':'rgb565'});res.end(corrupt?Buffer.alloc(3):frame.buffer);}catch{res.writeHead(503);res.end();}}));
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-camera-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
   const key='test-camera-device-key-with-32-characters';
   const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},embedded:{rendererUrl:worker,rendererToken:'test-private-renderer-token-at-least-32'},plugins:{clock:{enabled:true},camera:{enabled:true,provider:'stream',name:'Test camera',streamUrl:upstream+'/mjpeg',snapshotUrl:upstream+'/snapshot',displayMode:'snapshot',refreshSeconds:300}},screens:{home:{path:'/',type:'single',panels:[{id:'clock',plugin:'clock',interaction:{type:'modal',screenId:'camera'}}]},camera:{path:'/camera',type:'single',title:'Test camera',presentation:'modal',layout:{padding:4},appearance:{panelPadding:6},panels:[{id:'camera',plugin:'camera',options:{showTitle:false,fit:'contain'}}]},stream:{path:'/stream',type:'single',panels:[{id:'stream',plugin:'camera',options:{displayMode:'stream'}}]}},devices:{native:{name:'Test display',screenId:'home',mode:'native',width:320,height:240,format:'rgb565',refreshMs:3000,enabled:true,touch:true,allowActions:false,tokenHash:deviceTokenHash(key)}}};
@@ -31,13 +31,13 @@ test('camera snapshots, live stream, manual refresh and native images retain sco
   config.screens['overlay-home']={path:'/overlay-home',type:'single',panels:[{id:'clock',plugin:'clock',interaction:{type:'modal',screenId:'overlay'}}]};
   config.devices.overlay={...config.devices.native,screenId:'overlay-home',mode:'frame'};
   config.devices.image={...config.devices.native,mode:'frame'};
-  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));const app=await createApp({configPath});origin=await listen(app.server);t.after(()=>app.dispose());
+  const configPath=path.join(dir,'config.json');await fs.writeFile(configPath,JSON.stringify(config));const app=await createApp({configPath});let nativeBridgeRequests=0;app.server.prependListener('request',req=>{if(req.url.startsWith('/api/devices/native/plugins/camera/stream')){assert.equal(req.headers['x-castboard-bridge'],'native-image-bridge');nativeBridgeRequests++;}});origin=await listen(app.server);t.after(()=>app.dispose());
   const headers={Authorization:`Bearer ${key}`,'Content-Type':'application/json'};
   const home=await(await fetch(origin+'/api/devices/native/scene',{headers})).json();
   const opened=await(await fetch(origin+'/api/devices/native/events',{method:'POST',headers,body:JSON.stringify({sceneId:home.sceneId,event:'panel:clock',eventId:'camera001'})})).json();
   assert.equal(opened.modal,true);assert.ok(opened.panels[0].image);assert.equal(JSON.stringify(opened).includes(upstream),false);
   const imageUrl=origin+'/api/devices/native'+opened.panels[0].image.path;
-  let response=await fetch(imageUrl,{headers});assert.equal(response.status,200);let bytes=Buffer.from(await response.arrayBuffer());assert.equal(bytes.length,opened.panels[0].image.width*opened.panels[0].image.height*2);
+  let response=await fetch(imageUrl,{headers});assert.equal(response.status,200);let bytes=Buffer.from(await response.arrayBuffer());assert.equal(bytes.length,opened.panels[0].image.width*opened.panels[0].image.height*2);assert.ok(nativeBridgeRequests>0);
   const size=opened.panels[0].image;assert.equal(bytes.readUInt16LE((Math.floor(size.height/2)*size.width+Math.floor(size.width/2))*2),((0xd8&0xf8)<<8)|((0x44&0xfc)<<3)|(0x32>>3));
   assert.equal((await fetch(imageUrl,{headers:{Authorization:'Bearer wrong'}})).status,401);
   assert.equal((await fetch(imageUrl.replace('/images/0','/images/1'),{headers})).status,403);

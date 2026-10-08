@@ -23,15 +23,11 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Refresh · seconds | `refreshSeconds` | integer; min 1; max 3600 | — | How often the display checks for new data. Server caching may reuse the previous response. |
 | Timeline hours | `hoursAhead` | integer; min 1; max 24 | 6 | How many hours the calendar timeline looks ahead. |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `calendar` | [ambient-calendar-source](../ambient-calendar-source/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Calendar (`calendar`) | calendar-source@1 | [ambient-calendar-source](../ambient-calendar-source/README.md) |
 
 Compatible copies can replace these connections in admin.
 

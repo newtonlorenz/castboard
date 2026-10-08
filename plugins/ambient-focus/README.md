@@ -24,16 +24,11 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Message with no active event | `emptyCurrent` | string | — |  |
 | Message with no upcoming events | `emptyNext` | string | — |  |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `calendar` | [ambient-calendar-source](../ambient-calendar-source/README.md) |
-| `recovery` | [ambient-recovery-source](../ambient-recovery-source/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Calendar (`calendar`) | calendar-source@1 | [ambient-calendar-source](../ambient-calendar-source/README.md) |
 
 Compatible copies can replace these connections in admin.
 

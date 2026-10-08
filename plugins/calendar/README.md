@@ -39,7 +39,7 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Time zone | `timeZone` | string | — | An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone. |
 | Change pages automatically | `autoRotate` | boolean | false | Useful on screens without touch. Reading or interacting pauses the timer. |
 | Time per page · seconds | `rotationSeconds` | integer; min 5; max 600 | 20 |  |
-| Agenda layout | `layout` | Fit the panel (pages when needed), Pages, Scrollable list | auto |  |
+| Agenda layout | `layout` | Fit the panel (pages when needed), Pages, Scrollable list, All events on one screen | auto | Single-screen layout fits the selected events together. Keep Events to show low for small displays. |
 | Events per page | `eventsPerPage` | integer; min 0; max 20 | 0 | 0 fits the available height. Increase for a denser agenda. |
 | Show page controls | `showControls` | boolean | true |  |
 
@@ -61,7 +61,7 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Time zone | `timeZone` | string | — | An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone. |
 | Change pages automatically | `autoRotate` | boolean | false | Useful on screens without touch. Reading or interacting pauses the timer. |
 | Time per page · seconds | `rotationSeconds` | integer; min 5; max 600 | 20 |  |
-| Agenda layout | `layout` | Fit the panel (pages when needed), Pages, Scrollable list | auto |  |
+| Agenda layout | `layout` | Fit the panel (pages when needed), Pages, Scrollable list, All events on one screen | auto | Single-screen layout fits the selected events together. Keep Events to show low for small displays. |
 | Events per page | `eventsPerPage` | integer; min 0; max 20 | 0 | 0 fits the available height. Increase for a denser agenda. |
 | Show page controls | `showControls` | boolean | true |  |
 

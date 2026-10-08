@@ -1,21 +1,15 @@
 {
-  "name": "Weather Adapter",
-  "description": "Provide current weather to dashboard panels from an upstream plugin or shared service.",
-  "version": "1.1.0",
+  "name": "Weather Connection",
+  "description": "Configure weather data independently, or reuse a compatible shared provider.",
+  "version": "2.0.0",
   "license": "MIT",
   "category": "Data connectors",
   "defaultConfig": {
-    "route": "/api/weather",
-    "provider": "services"
+    "provider": "demo",
+    "cacheMs": 300000
   },
-  "defaultBindings": {
-    "services": "ambient-services",
-    "upstream": "weather"
-  },
-  "dependencies": [
-    "ambient-services",
-    "weather"
-  ],
+  "defaultBindings": {},
+  "dependencies": [],
   "settingsSchema": {
     "type": "object",
     "properties": {
@@ -30,14 +24,99 @@
         "type": "string",
         "title": "Data source",
         "enum": [
-          "services",
-          "plugin"
+          "demo",
+          "open-meteo",
+          "http-json",
+          "file-json",
+          "plugin",
+          "services"
         ],
         "enumLabels": {
-          "services": "Shared data service",
-          "plugin": "Connected plugin"
+          "demo": "Sample data",
+          "open-meteo": "Open-Meteo (no account needed)",
+          "http-json": "Web endpoint (JSON)",
+          "file-json": "Local file (JSON)",
+          "plugin": "Shared provider",
+          "services": "Legacy shared service"
         },
-        "description": "Choose the compatible data service or connected plugin that supplies this copy.",
+        "description": "Configure this connection directly, or deliberately reuse a compatible provider.",
+        "group": "Data source"
+      },
+      "cacheMs": {
+        "type": "integer",
+        "title": "Response cache \u00b7 milliseconds",
+        "minimum": 0,
+        "maximum": 3600000,
+        "advanced": true,
+        "description": "How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval.",
+        "group": "Updates"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "title": "Request timeout \u00b7 milliseconds",
+        "minimum": 500,
+        "maximum": 120000,
+        "advanced": true,
+        "description": "Maximum wait for an upstream response before showing an unavailable state.",
+        "group": "Updates"
+      },
+      "url": {
+        "type": "string",
+        "title": "JSON endpoint",
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        },
+        "description": "Endpoint returning the documented JSON data format for this plugin.",
+        "group": "Data source"
+      },
+      "path": {
+        "type": "string",
+        "title": "JSON file path",
+        "showWhen": {
+          "provider": [
+            "file-json"
+          ]
+        },
+        "description": "Path on the Castboard server, relative to its configuration folder. In Docker, this must be a mounted path.",
+        "group": "Data source"
+      },
+      "headers": {
+        "type": "object",
+        "title": "Request headers",
+        "sensitive": true,
+        "showWhen": {
+          "provider": [
+            "http-json"
+          ]
+        },
+        "advanced": true,
+        "description": "Optional request headers as a JSON object. Saved values are hidden and never sent to displays.",
+        "group": "Data source"
+      },
+      "latitude": {
+        "type": "number",
+        "title": "Latitude",
+        "minimum": -90,
+        "maximum": 90,
+        "showWhen": {
+          "provider": [
+            "open-meteo"
+          ]
+        },
+        "group": "Data source"
+      },
+      "longitude": {
+        "type": "number",
+        "title": "Longitude",
+        "minimum": -180,
+        "maximum": 180,
+        "showWhen": {
+          "provider": [
+            "open-meteo"
+          ]
+        },
         "group": "Data source"
       },
       "route": {
@@ -48,8 +127,46 @@
             "services"
           ]
         },
-        "description": "Route exposed by the shared service, such as /api/weather. Only supported routes can be used.",
+        "description": "Compatibility route for an existing legacy shared service. New connections use their own provider settings.",
+        "group": "Data source",
+        "advanced": true
+      },
+      "timeZone": {
+        "type": "string",
+        "title": "Time zone",
+        "description": "Leave empty to use the application time zone.",
         "group": "Data source"
+      }
+    }
+  },
+  "packageDependencies": [
+    "weather"
+  ],
+  "connectionSchema": {
+    "upstream": {
+      "title": "Shared weather provider",
+      "contract": "weather@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": true,
+      "showWhen": {
+        "provider": [
+          "plugin"
+        ]
+      }
+    },
+    "services": {
+      "title": "Legacy service",
+      "capabilities": [
+        "data"
+      ],
+      "required": true,
+      "legacy": true,
+      "showWhen": {
+        "provider": [
+          "services"
+        ]
       }
     }
   }

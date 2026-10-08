@@ -25,12 +25,12 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Check for updates · seconds | `refreshSeconds` | integer; min 15; max 3600 | 60 | How often the display requests data. The response cache can reduce upstream requests. |
 | Time zone | `timeZone` | string | — | Empty uses the screen’s time zone. |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `calendar` | [calendar](../calendar/README.md) |
-| `recovery` | [recovery](../recovery/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Calendar (`calendar`) | calendar@1 | [calendar](../calendar/README.md) |
+| Recovery (`recovery`) | recovery@1 | [recovery](../recovery/README.md) |
 
 Compatible copies can replace these connections in admin.
 

@@ -8,7 +8,7 @@ Package ID: `ambient-news`. Category: Dashboard panels. MIT licensed. Names show
 
 Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-Available sources: **Connected briefing service** (`briefings`), **Sample data** (`demo`), **RSS / Atom feeds** (`rss`), **Markdown folder** (`markdown-directory`), **Web endpoint (JSON)** (`http-json`), **Local file (JSON)** (`file-json`).
+Available sources: **Briefing service** (`briefings`), **Sample data** (`demo`), **RSS / Atom feeds** (`rss`), **Markdown folder** (`markdown-directory`), **Web endpoint (JSON)** (`http-json`), **Local file (JSON)** (`file-json`).
 
 Start with **Sample data** to try the layout without an external service. HTTP and file JSON must match the [canonical contracts](../../docs/PLUGIN-CONTRACTS.md). File paths are relative to the Castboard configuration. JSON files and HTTP responses are limited to 1 MiB. See the [configuration guide](../../docs/CONFIGURATION.md) for environment references and secret values.
 
@@ -21,7 +21,7 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Setting | Key | Accepted values | Default | Notes |
 | --- | --- | --- | --- | --- |
 | Name in admin | `displayName` | string; up to 100 characters | — | Name this copy for its purpose, such as Lobby weather or Workshop energy. Its connection ID stays the same. |
-| Data source | `provider` | Connected briefing service, Sample data, RSS / Atom feeds, Markdown folder, Web endpoint (JSON), Local file (JSON) | demo | Choose where this reader obtains its stories. Source settings apply to this copy only. |
+| Data source | `provider` | Briefing service, Sample data, RSS / Atom feeds, Markdown folder, Web endpoint (JSON), Local file (JSON) | demo | Choose where this reader obtains its stories. Source settings apply to this copy only. |
 | Response cache · milliseconds | `cacheMs` | integer; min 0; max 3600000 | — | How long server responses are reused. 0 bypasses this response cache; a provider may also have its own refresh interval. |
 | Request timeout · milliseconds | `timeoutMs` | integer; min 500; max 120000 | — | Maximum wait for an upstream response before showing an unavailable state. |
 | JSON endpoint | `url` | string | — | Endpoint returning the documented JSON data format for this plugin. |
@@ -49,16 +49,14 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Maximum briefing age · days | `briefingMaxAgeDays` | integer; min 0; max 365 | 1 | 1 includes today’s briefings. 0 also keeps older briefings supplied by the service. |
 | Show headline sidebar | `showHeadlines` | boolean | true |  |
 | Show category buttons | `showCategories` | boolean | true |  |
+| Briefing service URL | `briefingBaseUrl` | string | — | Base URL including the briefing path, for example https://your-service.example/api/briefings. Each configured briefing ID is appended to this path. |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `portfolio` | [ambient-portfolio-source](../ambient-portfolio-source/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Portfolio briefing (`portfolio`) | portfolio-source@1 | Choose when needed |
+| Legacy briefing service (`services`) | Legacy / package-specific | Choose when needed |
 
 Compatible copies can replace these connections in admin.
 

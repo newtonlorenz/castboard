@@ -93,5 +93,25 @@
   "defaultBindings": {
     "calendar": "calendar",
     "recovery": "recovery"
+  },
+  "connectionSchema": {
+    "calendar": {
+      "title": "Calendar",
+      "contract": "calendar@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": false,
+      "description": "Choose a calendar source. Older configurations continue to use the calendar instance when this input is unset."
+    },
+    "recovery": {
+      "title": "Recovery",
+      "contract": "recovery@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": false,
+      "description": "Optional wellbeing context. Configure the selected source independently."
+    }
   }
 }

@@ -16,5 +16,6 @@
     }
   },
   "license": "MIT",
-  "defaultConfig": {}
+  "defaultConfig": {},
+  "internal": true
 }

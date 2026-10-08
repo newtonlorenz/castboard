@@ -16,7 +16,9 @@ export function mount({ element, config, context }) {
     const events = calendarEvents(data,config);
     const padding = parseFloat(getComputedStyle(element).paddingTop)+parseFloat(getComputedStyle(element).paddingBottom);
     const capacity = config.eventsPerPage || Math.max(1,Math.floor((element.clientHeight-padding-88)/78));
-    const paged = config.layout !== 'scroll' && (config.layout === 'pages' || events.length>capacity);
+    const full = config.layout === 'full';
+    element.classList.toggle('calendar-full',full);
+    const paged = !full && config.layout !== 'scroll' && (config.layout === 'pages' || events.length>capacity);
     element.classList.toggle('calendar-paged',paged);
     pageCount = paged ? Math.max(1,Math.ceil(events.length/capacity)) : 1;
     page = Math.min(page,pageCount-1);

@@ -1,6 +1,6 @@
 # Clock Panel
 
-Show time and date using shared display settings, with optional time zone and location overrides.
+Show time and date with this clock’s own time zone, location and date-format settings. Existing shared settings remain supported.
 
 Package ID: `ambient-clock`. Category: Dashboard panels. MIT licensed. Names shown in admin can be changed for each installed copy; package IDs stay stable.
 
@@ -8,7 +8,7 @@ Package ID: `ambient-clock`. Category: Dashboard panels. MIT licensed. Names sho
 
 Install from **Plugins → Library**. Select the installed copy, give it a name, choose its content source and save its settings. Multiple copies can use separate sources and defaults.
 
-This package uses source connections listed below. Admin installs the required packages and connects them automatically. The [dashboard panel guide](../../docs/AMBIENT-PLUGINS.md) explains bridge routes and canonical source adapters.
+This package operates locally without an external data service. See [plugin authoring](../../docs/PLUGINS.md) for its lifecycle and extension interfaces.
 
 Add the installed copy to a screen with **Add to a screen**. Screen Studio can override the display settings below for each panel. Browser rendering supports phones, tablets, kiosks and Cast displays; image mode renders the same view for an embedded receiver. Native mode is supported only by packages with a native view; use image mode for camera/video and rich companion panels.
 
@@ -27,17 +27,6 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Show date | `showDate` | boolean | true |  |
 | Language and region | `locale` | string | — | Leave empty for the browser’s language, or use a locale such as en-GB or fr-FR. |
 | Date style | `dateStyle` | long, short, numeric | long |  |
-
-## Source connections
-
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-
-Compatible copies can replace these connections in admin.
 
 ## Panel overrides
 

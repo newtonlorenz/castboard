@@ -14,11 +14,11 @@ test('every Ambient display installs its declared dependencies and serves typed 
  const catalog=await pluginLibrary({pluginsDir:path.join(root,'plugins'),config,configDir});
  const display=catalog.filter(pkg=>pkg.id.startsWith('ambient-')&&pkg.hasWidget);assert.equal(display.length,11);
  for(const pkg of display)config=changePluginConfig(config,catalog,{action:'install',id:pkg.id,type:pkg.id});
- const source={clock:'config',focus:'calendar',calendar:'calendar',weather:'weather',solar:'solar',recovery:'recovery',portfolio:'portfolio',media:'media'};
+ const source={focus:'calendar',calendar:'calendar',weather:'weather',solar:'solar',recovery:'recovery',portfolio:'portfolio',media:'media'};
  config.screens.gallery.panels=display.map((pkg,index)=>{const kind=pkg.id.slice(8);return{id:pkg.id,plugin:pkg.id,...(source[kind]?{source:`ambient-${source[kind]}-source`}:{}),position:{column:(index%4)*3+1,row:Math.floor(index/4)*2+1,width:3,height:2}};});
  const app=await createApp({loadedConfig:{config,rawConfig:config,configDir,configPath:path.join(configDir,'config.json')},logger:{error(){}}});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(async()=>{app.server.closeAllConnections();await new Promise(resolve=>app.server.close(resolve));await app.dispose();});
  const url=`http://127.0.0.1:${app.server.address().port}`;
- for(const name of ['config','calendar','weather','solar','recovery','portfolio','media']){const response=await fetch(`${url}/api/plugins/ambient-${name}-source/data`);assert.equal(response.status,200,name);const data=await response.json();assert.equal(data.ok,true,name);assert.equal(data.data.demo,true,name);}
+ for(const name of ['calendar','weather','solar','recovery','portfolio','media','alerts']){const response=await fetch(`${url}/api/plugins/ambient-${name}-source/data`);assert.equal(response.status,200,name);const data=await response.json();assert.equal(data.ok,true,name);assert.equal(data.data.demo,true,name);}
  for(const name of ['runtime','theme']){const asset=name==='runtime'?'runtime.js':'mission.css';assert.equal((await fetch(`${url}/plugins/ambient-${name}/assets/${asset}`)).status,200);}
  const publicConfig=await(await fetch(url+'/api/runtime-config')).json();assert.equal(JSON.stringify(publicConfig).includes('settingsSchema'),false);assert.equal(JSON.stringify(publicConfig).includes('_configSignature'),false);assert.equal(publicConfig.screens.gallery.panels.length,11);
 });

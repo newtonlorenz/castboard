@@ -22,6 +22,10 @@ export function validateDevices(config) {
     if (!/^[a-f0-9]{64}$/.test(device.tokenHash)) throw deviceError(`Display ${id} needs a connection key`);
     for (const field of ['enabled', 'touch', 'allowActions']) if (typeof device[field] !== 'boolean') throw deviceError(`Display ${id} ${field} must be true or false`);
   }
+  if (config.embedded?.publicUrl) {
+    const url = new URL(config.embedded.publicUrl);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw deviceError('embedded.publicUrl must be an http(s) origin');
+  }
   if (config.embedded?.rendererUrl) {
     const url = new URL(config.embedded.rendererUrl);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw deviceError('embedded.rendererUrl must be an http(s) origin');

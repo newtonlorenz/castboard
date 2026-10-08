@@ -11,7 +11,8 @@ export async function mount({element,context,config}) {
 
     // ===== UTILITY: Time formatting =====
 
- dashConfig = await context.source('config').data().catch(()=>({}));
+ // Older configurations may deliberately share display settings. New clocks own theirs.
+ try { dashConfig = await context.source('config').data(); } catch { dashConfig = {}; }
     // ===== CLOCK =====
 
     function updateClock() {

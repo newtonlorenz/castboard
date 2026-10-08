@@ -147,3 +147,22 @@ An image URL must use HTTP/HTTPS without embedded credentials, or a same-origin 
 This package uses a public `url`, not a JSON source. Empty shows a sample embedded page. Scripts and forms are separately opt-in; the iframe has no same-origin privilege. Use a site that permits embedding and does not require access to Castboard credentials. Reload interval defaults to 0 (leave running); optional reloads are postponed during interaction. Native mode gives text guidance; browser/image mode displays the page.
 
 Metrics, Status Board and Menu native summaries are capped at 12 records. Use browser/image mode for the full automatically paged lists.
+
+
+## Companion camera detections
+
+`camera-alerts@1` supplies an `alerts` array to Detection Feed. Each entry may
+include `timestamp` or `captured_at`, `class_ids`, `cam_name`, `folder`,
+`filename` and a thumbnail path in `url`.
+An empty array is a valid no-detections result. Invalid responses fail explicitly.
+Image and clip delivery uses a separately selected `camera-resources@1` source
+with streaming capability; provider credentials stay on the server.
+
+## Briefing service
+
+News Reader’s Briefing service mode owns a base URL such as
+`https://your-service.example/api/briefings`. It appends each configured briefing
+ID and reads `{ "content": "Markdown text", "date": "YYYY-MM-DD" }`.
+Request headers and timeout belong to that reader copy. New direct connections
+only request configured IDs; they do not expose arbitrary service routes.
+RSS/Atom responses are bounded to 2 MiB per feed; JSON remains bounded to 1 MiB.

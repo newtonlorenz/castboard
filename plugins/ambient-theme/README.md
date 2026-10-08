@@ -10,7 +10,7 @@ Install from **Plugins → Library**. Select the installed copy, give it a name,
 
 This package operates locally without an external data service. See [plugin authoring](../../docs/PLUGINS.md) for its lifecycle and extension interfaces.
 
-This is a support package. Connect it through a display plugin’s **Source connections**; it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
+This is a rendering support package. Companion displays install it automatically as an internal dependency. it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
 
 ## Connection settings
 

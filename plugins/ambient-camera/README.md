@@ -22,16 +22,15 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
 | Preferred camera name | `cameraName` | string | — | Camera name supplied by the connected camera service. Empty uses the default camera. |
 | Image refresh · milliseconds | `frameRefreshMs` | integer; min 800; max 60000 | — | Time between snapshot updates, in milliseconds. |
+| Preferred camera ID | `preferredId` | string | — | Leave empty to use the first camera returned by the service. |
+| Snapshot camera name | `clearcamCameraName` | string | — | Name used by the snapshot service. Leave empty to use the panel camera name. |
+| Use detection snapshots | `enableAISnapshots` | boolean | true | Use fresh snapshots from the detection service, with the camera stream as fallback. |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `resources` | [ambient-resources](../ambient-resources/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Camera service (`resources`) | camera-resources@1 | [ambient-resources](../ambient-resources/README.md) |
 
 Compatible copies can replace these connections in admin.
 
@@ -44,6 +43,9 @@ Panel overrides affect only that panel. Source credentials and content settings 
 | Display title | `title` | string | — | Default heading on the display. A screen panel can override it. |
 | Preferred camera name | `cameraName` | string | — | Camera name supplied by the connected camera service. Empty uses the default camera. |
 | Image refresh · milliseconds | `frameRefreshMs` | integer; min 800; max 60000 | — | Time between snapshot updates, in milliseconds. |
+| Preferred camera ID | `preferredId` | string | — | Leave empty to use the first camera returned by the service. |
+| Snapshot camera name | `clearcamCameraName` | string | — | Name used by the snapshot service. Leave empty to use the panel camera name. |
+| Use detection snapshots | `enableAISnapshots` | boolean | true | Use fresh snapshots from the detection service, with the camera stream as fallback. |
 
 ## Privacy and maintenance
 

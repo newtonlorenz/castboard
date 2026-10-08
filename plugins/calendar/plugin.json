@@ -43,7 +43,7 @@
       },
       "cacheMs": {
         "type": "integer",
-        "title": "Response cache · milliseconds",
+        "title": "Response cache \u00b7 milliseconds",
         "minimum": 0,
         "maximum": 3600000,
         "advanced": true,
@@ -52,7 +52,7 @@
       },
       "timeoutMs": {
         "type": "integer",
-        "title": "Request timeout · milliseconds",
+        "title": "Request timeout \u00b7 milliseconds",
         "minimum": 500,
         "maximum": 120000,
         "advanced": true,
@@ -112,7 +112,7 @@
       },
       "daysAhead": {
         "type": "integer",
-        "title": "Look ahead · days",
+        "title": "Look ahead \u00b7 days",
         "minimum": 0,
         "maximum": 365,
         "default": 0,
@@ -149,7 +149,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check for updates · seconds",
+        "title": "Check for updates \u00b7 seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
@@ -159,7 +159,7 @@
       "timeZone": {
         "type": "string",
         "title": "Time zone",
-        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone.",
+        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen\u2019s time zone.",
         "group": "Display"
       },
       "autoRotate": {
@@ -171,7 +171,7 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per page · seconds",
+        "title": "Time per page \u00b7 seconds",
         "group": "Display",
         "minimum": 5,
         "maximum": 600,
@@ -184,14 +184,17 @@
         "enum": [
           "auto",
           "pages",
-          "scroll"
+          "scroll",
+          "full"
         ],
         "enumLabels": {
           "auto": "Fit the panel (pages when needed)",
           "pages": "Pages",
-          "scroll": "Scrollable list"
+          "scroll": "Scrollable list",
+          "full": "All events on one screen"
         },
-        "default": "auto"
+        "default": "auto",
+        "description": "Single-screen layout fits the selected events together. Keep Events to show low for small displays."
       },
       "eventsPerPage": {
         "type": "integer",
@@ -235,7 +238,7 @@
       },
       "daysAhead": {
         "type": "integer",
-        "title": "Look ahead · days",
+        "title": "Look ahead \u00b7 days",
         "minimum": 0,
         "maximum": 365,
         "default": 0,
@@ -272,7 +275,7 @@
       },
       "refreshSeconds": {
         "type": "integer",
-        "title": "Check for updates · seconds",
+        "title": "Check for updates \u00b7 seconds",
         "minimum": 15,
         "maximum": 3600,
         "default": 60,
@@ -282,7 +285,7 @@
       "timeZone": {
         "type": "string",
         "title": "Time zone",
-        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen’s time zone.",
+        "description": "An IANA name such as Europe/Madrid or America/New_York. Empty uses the screen\u2019s time zone.",
         "group": "Display"
       },
       "autoRotate": {
@@ -294,7 +297,7 @@
       },
       "rotationSeconds": {
         "type": "integer",
-        "title": "Time per page · seconds",
+        "title": "Time per page \u00b7 seconds",
         "group": "Display",
         "minimum": 5,
         "maximum": 600,
@@ -307,14 +310,17 @@
         "enum": [
           "auto",
           "pages",
-          "scroll"
+          "scroll",
+          "full"
         ],
         "enumLabels": {
           "auto": "Fit the panel (pages when needed)",
           "pages": "Pages",
-          "scroll": "Scrollable list"
+          "scroll": "Scrollable list",
+          "full": "All events on one screen"
         },
-        "default": "auto"
+        "default": "auto",
+        "description": "Single-screen layout fits the selected events together. Keep Events to show low for small displays."
       },
       "eventsPerPage": {
         "type": "integer",
@@ -332,5 +338,6 @@
         "default": true
       }
     }
-  }
+  },
+  "contract": "calendar@1"
 }

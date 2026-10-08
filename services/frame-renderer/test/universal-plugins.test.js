@@ -8,7 +8,7 @@ import {once} from 'node:events';
 import {createApp} from '../../../src/server.js';
 const ids=['weather','calendar','noticeboard','clock','news','metrics','status-board','menu','image-slideshow','web-page'];
 test('universal panels adapt, rotate without refresh starvation and keep readers in control',{skip:process.env.CASTBOARD_BROWSER_TESTS!=='1',timeout:120000},async t=>{
- const {chromium}=await import('playwright');const browser=await chromium.launch();t.after(()=>browser.close());
+ const {chromium}=await import('playwright');const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});t.after(()=>browser.close());
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-universal-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
  const remote=http.createServer((req,res)=>{if(req.url==='/slide.svg'){res.writeHead(200,{'Content-Type':'image/svg+xml'});return res.end('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="600" height="300" fill="green"/></svg>');}if(req.url==='/missing.svg'){res.writeHead(404);return res.end();}res.writeHead(200,{'Content-Type':'text/html'});res.end('<h1>External sample page</h1><script>document.body.dataset.executed="yes";try{parent.document.body.dataset.leaked="true"}catch{document.body.dataset.isolated="yes"}</script>');});remote.listen(0,'127.0.0.1');await once(remote,'listening');t.after(()=>new Promise(resolve=>remote.close(resolve)));const remoteOrigin='http://127.0.0.1:'+remote.address().port;
  const config={server:{host:'127.0.0.1',port:8787},branding:{name:'Sample panels',timeZone:'UTC'},defaultScreen:'clock',plugins:{},screens:{}};

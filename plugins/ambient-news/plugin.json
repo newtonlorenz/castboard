@@ -1,7 +1,7 @@
 {
   "name": "News Reader",
   "description": "A full-screen news reader with categories, automatic rotation and article view. Choose briefing services, RSS, Atom, Markdown or JSON.",
-  "version": "1.5.0",
+  "version": "1.4.0",
   "license": "MIT",
   "category": "Dashboard panels",
   "defaultConfig": {
@@ -29,14 +29,14 @@
           "file-json"
         ],
         "enumLabels": {
-          "briefings": "Connected briefing service",
+          "briefings": "Briefing service",
           "demo": "Sample data",
           "rss": "RSS / Atom feeds",
           "markdown-directory": "Markdown folder",
           "http-json": "Web endpoint (JSON)",
           "file-json": "Local file (JSON)"
         },
-        "default": "briefings",
+        "default": "demo",
         "description": "Choose where this reader obtains its stories. Source settings apply to this copy only.",
         "group": "Data source"
       },
@@ -88,7 +88,8 @@
         "showWhen": {
           "provider": [
             "http-json",
-            "rss"
+            "rss",
+            "briefings"
           ]
         },
         "advanced": true,
@@ -344,7 +345,7 @@
         },
         "addLabel": "Add briefing",
         "itemLabel": "briefing",
-        "emptyLabel": "Uses categories supplied by the connected service.",
+        "emptyLabel": "Uses the top-stories briefing ID.",
         "showWhen": {
           "provider": [
             "briefings"
@@ -378,6 +379,17 @@
         "title": "Show category buttons",
         "default": true,
         "group": "Display"
+      },
+      "briefingBaseUrl": {
+        "type": "string",
+        "title": "Briefing service URL",
+        "description": "Base URL including the briefing path, for example https://your-service.example/api/briefings. Each configured briefing ID is appended to this path.",
+        "group": "Data source",
+        "showWhen": {
+          "provider": [
+            "briefings"
+          ]
+        }
       }
     }
   },
@@ -482,16 +494,46 @@
   },
   "defaultBindings": {
     "runtime": "ambient-runtime",
-    "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
-    "portfolio": "ambient-portfolio-source"
+    "theme": "ambient-theme"
   },
   "dependencies": [
     "ambient-runtime",
-    "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
-    "ambient-portfolio-source"
+    "ambient-theme"
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "portfolio": {
+      "title": "Portfolio briefing",
+      "contract": "portfolio-source@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": false,
+      "showWhen": {
+        "provider": [
+          "briefings"
+        ]
+      },
+      "description": "Optional source for a portfolio-brief category."
+    },
+    "services": {
+      "title": "Legacy briefing service",
+      "capabilities": [
+        "data"
+      ],
+      "required": false,
+      "legacy": true,
+      "showWhen": {
+        "provider": [
+          "briefings"
+        ]
+      }
+    }
+  },
+  "packageDependencies": [
+    "news"
   ]
 }

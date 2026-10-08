@@ -143,15 +143,26 @@
   "defaultBindings": {
     "runtime": "ambient-runtime",
     "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
     "weather": "ambient-weather-source"
   },
   "dependencies": [
     "ambient-runtime",
     "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
     "ambient-weather-source"
-  ]
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "weather": {
+      "title": "Weather",
+      "contract": "weather-source@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": true,
+      "description": "Select a configured source. Its account and update settings stay with that source."
+    }
+  }
 }

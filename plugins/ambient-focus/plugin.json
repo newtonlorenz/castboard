@@ -73,17 +73,26 @@
   "defaultBindings": {
     "runtime": "ambient-runtime",
     "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
-    "calendar": "ambient-calendar-source",
-    "recovery": "ambient-recovery-source"
+    "calendar": "ambient-calendar-source"
   },
   "dependencies": [
     "ambient-runtime",
     "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
-    "ambient-calendar-source",
-    "ambient-recovery-source"
-  ]
+    "ambient-calendar-source"
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "calendar": {
+      "title": "Calendar",
+      "contract": "calendar-source@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": true,
+      "description": "Choose the calendar used for current and upcoming focus time."
+    }
+  }
 }

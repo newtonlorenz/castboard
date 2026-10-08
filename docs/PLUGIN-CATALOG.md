@@ -2,33 +2,34 @@
 
 Install from **Plugins → Library**. Give each copy a name and connect its sources. Use screen panel overrides to reuse a source in different layouts. All packages are MIT licensed. Package IDs are retained for existing configurations.
 
-The library separates complete display plugins, companion dashboard panels, data connectors and support packages. Use complete display plugins for canonical JSON, ICS, RSS and direct integrations. Companion panels offer coordinated styling through the shared theme and runtime; their source adapters can connect canonical plugins or a compatible service bridge.
+The library separates complete display plugins, companion dashboard panels, data connectors and support packages. Use complete display plugins for canonical JSON, ICS, RSS and direct integrations. Companion panels offer coordinated styling through the shared theme and runtime; their independently configured sources own provider settings and can deliberately share a compatible account. Runtime and theme are internal rendering dependencies. The shared service bridge remains for older configurations.
 
 | Name | Purpose | Category | Guide |
 | --- | --- | --- | --- |
 | Camera Alerts | Review camera detections supplied by the connected camera resources. | Dashboard panels | [`ambient-alerts`](../plugins/ambient-alerts/README.md) |
+| Camera Detections | Connect one detection dataset from a JSON endpoint or local file, with independent credentials and update settings. | Data connectors | [`ambient-alerts-source`](../plugins/ambient-alerts-source/README.md) |
 | Calendar Timeline | Show a timeline of events from a calendar adapter, with a configurable look-ahead period. | Dashboard panels | [`ambient-calendar`](../plugins/ambient-calendar/README.md) |
-| Calendar Adapter | Convert a connected calendar plugin or shared service into the timeline format used by dashboard panels. | Data connectors | [`ambient-calendar-source`](../plugins/ambient-calendar-source/README.md) |
+| Calendar Connection | Configure calendar data independently, or reuse a compatible shared provider. | Data connectors | [`ambient-calendar-source`](../plugins/ambient-calendar-source/README.md) |
 | Camera Panel | Browse cameras and snapshots from connected camera resources. Choose a camera name and image refresh timing. | Dashboard panels | [`ambient-camera`](../plugins/ambient-camera/README.md) |
-| Clock Panel | Show time and date using shared display settings, with optional time zone and location overrides. | Dashboard panels | [`ambient-clock`](../plugins/ambient-clock/README.md) |
-| Shared Display Settings | Provide shared location and display settings to companion panels. | Data connectors | [`ambient-config-source`](../plugins/ambient-config-source/README.md) |
+| Clock Panel | Show time and date with this clock’s own time zone, location and date-format settings. Existing shared settings remain supported. | Dashboard panels | [`ambient-clock`](../plugins/ambient-clock/README.md) |
+| Legacy Shared Settings | Compatibility package for older configurations. New displays and sources own their settings independently. | Support | [`ambient-config-source`](../plugins/ambient-config-source/README.md) |
 | Focus Strip | Show current and next events from a connected calendar, with editable empty-state text. | Dashboard panels | [`ambient-focus`](../plugins/ambient-focus/README.md) |
 | Display Link Launcher | Open links on a configured cast device through the local cast command. | Data connectors | [`ambient-launch-source`](../plugins/ambient-launch-source/README.md) |
 | Speaker Controls | Show speaker playback and optional controls using the connected speaker source. | Dashboard panels | [`ambient-media`](../plugins/ambient-media/README.md) |
 | Speaker Source | Connect speaker playback and actions to dashboard panels, using sample data or a compatible web service. | Data connectors | [`ambient-media-source`](../plugins/ambient-media-source/README.md) |
 | News Reader | A full-screen news reader with categories, automatic rotation and article view. Choose briefing services, RSS, Atom, Markdown or JSON. | Dashboard panels | [`ambient-news`](../plugins/ambient-news/README.md) |
 | Portfolio Panel | Show account totals and positions supplied by a portfolio adapter. Choose a title, row limit and update timing. | Dashboard panels | [`ambient-portfolio`](../plugins/ambient-portfolio/README.md) |
-| Portfolio Adapter | Provide portfolio data to dashboard panels from a compatible upstream plugin or shared service. | Data connectors | [`ambient-portfolio-source`](../plugins/ambient-portfolio-source/README.md) |
+| Portfolio Connection | Configure portfolio data independently, or reuse a compatible shared provider. | Data connectors | [`ambient-portfolio-source`](../plugins/ambient-portfolio-source/README.md) |
 | Wellbeing Panel | Show recovery, sleep and strain supplied by a wellbeing adapter. Choose which measurements appear. | Dashboard panels | [`ambient-recovery`](../plugins/ambient-recovery/README.md) |
-| Wellbeing Adapter | Provide recovery, sleep and strain data to dashboard panels from an upstream plugin or shared service. | Data connectors | [`ambient-recovery-source`](../plugins/ambient-recovery-source/README.md) |
+| Recovery Connection | Configure recovery data independently, or reuse a compatible shared provider. | Data connectors | [`ambient-recovery-source`](../plugins/ambient-recovery-source/README.md) |
 | Camera Resources | Provide camera lists, snapshots and detections to camera panels from sample data or a compatible service. | Data connectors | [`ambient-resources`](../plugins/ambient-resources/README.md) |
 | Display Runtime | Shared display behavior required by companion dashboard panels. It has no user-facing panel. | Support | [`ambient-runtime`](../plugins/ambient-runtime/README.md) |
-| Shared Service Connector | Connect dashboard adapters to sample data or a compatible service endpoint. Credentials stay on the server. | Data connectors | [`ambient-services`](../plugins/ambient-services/README.md) |
+| Legacy Service Connector | Compatibility package for older configurations. New displays and sources own their settings independently. | Support | [`ambient-services`](../plugins/ambient-services/README.md) |
 | Energy Panel | Show generation, use and grid flow supplied by an energy adapter. Choose a title and numeric precision. | Dashboard panels | [`ambient-solar`](../plugins/ambient-solar/README.md) |
-| Energy Adapter | Provide power and grid-flow data to dashboard panels from an upstream plugin or shared service. | Data connectors | [`ambient-solar-source`](../plugins/ambient-solar-source/README.md) |
+| Solar Connection | Configure solar data independently, or reuse a compatible shared provider. | Data connectors | [`ambient-solar-source`](../plugins/ambient-solar-source/README.md) |
 | Dashboard Theme | Shared visual styles required by companion dashboard panels. It has no user-facing panel. | Support | [`ambient-theme`](../plugins/ambient-theme/README.md) |
 | Current Weather Panel | Show current conditions supplied by a weather adapter. Choose Celsius or Fahrenheit and update timing. | Dashboard panels | [`ambient-weather`](../plugins/ambient-weather/README.md) |
-| Weather Adapter | Provide current weather to dashboard panels from an upstream plugin or shared service. | Data connectors | [`ambient-weather-source`](../plugins/ambient-weather-source/README.md) |
+| Weather Connection | Configure weather data independently, or reuse a compatible shared provider. | Data connectors | [`ambient-weather-source`](../plugins/ambient-weather-source/README.md) |
 | Calendar Agenda | Show upcoming events from an ICS calendar or JSON source. Choose an event horizon, calendars, locations and update timing. | Display plugins | [`calendar`](../plugins/calendar/README.md) |
 | Camera Viewer | Show a live stream or refreshing snapshots from a camera service or Home Assistant. Control image fit, titles and update timestamps. | Display plugins | [`camera`](../plugins/camera/README.md) |
 | Clock | Show local time, a different time zone, or a clock for any location. Choose date style, language and 12- or 24-hour time. | Display plugins | [`clock`](../plugins/clock/README.md) |

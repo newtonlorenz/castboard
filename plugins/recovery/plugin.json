@@ -166,5 +166,6 @@
         "group": "Updates"
       }
     }
-  }
+  },
+  "contract": "recovery@1"
 }

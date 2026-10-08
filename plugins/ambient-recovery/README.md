@@ -26,15 +26,11 @@ A provider failure is isolated to its panel. It retries on the configured refres
 | Positive score from | `goodThreshold` | number; min 0; max 100 | 67 |  |
 | Caution score from | `warningThreshold` | number; min 0; max 100 | 34 |  |
 
-## Source connections
+## Shared sources
 
-| Connection | Default package |
-| --- | --- |
-| `runtime` | [ambient-runtime](../ambient-runtime/README.md) |
-| `theme` | [ambient-theme](../ambient-theme/README.md) |
-| `config` | [ambient-config-source](../ambient-config-source/README.md) |
-| `services` | [ambient-services](../ambient-services/README.md) |
-| `recovery` | [ambient-recovery-source](../ambient-recovery-source/README.md) |
+| Input | Contract | Default package |
+| --- | --- | --- |
+| Recovery (`recovery`) | recovery-source@1 | [ambient-recovery-source](../ambient-recovery-source/README.md) |
 
 Compatible copies can replace these connections in admin.
 

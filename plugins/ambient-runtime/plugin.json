@@ -1,7 +1,7 @@
 {
   "name": "Display Runtime",
   "description": "Shared display behavior required by companion dashboard panels. It has no user-facing panel.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "category": "Support",
   "settingsSchema": {
     "type": "object",
@@ -16,5 +16,6 @@
     }
   },
   "license": "MIT",
-  "defaultConfig": {}
+  "defaultConfig": {},
+  "internal": true
 }

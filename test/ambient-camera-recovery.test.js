@@ -20,7 +20,6 @@ async function fixture(t,{ai=true,discovery=true,preferredId='camera-1',enabled=
   const controls={ai,discovery};const abort=new AbortController();
   const context={app:{branding:{timeZone:'UTC'}},signal:abort.signal,onDispose:fn=>cleanups.push(fn),source(id){
     if(id==='runtime')return {asset:()=>runtime};
-    if(id==='config')return {data:async()=>({camera:{name:'Test Camera',preferredId},clearcam:{enabled,cameraName:'Test Camera',refreshMs}})};
     throw new Error('Unexpected source '+id);
   }};
   context.fixtureScope={document:{getElementById:id=>nodes.get(id)},resourceUrl:path=>path,
@@ -37,7 +36,7 @@ async function fixture(t,{ai=true,discovery=true,preferredId='camera-1',enabled=
   };
   const dispose=()=>{abort.abort();for(const fn of cleanups.splice(0))fn();};
   t.after(dispose);
-  await mount({element,context,config:{}});await flush();
+  await mount({element,context,config:{cameraName:'Test Camera',preferredId,clearcamCameraName:'Test Camera',enableAISnapshots:enabled,frameRefreshMs:refreshMs}});await flush();
   return {element,controls,requests,timers,get frame(){return nodes.get('outdoor-camera-frame');},get status(){return nodes.get('outdoor-camera-status').textContent;},dispose,
     async run(delay,repeat){const found=[...timers].find(([,timer])=>timer.delay===delay&&timer.repeat===repeat);assert.ok(found,`timer ${delay}/${repeat} exists`);const [id,timer]=found;if(!timer.repeat)timers.delete(id);await timer.fn();await flush();},
     loaded(){this.frame.naturalWidth=640;this.frame.onload?.();},

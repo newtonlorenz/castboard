@@ -1,7 +1,7 @@
 {
   "name": "Camera Panel",
   "description": "Browse cameras and snapshots from connected camera resources. Choose a camera name and image refresh timing.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "MIT",
   "category": "Dashboard panels",
   "defaultConfig": {},
@@ -34,6 +34,25 @@
         "maximum": 60000,
         "description": "Time between snapshot updates, in milliseconds.",
         "group": "Updates"
+      },
+      "preferredId": {
+        "type": "string",
+        "title": "Preferred camera ID",
+        "description": "Leave empty to use the first camera returned by the service.",
+        "group": "Content"
+      },
+      "clearcamCameraName": {
+        "type": "string",
+        "title": "Snapshot camera name",
+        "description": "Name used by the snapshot service. Leave empty to use the panel camera name.",
+        "group": "Content"
+      },
+      "enableAISnapshots": {
+        "type": "boolean",
+        "title": "Use detection snapshots",
+        "default": true,
+        "description": "Use fresh snapshots from the detection service, with the camera stream as fallback.",
+        "group": "Display"
       }
     }
   },
@@ -59,21 +78,52 @@
         "maximum": 60000,
         "description": "Time between snapshot updates, in milliseconds.",
         "group": "Updates"
+      },
+      "preferredId": {
+        "type": "string",
+        "title": "Preferred camera ID",
+        "description": "Leave empty to use the first camera returned by the service.",
+        "group": "Content"
+      },
+      "clearcamCameraName": {
+        "type": "string",
+        "title": "Snapshot camera name",
+        "description": "Name used by the snapshot service. Leave empty to use the panel camera name.",
+        "group": "Content"
+      },
+      "enableAISnapshots": {
+        "type": "boolean",
+        "title": "Use detection snapshots",
+        "default": true,
+        "description": "Use fresh snapshots from the detection service, with the camera stream as fallback.",
+        "group": "Display"
       }
     }
   },
   "defaultBindings": {
     "runtime": "ambient-runtime",
     "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
     "resources": "ambient-resources"
   },
   "dependencies": [
     "ambient-runtime",
     "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
     "ambient-resources"
-  ]
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "resources": {
+      "title": "Camera service",
+      "contract": "camera-resources@1",
+      "capabilities": [
+        "data",
+        "stream"
+      ],
+      "required": true,
+      "description": "Lists, live images and snapshots from this camera service."
+    }
+  }
 }

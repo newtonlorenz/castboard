@@ -1,9 +1,9 @@
 {
-  "name": "Shared Service Connector",
-  "description": "Connect dashboard adapters to sample data or a compatible service endpoint. Credentials stay on the server.",
+  "name": "Legacy Service Connector",
+  "description": "Compatibility package for older configurations. New displays and sources own their settings independently.",
   "version": "1.1.0",
   "license": "MIT",
-  "category": "Data connectors",
+  "category": "Support",
   "defaultConfig": {
     "provider": "demo"
   },
@@ -65,5 +65,6 @@
         "group": "Updates"
       }
     }
-  }
+  },
+  "internal": true
 }

@@ -15,11 +15,11 @@ import { publicAsset, extensionMetadata, validateSchema } from './core/extension
 import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
 import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
 import { discoverCastProtocols } from './core/cast-protocol-registry.js';
+import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
 import { createNativeScenes } from './core/native-scene.js';
 import { adapterCatalog, adapterFor, adapterOptions, discoverDisplayAdapters, encodeAdapterResult, safeAdapterContext, validateAdapterDevices } from './core/display-adapters.js';
 import { installDisplayPackage, MAX_PACKAGE_BYTES, removeDisplayPackage, unpackDisplayPackage, zipFiles } from './core/display-packages.js';
-import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -131,6 +131,7 @@ export async function createApp(options = {}) {
     reads.set(key, entry);
     return entry.pending;
   };
+  context.action = (id, payload, request = {}) => runAction(id, payload, request);
   let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
@@ -223,7 +224,7 @@ export async function createApp(options = {}) {
       }
       if (url.pathname === '/api/admin/devices') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Display management requires admin access'}});
-        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),adapters:adapterCatalog(displayAdapters,runtimeConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.server.publicUrl || ''});
+        const payload = () => ({ok:true,revision:configRevision(rawConfig),rendererConfigured:Boolean(runtimeConfig.embedded?.rendererUrl),devices:deviceReport(runtimeConfig,plugins,screenTypes,deviceDiagnostics),adapters:adapterCatalog(displayAdapters,runtimeConfig),screens:Object.entries(runtimeConfig.screens).map(([id,screen])=>({id,title:screen.title||id})),publicUrl:runtimeConfig.embedded?.publicUrl || runtimeConfig.server.publicUrl || ''});
         if (req.method === 'GET') return jsonResponse(res,200,payload());
         if (req.method !== 'POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
         if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Display changes require JSON'}});
@@ -423,7 +424,10 @@ export async function createApp(options = {}) {
         const body = await readBody(req);
         if (pluginSaveInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Settings changed in another window. Refresh displays and try again.' } });
         if (body.action === 'send') {
-          const item = deliveryTarget(runtimeConfig, body.screenId, body.index);
+          const item = deliveryTarget(runtimeConfig, body.screenId, body.index, body.targetScreenId);
+          if (body.reset !== undefined && typeof body.reset !== 'boolean') return jsonResponse(res, 422, { error: { message: 'Choose Cast or Recast.' } });
+          if (body.reset && item.protocol !== 'google-cast') return jsonResponse(res, 422, { error: { message: 'Recast is available for Google Cast displays.' } });
+          if (body.reset) item.target = { ...item.target, resetBeforeCast: true };
           if (!item.url) return jsonResponse(res, 422, { error: { message: 'Set server.publicUrl to an address your display can reach before sending.' } });
           if (item.protocol === 'url') return jsonResponse(res, 422, { error: { message: 'Open the screen link in the browser on this display.' } });
           // A receiver may be shared by multiple screens; serialize sends to that receiver.
@@ -435,7 +439,7 @@ export async function createApp(options = {}) {
             const protocol = protocols.find(entry => entry.id === item.protocol);
             if (!protocol) return jsonResponse(res, 422, { error: { message: 'This delivery method is disabled or missing. Check the server configuration.' } });
             await protocol.cast(item);
-            return jsonResponse(res, 200, { ok: true, message: 'Screen sent. Check the display to confirm it opened.' });
+            return jsonResponse(res, 200, { ok: true, message: 'Dashboard sent. Check the display to confirm it opened.' });
           } catch (error) {
             // Adapter errors can include private URLs, headers or executable arguments.
             return jsonResponse(res, 502, { error: { code: 'DELIVERY_FAILED', message: error.code === 'ENOENT' ? 'The delivery tool is not installed. Check Server tools below, then try again.' : 'Could not send the screen. Check that the display is online and can reach this server, then try again.' } });
@@ -555,6 +559,7 @@ export async function createApp(options = {}) {
       if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
       if(req.method==='GET'&&url.pathname==='/admin/devices'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'devices.html'));
       if(req.method==='GET'&&/^\/devices\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
+      if(req.method==='GET'&&url.pathname==='/connection-model.js'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'connection-model.js'));
       if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
       if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
       if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);

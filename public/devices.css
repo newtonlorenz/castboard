@@ -23,3 +23,6 @@
 @media(max-width:520px){.adapter-row{flex-direction:column;gap:12px}.adapter-row summary,.adapter-upload summary{min-height:44px}.adapter-upload input[type=file]{max-width:100%;font-size:12px}}
 
 .adapter-heading-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.dashboard-assignment{margin:0 0 12px;max-width:380px}.dashboard-assignment select{width:100%;min-height:44px}.cast-result{min-height:20px;margin-top:10px!important}.cast-result.failed{color:var(--error)}.cast-displays .section-head{gap:20px}.cast-row .device-actions button{min-height:44px}#cast-status:empty{display:none}@media(max-width:520px){.cast-displays .section-head{align-items:flex-start;flex-direction:column}.dashboard-assignment{max-width:none}.cast-row .device-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.devices-page .topbar-actions #refresh-devices{display:inline-flex}.device-row>div{min-width:0}.device-row h3{overflow-wrap:anywhere}}
+.cast-settings{flex-basis:100%;font-size:12px;text-align:right;margin-top:4px}@media(max-width:520px){.cast-settings{grid-column:1/-1;text-align:left}}

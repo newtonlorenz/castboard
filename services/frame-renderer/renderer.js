@@ -11,7 +11,7 @@ const closeTarget = (page, point = null) => page.evaluate(point => {
   return {id: dialog.dataset.castboardOverlay, x, y, width, height};
 }, point && {x:point.x,y:point.y});
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 32);
-export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleMs = 300000 }) {
+export function createFrameRenderer({ browser, appOrigin, bridgeToken, maxSessions = 8, idleMs = 300000 }) {
   const origin = new URL(appOrigin).origin;
   const sessions = new Map();
   async function close(id) {
@@ -52,7 +52,7 @@ export function createFrameRenderer({ browser, appOrigin, maxSessions = 8, idleM
           if (pathname.startsWith('/api/') && !scoped && !pathname.startsWith(`/api/devices/${id}/plugins/`)) return route.fulfill({ status: 403, contentType: 'application/json', body: '{"error":{"message":"Unavailable on this display"}}' });
           if (request.isNavigationRequest() && pathname !== `/device-view/${id}`) return route.abort();
           if (scoped) url.pathname = scoped;
-          await route.continue({ url: url.href, headers: { ...request.headers(), authorization: `Bearer ${token}` } });
+          await route.continue({ url: url.href, headers: { ...request.headers(), ...(bridgeToken ? {'x-castboard-bridge':bridgeToken} : {}), authorization: `Bearer ${token}` } });
         });
         session.page = await session.context.newPage();
         session.page.on('dialog', dialog => void dialog.dismiss());

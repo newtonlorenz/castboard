@@ -1,7 +1,7 @@
 {
   "name": "Camera Alerts",
   "description": "Review camera detections supplied by the connected camera resources.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "MIT",
   "category": "Dashboard panels",
   "defaultConfig": {},
@@ -69,15 +69,36 @@
   "defaultBindings": {
     "runtime": "ambient-runtime",
     "theme": "ambient-theme",
-    "config": "ambient-config-source",
-    "services": "ambient-services",
-    "resources": "ambient-resources"
+    "resources": "ambient-resources",
+    "alerts": "ambient-alerts-source"
   },
   "dependencies": [
     "ambient-runtime",
     "ambient-theme",
-    "ambient-config-source",
-    "ambient-services",
-    "ambient-resources"
-  ]
+    "ambient-resources",
+    "ambient-alerts-source"
+  ],
+  "internalBindings": [
+    "runtime",
+    "theme"
+  ],
+  "connectionSchema": {
+    "alerts": {
+      "title": "Camera detections",
+      "contract": "camera-alerts@1",
+      "capabilities": [
+        "data"
+      ],
+      "required": false,
+      "description": "Detection data for this panel. Existing explicit service bindings remain supported during migration."
+    },
+    "resources": {
+      "title": "Detection images and clips",
+      "contract": "camera-resources@1",
+      "capabilities": [
+        "stream"
+      ],
+      "required": true
+    }
+  }
 }

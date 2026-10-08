@@ -18,19 +18,6 @@
       "type": "ambient-theme",
       "enabled": true
     },
-    "ambient-services": {
-      "provider": "demo",
-      "type": "ambient-services",
-      "enabled": true
-    },
-    "ambient-config-source": {
-      "route": "/api/config",
-      "type": "ambient-config-source",
-      "enabled": true,
-      "bindings": {
-        "services": "ambient-services"
-      }
-    },
     "ambient-resources": {
       "provider": "demo",
       "type": "ambient-resources",
@@ -42,25 +29,14 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
-        "resources": "ambient-resources"
+        "resources": "ambient-resources",
+        "alerts": "ambient-alerts-source"
       }
-    },
-    "calendar": {
-      "provider": "demo",
-      "type": "calendar",
-      "enabled": true
     },
     "ambient-calendar-source": {
-      "route": "/api/calendar",
-      "provider": "services",
+      "provider": "demo",
       "type": "ambient-calendar-source",
-      "enabled": true,
-      "bindings": {
-        "services": "ambient-services",
-        "upstream": "calendar"
-      }
+      "enabled": true
     },
     "ambient-calendar": {
       "type": "ambient-calendar",
@@ -68,8 +44,6 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "calendar": "ambient-calendar-source"
       }
     },
@@ -79,8 +53,6 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "resources": "ambient-resources"
       }
     },
@@ -89,25 +61,13 @@
       "enabled": true,
       "bindings": {
         "runtime": "ambient-runtime",
-        "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services"
+        "theme": "ambient-theme"
       }
-    },
-    "recovery": {
-      "provider": "demo",
-      "type": "recovery",
-      "enabled": true
     },
     "ambient-recovery-source": {
-      "route": "/api/whoop",
-      "provider": "services",
+      "provider": "demo",
       "type": "ambient-recovery-source",
-      "enabled": true,
-      "bindings": {
-        "services": "ambient-services",
-        "upstream": "recovery"
-      }
+      "enabled": true
     },
     "ambient-focus": {
       "type": "ambient-focus",
@@ -115,10 +75,7 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
-        "calendar": "ambient-calendar-source",
-        "recovery": "ambient-recovery-source"
+        "calendar": "ambient-calendar-source"
       }
     },
     "ambient-media-source": {
@@ -136,38 +93,23 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "media": "ambient-media-source",
-        "resources": "ambient-resources",
         "launch": "ambient-launch-source"
       }
     },
-    "stocks": {
-      "provider": "demo",
-      "type": "stocks",
-      "enabled": true
-    },
     "ambient-portfolio-source": {
-      "route": "/api/dashboard/portfolio",
-      "provider": "services",
+      "provider": "demo",
       "type": "ambient-portfolio-source",
-      "enabled": true,
-      "bindings": {
-        "services": "ambient-services",
-        "upstream": "stocks"
-      }
+      "enabled": true
     },
     "ambient-news": {
       "type": "ambient-news",
       "enabled": true,
       "bindings": {
         "runtime": "ambient-runtime",
-        "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
-        "portfolio": "ambient-portfolio-source"
-      }
+        "theme": "ambient-theme"
+      },
+      "provider": "demo"
     },
     "ambient-portfolio": {
       "type": "ambient-portfolio",
@@ -175,8 +117,6 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "portfolio": "ambient-portfolio-source"
       }
     },
@@ -186,25 +126,13 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "recovery": "ambient-recovery-source"
       }
     },
-    "solar": {
-      "provider": "demo",
-      "type": "solar",
-      "enabled": true
-    },
     "ambient-solar-source": {
-      "route": "/api/solar",
-      "provider": "services",
+      "provider": "demo",
       "type": "ambient-solar-source",
-      "enabled": true,
-      "bindings": {
-        "services": "ambient-services",
-        "upstream": "solar"
-      }
+      "enabled": true
     },
     "ambient-solar": {
       "type": "ambient-solar",
@@ -212,25 +140,13 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "solar": "ambient-solar-source"
       }
     },
-    "weather": {
-      "provider": "demo",
-      "type": "weather",
-      "enabled": true
-    },
     "ambient-weather-source": {
-      "route": "/api/weather",
-      "provider": "services",
+      "provider": "demo",
       "type": "ambient-weather-source",
-      "enabled": true,
-      "bindings": {
-        "services": "ambient-services",
-        "upstream": "weather"
-      }
+      "enabled": true
     },
     "ambient-weather": {
       "type": "ambient-weather",
@@ -238,10 +154,13 @@
       "bindings": {
         "runtime": "ambient-runtime",
         "theme": "ambient-theme",
-        "config": "ambient-config-source",
-        "services": "ambient-services",
         "weather": "ambient-weather-source"
       }
+    },
+    "ambient-alerts-source": {
+      "type": "ambient-alerts-source",
+      "provider": "demo",
+      "enabled": true
     }
   },
   "screens": {
@@ -290,7 +209,6 @@
         {
           "id": "clock",
           "plugin": "ambient-clock",
-          "source": "ambient-config-source",
           "position": {
             "column": 10,
             "row": 1,
@@ -436,7 +354,6 @@
         {
           "id": "clock",
           "plugin": "ambient-clock",
-          "source": "ambient-config-source",
           "position": {
             "column": 1,
             "row": 1,
