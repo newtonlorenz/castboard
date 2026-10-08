@@ -56,11 +56,13 @@ test('delivery API saves, handles conflicts and sends only configured destinatio
   t.after(()=>fs.rm(directory,{recursive:true,force:true}));
   const executable=path.join(directory,'catt-fixture');
   const output=path.join(directory,'received.json');
-  await fs.writeFile(executable,`#!${process.execPath}\nimport fs from 'node:fs';\nif(process.argv.includes('Fail')) process.exit(1);\nfs.writeFileSync(${JSON.stringify(output)},JSON.stringify(process.argv.slice(2)));\nawait new Promise(r=>setTimeout(r,150));\n`);
+  const commands=path.join(directory,'commands.jsonl');
+  await fs.writeFile(executable,`#!${process.execPath}\nimport fs from 'node:fs';\nif(process.argv.includes('Fail')) process.exit(1);\nfs.writeFileSync(${JSON.stringify(output)},JSON.stringify(process.argv.slice(2)));\nfs.appendFileSync(${JSON.stringify(commands)},JSON.stringify(process.argv.slice(2))+'\\n');\nawait new Promise(r=>setTimeout(r,150));\n`);
   // .mjs makes the receiver fixture independent of Node's extension heuristics.
   await fs.rename(executable,executable+'.mjs');await fs.chmod(executable+'.mjs',0o700);
   const config=example();
-  config.casting={protocols:{'google-cast':{enabled:true,executable:executable+'.mjs',attempts:1}}};
+  config.casting={protocols:{'google-cast':{enabled:true,executable:executable+'.mjs',attempts:1,resetDelayMs:0}}};
+  config.screens.news={title:'News',path:'/news',type:'single',panels:[{id:'news-clock',plugin:'clock'}]};
   const configPath=path.join(directory,'castboard.config.json');
   await fs.writeFile(configPath,JSON.stringify(config));
   const app=await createApp({configPath,logger:{error(){}}});
@@ -82,6 +84,15 @@ test('delivery API saves, handles conflicts and sends only configured destinatio
   assert.match((await response.json()).message,/Check the display/);
   assert.deepEqual(JSON.parse(await fs.readFile(output,'utf8')),['-d','Demo','cast_site','http://display.test/base/home']);
   assert.doesNotMatch(JSON.stringify(await(await fetch(base+'/api/config')).json()),/Test receiver|Demo|catt-fixture/);
+  // A dashboard can use a previously registered receiver without saving a new destination.
+  response=await post({action:'send',screenId:'news',targetScreenId:'home',index:0,reset:true,revision:state.revision});
+  assert.equal(response.status,200);
+  const calls=(await fs.readFile(commands,'utf8')).trim().split('\n').map(line=>JSON.parse(line));
+  assert.deepEqual(calls.slice(-2),[['-d','Demo','stop'],['-d','Demo','cast_site','http://display.test/base/news']]);
+  assert.equal(JSON.parse(await fs.readFile(configPath,'utf8')).screens.news.targets,undefined);
+  assert.equal((await post({action:'send',screenId:'news',targetScreenId:'__proto__',index:0,revision:state.revision})).status,404);
+  assert.equal((await post({action:'send',screenId:'news',targetScreenId:'home',index:0,reset:'yes',revision:state.revision})).status,422);
+
   response=await post({action:'add',screenId:'home',name:'Failure test',device:'Fail',revision:state.revision});state=await response.json();
   response=await post({action:'send',screenId:'home',index:1,revision:state.revision});assert.equal(response.status,502);
   assert.match((await response.json()).error.message,/Check that the display is online/);
@@ -93,4 +104,19 @@ test('delivery API saves, handles conflicts and sends only configured destinatio
   });
   assert.equal(unauthorized,403);
   assert.equal((await fetch(base+'/api/admin/delivery',{method:'POST',body:'{}'})).status,415);
+});
+
+test('receiver IDs group shared connections and cross-dashboard delivery keeps their original protocol', () => {
+  const config=example();
+  const receiver={name:'Living room',device:'Private receiver',protocol:'google-cast'};
+  config.screens.home.targets=[receiver];
+  config.screens.news={title:'News',path:'/news',type:'single',castProtocol:'http-webhook',targets:[{...receiver}]};
+  const report=deliveryReport(config,config);
+  assert.equal(report.screens[0].targets[0].id,report.screens[1].targets[0].id);
+  assert.doesNotMatch(JSON.stringify(report),/Private receiver/);
+  const item=deliveryTarget(config,'news',0,'home');
+  assert.equal(item.protocol,'google-cast');
+  assert.equal(item.target,receiver);
+  assert.equal(item.url,'http://display.test/base/news');
+  assert.throws(()=>deliveryTarget(config,'missing',0,'home'),/no longer exists/);
 });

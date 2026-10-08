@@ -23,11 +23,11 @@ Castboard turns Google Nest displays, wall tablets, TVs, kiosk browsers, and oth
 > No hosted account. No vendor-shaped layout. No frontend access to your integration secrets.
 
 <p align="center">
-  <img src="public/assets/castboard-hero.webp" width="960" alt="A smart display running a calm, modular Castboard dashboard in a modern home">
+  <img src="public/assets/castboard-hero.webp" width="960" alt="The running Castboard Home dashboard using the bundled example configuration and demo data">
 </p>
 
 <p align="center">
-  <img src="public/assets/castboard-studio.png" width="960" alt="Castboard Studio with a draft preview and contextual panel settings">
+  <img src="public/assets/castboard-studio.png" width="960" alt="The running Castboard Dashboard Studio with the Home layout and contextual panel settings">
   <br><sub>Design every screen visually, with the real output always in view.</sub>
 </p>
 
@@ -61,12 +61,14 @@ npm start
 Now open:
 
 - [`localhost:8787/setup`](http://localhost:8787/setup) — first-run checks and connection tests
-- [`localhost:8787/admin`](http://localhost:8787/admin) — visual screen studio
-- [`localhost:8787/admin/devices`](http://localhost:8787/admin/devices) — register embedded displays and upload hardware plugins
+- [`localhost:8787/admin`](http://localhost:8787/admin) — Dashboard Studio: build and quickly switch between dashboard designs
+- [`localhost:8787/admin/devices`](http://localhost:8787/admin/devices) — manage Google Cast and embedded displays, cast/recast dashboards, and upload hardware plugins
 - [`localhost:8787/admin/plugins`](http://localhost:8787/admin/plugins) — install, configure and test plugins
 - [`localhost:8787`](http://localhost:8787) — 10-panel Home dashboard
 - [`localhost:8787/screens/office`](http://localhost:8787/screens/office) — full-screen news wire
 - [`localhost:8787/screens/tablet`](http://localhost:8787/screens/tablet) — responsive tablet flow
+
+**Dashboards** are the designs; **Displays** are the physical devices showing them. The dashboard picker stays visible in Studio, and switching preserves unsaved edits. Choose **Show on display** to open Displays with that dashboard selected for Cast receivers. The Displays page includes saved Google Nest/Chromecast connections alongside ESP32 and other receivers. Use **Cast** to send the selected dashboard, **Recast** to stop and reopen a Google Cast session, or **Apply dashboard** to change an embedded receiver's assignment on its next update. Sending uses saved destinations and does not change their connection settings. Cast success confirms the command completed; check the display to confirm it opened.
 
 Use Connections at `/setup` to inspect configured plugins, test data connections, view delivery target counts, check optional tools and discover Cast devices. Configuration checks and connection tests are shown separately. The same report is available in a terminal with `npm run doctor`.
 

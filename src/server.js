@@ -424,7 +424,10 @@ export async function createApp(options = {}) {
         const body = await readBody(req);
         if (pluginSaveInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Settings changed in another window. Refresh displays and try again.' } });
         if (body.action === 'send') {
-          const item = deliveryTarget(runtimeConfig, body.screenId, body.index);
+          const item = deliveryTarget(runtimeConfig, body.screenId, body.index, body.targetScreenId);
+          if (body.reset !== undefined && typeof body.reset !== 'boolean') return jsonResponse(res, 422, { error: { message: 'Choose Cast or Recast.' } });
+          if (body.reset && item.protocol !== 'google-cast') return jsonResponse(res, 422, { error: { message: 'Recast is available for Google Cast displays.' } });
+          if (body.reset) item.target = { ...item.target, resetBeforeCast: true };
           if (!item.url) return jsonResponse(res, 422, { error: { message: 'Set server.publicUrl to an address your display can reach before sending.' } });
           if (item.protocol === 'url') return jsonResponse(res, 422, { error: { message: 'Open the screen link in the browser on this display.' } });
           // A receiver may be shared by multiple screens; serialize sends to that receiver.
@@ -436,7 +439,7 @@ export async function createApp(options = {}) {
             const protocol = protocols.find(entry => entry.id === item.protocol);
             if (!protocol) return jsonResponse(res, 422, { error: { message: 'This delivery method is disabled or missing. Check the server configuration.' } });
             await protocol.cast(item);
-            return jsonResponse(res, 200, { ok: true, message: 'Screen sent. Check the display to confirm it opened.' });
+            return jsonResponse(res, 200, { ok: true, message: 'Dashboard sent. Check the display to confirm it opened.' });
           } catch (error) {
             // Adapter errors can include private URLs, headers or executable arguments.
             return jsonResponse(res, 502, { error: { code: 'DELIVERY_FAILED', message: error.code === 'ENOENT' ? 'The delivery tool is not installed. Check Server tools below, then try again.' : 'Could not send the screen. Check that the display is online and can reach this server, then try again.' } });

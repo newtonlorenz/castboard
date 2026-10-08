@@ -24,7 +24,7 @@ the reference protocols; other formats require matching receiver firmware.
 
 ## 1. Build screens and details
 
-In **Screens**, select a panel and open **On tap**. Choose a modal, another screen,
+In **Dashboards**, select a panel and open **On tap**. Choose a modal, another screen,
 Back, Close, or a plugin action. **New modal** creates an ordinary reusable screen
 composition: add plugins, arrange panels and style it like any screen. A modal has
 its own preferred dimensions and appearance. Links can nest up to four modals.

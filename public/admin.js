@@ -282,6 +282,10 @@ function renderAll() {
 }
 
 function renderScreens() {
+  const quick = $('#quick-screen');
+  quick.replaceChildren(...Object.entries(state.design.screens).map(([id, screen]) => new Option(screen.title || id, id)));
+  quick.value = state.selectedScreenId;
+  $('#manage-screen-displays').href = `/admin/devices?screen=${encodeURIComponent(state.selectedScreenId)}`;
   const list = $('#screen-list');
   list.replaceChildren();
   for (const [id, screen] of Object.entries(state.design.screens)) {
@@ -548,7 +552,7 @@ function renderPluginLibrary() {
     button.type = 'button';
     button.className = 'plugin-card';
     button.disabled = screen?.type === 'single' && screen.panels.length >= 1;
-    button.title = button.disabled ? 'Single-panel screens can contain only one panel' : `Add ${plugin.name}`;
+    button.title = button.disabled ? 'Single-panel dashboards can contain only one panel' : `Add ${plugin.name}`;
     const copy = document.createElement('span');
     const name = document.createElement('strong');
     name.textContent = plugin.name;
@@ -581,7 +585,7 @@ function renderPanelList() {
     const order = document.createElement('small'); order.textContent = String(index + 1);
     button.append(text, order); button.addEventListener('click', () => selectPanel(panel.id)); list.append(button);
   }
-  if (!screen.panels.length) { const text = document.createElement('p'); text.className = 'section-note'; text.textContent = 'No panels yet. Add a plugin to start this screen.'; list.append(text); }
+  if (!screen.panels.length) { const text = document.createElement('p'); text.className = 'section-note'; text.textContent = 'No panels yet. Add a plugin to start this dashboard.'; list.append(text); }
   $('#show-library').disabled = screen.type === 'single' && screen.panels.length >= 1;
 }
 let canvasGeneration = 0;
@@ -842,7 +846,7 @@ function updateOpenScreen() {
   const saved = !$('#open-screen').disabled;
   $('#set-up-display').disabled = !saved;
   $('#set-up-display').textContent = saved ? 'Connect a device' : 'Save to connect a device';
-  $('#display-setup-help').textContent = saved ? 'Connect a device using the saved screen. Save any new edits first.' : 'Add your panels, then Save changes to get a link and connect your device.';
+  $('#display-setup-help').textContent = saved ? 'Connect a device using the saved dashboard. Save any new edits first.' : 'Add your panels, then Save changes to get a link and connect your device.';
 }
 
 function resizeCanvasFrame() {
@@ -891,11 +895,11 @@ async function addPanel(plugin) {
     const before=JSON.stringify(screen),screenId=state.selectedScreenId;
     try {
       const renderer=await import(`/screen-types/${encodeURIComponent(screen.type)}/renderer.js?v=${encodeURIComponent(type?.version||'1')}`);
-      if(currentScreen()!==screen||JSON.stringify(screen)!==before)return toast('The screen changed. Choose the plugin again.',true);
+      if(currentScreen()!==screen||JSON.stringify(screen)!==before)return toast('The dashboard changed. Choose the plugin again.',true);
       if(typeof renderer.editor?.add==='function'){
         const candidate=clone(screen);
         await renderer.editor.add(candidate,panel);
-        if(currentScreen()!==screen||JSON.stringify(screen)!==before)return toast('The screen changed. Choose the plugin again.',true);
+        if(currentScreen()!==screen||JSON.stringify(screen)!==before)return toast('The dashboard changed. Choose the plugin again.',true);
         if(!candidate.panels.some(item=>item.id===panel.id))throw new Error('This layout could not place the new panel.');
         screen=state.design.screens[screenId]=candidate;inserted=true;
       }else{panel.position=schemaDefaults(type?.positionSchema);panel.size=schemaDefaults(type?.sizeSchema);}
@@ -968,7 +972,7 @@ function changeScreenType(type) {
   const screen = currentScreen();
   if (type === screen.type) return;
   if (type === 'single' && screen.panels.length > 1) {
-    toast('A single screen can contain only one panel. Remove the others first.', true);
+    toast('A single dashboard can contain only one panel. Remove the others first.', true);
     $('#screen-type').value = screen.type;
     return;
   }
@@ -1071,13 +1075,13 @@ function duplicateScreen() {
 function deleteScreen(confirmed = false) {
   if (!canLeaveField()) return;
   const ids = Object.keys(state.design.screens);
-  if (ids.length <= 1) return toast('A Castboard project must keep at least one screen.', true);
+  if (ids.length <= 1) return toast('A Castboard project must keep at least one dashboard.', true);
   const screen = currentScreen();
-  if (confirmed !== true) return showNotice(`Remove “${screen.title || state.selectedScreenId}”? Its delivery settings will be removed when you save.`, [['Remove screen', () => deleteScreen(true)], ['Cancel', () => showNotice('')]]);
+  if (confirmed !== true) return showNotice(`Remove “${screen.title || state.selectedScreenId}”? Its delivery settings will be removed when you save.`, [['Remove dashboard', () => deleteScreen(true)], ['Cancel', () => showNotice('')]]);
   showNotice('');
   const deletedId = state.selectedScreenId;
   const references=Object.values(state.design.screens).flatMap(screen=>screen.panels).filter(panel=>['modal','screen'].includes(panel.interaction?.type)&&panel.interaction.screenId===deletedId);
-  if(references.length)return toast('Change the '+references.length+' tap destination(s) using this screen before removing it.',true);
+  if(references.length)return toast('Change the '+references.length+' tap destination(s) using this dashboard before removing it.',true);
   delete state.design.screens[deletedId];
   if (state.design.defaultScreen === deletedId) state.design.defaultScreen = Object.keys(state.design.screens)[0];
   state.selectedScreenId = state.design.defaultScreen;
@@ -1090,8 +1094,8 @@ function validateDesign() {
   const errors = [];
   const invalid = invalidField(); if (invalid) errors.push('Correct the highlighted setting before saving.');
   const screens = Object.entries(state.design.screens);
-  if (!screens.length) errors.push('At least one screen is required.');
-  if (!state.design.screens[state.design.defaultScreen]) errors.push('The default screen does not exist.');
+  if (!screens.length) errors.push('At least one dashboard is required.');
+  if (!state.design.screens[state.design.defaultScreen]) errors.push('The default dashboard does not exist.');
   const paths = new Set();
   const installed=Object.fromEntries((state.runtime?.plugins||[]).map(plugin=>[plugin.id,{enabled:true}]));
   for (const [id, screen] of screens) {
@@ -1101,7 +1105,7 @@ function validateDesign() {
     if (pathError) errors.push(`${screen.title || id}: ${pathError}`);
     if (paths.has(screen.path)) errors.push(`Screen path “${screen.path}” is duplicated.`);
     paths.add(screen.path);
-    if (screen.type === 'single' && screen.panels.length !== 1) errors.push(`${screen.title || id} is a single screen and needs exactly one panel.`);
+    if (screen.type === 'single' && screen.panels.length !== 1) errors.push(`${screen.title || id} is a single-panel dashboard and needs exactly one panel.`);
     const panelIds = new Set();
     for (const panel of screen.panels) {
       if (!panel.id || panelIds.has(panel.id)) errors.push(`${screen.title || id} has missing or duplicate panel IDs.`);
@@ -1143,8 +1147,8 @@ async function saveDesign() {
     if (!invalidField()) renderAll();
     else { renderScreens(); renderPanelList(); updateOpenScreen(); }
     markDirty(); refreshPreview();
-    if (firstSave && !state.dirty) showNotice('Your screen is saved. Next, connect the device that will show it.', [['Connect a device', () => openDisplaySetup(savedScreenId)], ['Keep editing', () => showNotice('')]]);
-    toast(state.dirty ? 'Saved. Newer edits are still unsaved.' : 'Changes saved. Running screens will update.');
+    if (firstSave && !state.dirty) showNotice('Your dashboard is saved. Next, connect the device that will show it.', [['Connect a device', () => openDisplaySetup(savedScreenId)], ['Keep editing', () => showNotice('')]]);
+    toast(state.dirty ? 'Saved. Newer edits are still unsaved.' : 'Changes saved. Running dashboards will update.');
   } catch (error) {
     state.saving = false; $('#save-design').disabled = false; updateHistory();
     if (error.code === 'REVISION_CONFLICT') {
@@ -1235,6 +1239,7 @@ function downloadDraft() {
   const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'castboard-design-draft.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function bindEvents() {
+  $('#quick-screen').onchange = event => { selectScreen(event.target.value); event.target.value = state.selectedScreenId; };
   $('#cancel-draft-review').onclick = () => $('#draft-conflict-dialog').close();
   $('#draft-conflict-form').onsubmit = event => {
     event.preventDefault();
@@ -1525,6 +1530,7 @@ function bindEvents() {
     event.returnValue = '';
   });
   new ResizeObserver(() => resizeCanvasFrame()).observe($('#canvas-stage'));
+  new ResizeObserver(() => document.documentElement.style.setProperty('--topbar-height',`${$('.topbar').getBoundingClientRect().height}px`)).observe($('.topbar'));
   new ResizeObserver(() => document.documentElement.style.setProperty('--notice-height',`${$('#notice').getBoundingClientRect().height}px`)).observe($('#notice'));
 }
 

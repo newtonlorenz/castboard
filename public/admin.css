@@ -50,3 +50,6 @@ body.admin-app{padding-left:176px}::selection{background:#c6dfcd;color:#163b2b}i
 #screen-dialog footer{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 @media(max-width:800px){#screen-dialog button,#screen-dialog input,#screen-dialog select{min-height:44px}}
 .canvas-frame.preview #design-surface{display:none!important}
+
+/* Always available, including when the Studio sidebar is hidden. */
+.studio-switch{display:flex;align-items:center;gap:8px;min-width:0}.studio-switch>span{font-size:12px;color:var(--muted)}.studio-switch select{padding:8px 30px 8px 10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);max-width:220px;min-width:120px}.studio-page .topbar{height:auto;min-height:68px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}.studio-page .topbar-center{margin-left:auto}.studio-page .topbar-actions{flex-wrap:wrap;margin-left:auto}@media(min-width:1100px){.studio-page .studio{height:calc(100dvh - var(--topbar-height,116px) - var(--notice-height,0px))}}@media(max-width:600px){.studio-switch{order:1;flex:1}.studio-switch select{max-width:100%;width:100%}.studio-switch>span{display:none}.studio-page .topbar-actions{order:2;grid-template-columns:repeat(3,minmax(0,1fr))}.studio-page #save-design{grid-column:auto}.app-nav a{min-width:86px}.app-nav a span{max-width:100px;text-align:center}}
