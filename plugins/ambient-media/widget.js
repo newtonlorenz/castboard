@@ -393,10 +393,11 @@ export async function mount({element,context,config}) {
     progressBar.setAttribute('aria-label', 'Track progress');
     progressBar.setAttribute('aria-valuemin', '0');
     progressBar.setAttribute('aria-valuemax', '100');
-    progressBar.style.cssText = 'height:3px;margin-top:10px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden';
+    progressBar.style.cssText = 'height:3px;flex:0 0 3px;margin-top:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden';
     var progressFill = globalThis.document.createElement('div');
     progressFill.style.cssText = 'height:100%;width:0;background:var(--accent,#1ed760);border-radius:inherit;transition:width 1s linear';
     progressBar.appendChild(progressFill);
+    document.querySelector('.player-top').style.flexBasis = '96px';
     document.querySelector('.player-top').after(progressBar);
     function playbackSeconds(value) {
         if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
