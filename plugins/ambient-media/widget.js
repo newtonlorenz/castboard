@@ -31,6 +31,9 @@ export async function mount({element,context,config}) {
     var LINK_API_BASE = '';
     var activeModalUrl = null;
     var currentSonosVolume = 0;
+    var currentSpotifyTrack = '';
+    var savedSpotifyTrack = '';
+    var savingSpotifyTrack = '';
     var sonosVolumeCommitTimer = null;
     var playerActionError = '';
 
@@ -366,6 +369,92 @@ export async function mount({element,context,config}) {
         if (e.target && e.target.id === 'link-modal') closeLinkModal();
     });
 
+    var djButton = document.getElementById('player-dj');
+    djButton.textContent = 'DJ';
+    djButton.style.fontSize = '15px';
+    djButton.style.fontWeight = '800';
+    var radioButton = document.getElementById('player-radio');
+    radioButton.title = 'Create radio station from this song';
+    radioButton.setAttribute('aria-label', radioButton.title);
+    radioButton.style.display = 'flex';
+    radioButton.style.flexDirection = 'column';
+    radioButton.style.alignItems = 'center';
+    radioButton.style.justifyContent = 'center';
+    var radioLabel = globalThis.document.createElement('span');
+    radioLabel.textContent = 'Radio';
+    radioLabel.style.cssText = 'font-size:9px;font-weight:700;line-height:10px';
+    radioButton.appendChild(radioLabel);
+
+    var progressData = null;
+    var progressUpdatedAt = 0;
+    var progressBar = globalThis.document.createElement('div');
+    progressBar.id = 'player-progress';
+    progressBar.setAttribute('role', 'progressbar');
+    progressBar.setAttribute('aria-label', 'Track progress');
+    progressBar.setAttribute('aria-valuemin', '0');
+    progressBar.setAttribute('aria-valuemax', '100');
+    progressBar.style.cssText = 'height:3px;margin-top:10px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden';
+    var progressFill = globalThis.document.createElement('div');
+    progressFill.style.cssText = 'height:100%;width:0;background:var(--accent,#1ed760);border-radius:inherit;transition:width 1s linear';
+    progressBar.appendChild(progressFill);
+    document.querySelector('.player-top').after(progressBar);
+    function playbackSeconds(value) {
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        var parts = String(value || '').split(':').map(Number);
+        return parts.every(Number.isFinite) ? parts.reduce(function(total, part) {return total * 60 + part;}, 0) : 0;
+    }
+    function updateProgress() {
+        var duration = playbackSeconds(progressData && progressData.duration);
+        var elapsed = playbackSeconds(progressData && progressData.position);
+        if (progressData && progressData.state === 'PLAYING') elapsed += (Date.now() - progressUpdatedAt) / 1000;
+        var percent = duration > 0 ? Math.max(0, Math.min(100, elapsed / duration * 100)) : 0;
+        progressBar.hidden = duration <= 0;
+        progressFill.style.width = percent + '%';
+        progressBar.setAttribute('aria-valuenow', String(Math.round(percent)));
+        progressBar.setAttribute('aria-valuetext', Math.floor(Math.min(elapsed, duration)) + ' of ' + Math.floor(duration) + ' seconds');
+    }
+    updateProgress();
+    setInterval(updateProgress, 1000);
+
+    var likeButton = globalThis.document.createElement('button');
+    likeButton.type = 'button';
+    likeButton.className = 'player-btn';
+    likeButton.id = 'player-like';
+    likeButton.innerHTML = '<svg class="player-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"></path></svg>';
+    likeButton.disabled = true;
+    likeButton.title = 'Add to liked songs';
+    likeButton.setAttribute('aria-label', likeButton.title);
+    document.querySelector('.player-controls').appendChild(likeButton);
+
+    function updateLikeButton() {
+        var saved = !!currentSpotifyTrack && savedSpotifyTrack === currentSpotifyTrack;
+        likeButton.disabled = !currentSpotifyTrack || saved || !!savingSpotifyTrack;
+        likeButton.title = savingSpotifyTrack ? 'Adding to liked songs…' : saved ? 'Added to liked songs' : 'Add to liked songs';
+        likeButton.setAttribute('aria-label', likeButton.title);
+        likeButton.setAttribute('aria-pressed', String(saved));
+        likeButton.querySelector('path').style.fill = saved ? 'currentColor' : 'none';
+    }
+
+    likeButton.addEventListener('click', async function() {
+        var trackUri = currentSpotifyTrack;
+        if (!trackUri || savingSpotifyTrack) return;
+        savingSpotifyTrack = trackUri;
+        updateLikeButton();
+        try {
+            await fetchJSON(SONOS_API_BASE + '/api/sonos/like', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({trackUri: trackUri})
+            }, 0);
+            savedSpotifyTrack = trackUri;
+            if (currentSpotifyTrack === trackUri) setSpotifyStatus('Added to liked songs', false);
+        } catch (error) {
+            setSpotifyStatus('Could not add to liked songs: ' + errorMessage(error), true);
+        } finally {
+            savingSpotifyTrack = '';
+            updateLikeButton();
+        }
+    });
+
     function setPlayerArt(url) {
         var art = document.getElementById('player-art');
         if (url) {
@@ -431,6 +520,12 @@ export async function mount({element,context,config}) {
     async function loadPlayer() {
         try {
             var data = await fetchJSON(SONOS_API_BASE + '/api/sonos/status');
+            progressData = data;
+            progressUpdatedAt = Date.now();
+            updateProgress();
+            var trackMatch = decodeURIComponent(data.trackUri || data.uri || '').match(/spotify:track:([A-Za-z0-9]{22})(?![A-Za-z0-9])/);
+            currentSpotifyTrack = trackMatch ? trackMatch[0] : '';
+            updateLikeButton();
             var hasSong = !!(data.title || data.artist || data.albumArtURI);
             var rawDevice = data.raw && data.raw.device;
             var isReachable = data.reachable !== undefined ? data.reachable : !rawDevice || !!(rawDevice.ip || rawDevice.name || rawDevice.location);
@@ -464,6 +559,10 @@ export async function mount({element,context,config}) {
             setPlayerPlaybackState(data.state, hasSong, isReachable);
             setPlayerArt(hasSong ? data.albumArtURI : '');
         } catch (e) {
+            currentSpotifyTrack = '';
+            progressData = null;
+            updateProgress();
+            updateLikeButton();
             var status = null;
             try { status = JSON.parse(e.message); } catch (_) {}
             if (status && status.error && (status.error.indexOf('239.255.255.250') !== -1 || status.error.indexOf('sendto: no route to host') !== -1)) {
