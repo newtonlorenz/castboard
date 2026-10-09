@@ -1,7 +1,7 @@
 {
   "name": "Speaker Source",
   "description": "Connect speaker playback and actions to dashboard panels, using sample data or a compatible web service.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "MIT",
   "category": "Data connectors",
   "defaultConfig": {
@@ -65,5 +65,6 @@
         "group": "Updates"
       }
     }
-  }
+  },
+  "displayNotes": "A compatible media service can implement `POST /api/sonos/like` with `{ \"trackUri\": \"spotify:track:\u2026\" }` to save the displayed song to Spotify Liked Songs."
 }

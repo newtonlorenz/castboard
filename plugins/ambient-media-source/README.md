@@ -14,6 +14,8 @@ Start with **Sample data** to try the layout without an external service. HTTP a
 
 This is a source package. Select it through a display plugin’s **Shared sources**; it does not appear as a panel by itself. Use **Test connection** when the package exposes data. An upstream failure is reported to the consuming panel, which retries on its own cadence.
 
+A compatible media service can implement `POST /api/sonos/like` with `{ "trackUri": "spotify:track:…" }` to save the displayed song to Spotify Liked Songs.
+
 ## Connection settings
 
 | Setting | Key | Accepted values | Default | Notes |
