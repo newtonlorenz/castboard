@@ -1,7 +1,7 @@
 {
   "name": "Energy Monitor",
   "description": "Show generation, consumption and grid flow from Fronius or JSON. Choose watts or kilowatts, labels and precision.",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "license": "MIT",
   "category": "Display plugins",
   "defaultConfig": {
@@ -223,5 +223,6 @@
       }
     }
   },
-  "contract": "solar@1"
+  "contract": "solar@1",
+  "displayNotes": "Compact browser and image-mode panels use green upward arrows for generation and grid export, amber downward arrows for household consumption and grid import, and a neutral dash for idle or unknown flow. Labels accompany colour; native text views retain their existing readings."
 }

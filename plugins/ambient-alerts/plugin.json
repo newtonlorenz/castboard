@@ -1,7 +1,7 @@
 {
   "name": "Camera Alerts",
   "description": "Review camera detections supplied by the connected camera resources.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "license": "MIT",
   "category": "Dashboard panels",
   "defaultConfig": {},
@@ -100,5 +100,6 @@
       ],
       "required": true
     }
-  }
+  },
+  "displayNotes": "Detection replay starts as soon as a decoded frame arrives. Failed or stalled clip loads retry up to four times, then retain the snapshot with a clear unavailable message. Closing the preview cancels pending retries."
 }
