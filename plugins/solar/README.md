@@ -16,6 +16,8 @@ Add the installed copy to a screen with **Add to a screen**. Screen Studio can o
 
 A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
 
+Compact browser and image-mode panels use green upward arrows for generation and grid export, amber downward arrows for household consumption and grid import, and a neutral dash for idle or unknown flow. Labels accompany colour; native text views retain their existing readings.
+
 ## Connection settings
 
 | Setting | Key | Accepted values | Default | Notes |

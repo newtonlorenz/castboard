@@ -121,12 +121,42 @@ export async function mount({element,context,config}) {
     }
 
     var cameraDetectionReturnFocus = null;
+    var cameraReplayTimer = null;
+    var cameraReplayUrl = '';
+    var cameraReplayAttempts = 0;
+
+    function loadCameraReplay() {
+        var modal = document.getElementById('camera-detection-modal');
+        var video = document.getElementById('camera-detection-video');
+        if (!cameraReplayUrl || modal.hidden) return;
+        clearTimeout(cameraReplayTimer);
+        cameraReplayAttempts += 1;
+        cameraReplayTimer = setTimeout(retryCameraReplay, 20000);
+        video.src = cameraReplayUrl + '&retry=' + cameraReplayAttempts;
+        video.load();
+    }
+
+    function retryCameraReplay() {
+        var modal = document.getElementById('camera-detection-modal');
+        var status = document.getElementById('camera-detection-status');
+        clearTimeout(cameraReplayTimer);
+        if (!cameraReplayUrl || modal.hidden) return;
+        status.className = 'camera-detection-status frame';
+        if (cameraReplayAttempts >= 4) {
+            status.textContent = 'Video unavailable · showing detection frame';
+            return;
+        }
+        status.textContent = 'Preparing video… retrying';
+        cameraReplayTimer = setTimeout(loadCameraReplay, 3000);
+    }
 
     function closeCameraDetection() {
         var modal = document.getElementById('camera-detection-modal');
         var video = document.getElementById('camera-detection-video');
         var image = document.getElementById('camera-detection-image');
         if (!modal || modal.hidden) return;
+        clearTimeout(cameraReplayTimer);
+        cameraReplayUrl = '';
         video.pause();
         video.removeAttribute('src');
         video.load();
@@ -147,6 +177,12 @@ export async function mount({element,context,config}) {
         var status = document.getElementById('camera-detection-status');
         if (!modal || !alert || !alert.imageUrl) return;
 
+        clearTimeout(cameraReplayTimer);
+        cameraReplayUrl = '';
+        cameraReplayAttempts = 0;
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
         cameraDetectionReturnFocus = trigger || null;
         title.textContent = alert.title || 'Activity detected';
         meta.textContent = (alert.when || 'Recent') + ' · ' + (alert.camera || 'Outdoor camera');
@@ -164,8 +200,8 @@ export async function mount({element,context,config}) {
             status.textContent = 'Detection frame';
             return;
         }
-        video.src = resourceUrl('/api/camera-alert-clip?folder=' + encodeURIComponent(alert.folder) + '&filename=' + encodeURIComponent(alert.filename));
-        video.load();
+        cameraReplayUrl = resourceUrl('/api/camera-alert-clip?folder=' + encodeURIComponent(alert.folder) + '&filename=' + encodeURIComponent(alert.filename));
+        loadCameraReplay();
     }
 
     (function bindCameraDetectionModal() {
@@ -186,9 +222,11 @@ export async function mount({element,context,config}) {
         if (modal) modal.addEventListener('click', function(event) {
             if (event.target === modal) closeCameraDetection();
         });
+        if (modal) modal.addEventListener('cancel', function(event) { event.preventDefault(); closeCameraDetection(); });
         if (video) {
-            video.addEventListener('canplay', function() {
-                if (!video.src) return;
+            video.addEventListener('loadeddata', function() {
+                if (!cameraReplayUrl || modal.hidden || video.readyState < 2) return;
+                clearTimeout(cameraReplayTimer);
                 image.hidden = true;
                 video.hidden = false;
                 status.className = 'camera-detection-status ready';
@@ -200,7 +238,7 @@ export async function mount({element,context,config}) {
                 video.hidden = true;
                 image.hidden = false;
                 status.className = 'camera-detection-status frame';
-                status.textContent = 'Detection frame';
+                retryCameraReplay();
             });
         }
         document.addEventListener('keydown', function(event) {

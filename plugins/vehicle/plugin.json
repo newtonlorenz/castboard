@@ -1,7 +1,7 @@
 {
   "name": "Vehicle Status",
   "description": "Show battery, charging and range from Home Assistant or JSON. Choose entities, units, labels and visible measurements.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "MIT",
   "category": "Display plugins",
   "defaultConfig": {
@@ -282,5 +282,6 @@
         "group": "Display"
       }
     }
-  }
+  },
+  "displayNotes": "Compact browser and image-mode panels show an amber downward arrow when charging draws power, and a neutral dash for zero or unknown draw. Charging power is household consumption; these readings do not imply battery discharge when the vehicle is idle. Native text views retain their existing readings."
 }
