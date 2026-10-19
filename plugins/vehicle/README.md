@@ -16,6 +16,8 @@ Add the installed copy to a screen with **Add to a screen**. Screen Studio can o
 
 A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
 
+Compact browser and image-mode panels show an amber downward arrow when charging draws power, and a neutral dash for zero or unknown draw. Charging power is household consumption; these readings do not imply battery discharge when the vehicle is idle. Native text views retain their existing readings.
+
 ## Connection settings
 
 | Setting | Key | Accepted values | Default | Notes |

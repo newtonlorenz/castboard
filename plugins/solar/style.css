@@ -16,3 +16,16 @@
 
 
 .solar-compact .widget-head{font-size:.75em;letter-spacing:0;text-transform:none}.solar-compact .solar-metrics{grid-template-columns:1fr;gap:7px;margin-top:8px}.solar-compact .solar-metric{display:flex;align-items:baseline;justify-content:space-between;gap:4px}.solar-compact .solar-metric strong{order:2;font-size:.875em;white-space:nowrap;letter-spacing:0}.solar-compact .solar-metric span{font-size:.6875em;margin:0}.solar-compact .solar-flow{display:none}
+
+/* Compact energy flow: upward = supply, downward = consumption, dash = idle/unknown. */
+.solar-compact{--energy-supply:#76e2bf;--energy-demand:#ffbc7a}
+.solar-compact .solar-metrics{gap:3px;margin-top:4px}
+.solar-compact .widget-head{font-size:.6875em;line-height:1.1}
+.solar-compact .solar-metric{display:grid;gap:0;line-height:1.1}
+.solar-compact .solar-metric strong{font-size:.8em}
+.solar-compact .solar-metric span{font-size:.625em}
+.solar-compact .solar-metric[data-energy="supply"]{color:var(--energy-supply)}
+.solar-compact .solar-metric[data-energy="demand"]{color:var(--energy-demand)}
+.solar-compact .solar-metric[data-energy="idle"]{color:var(--muted)}
+.solar-compact .solar-metric span{display:flex;align-items:center;gap:3px;color:inherit}
+.solar-compact .energy-direction{width:9px;height:9px;flex:none}

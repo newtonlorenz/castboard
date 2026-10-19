@@ -1,6 +1,6 @@
 {
   "name": "castboard",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "description": "An open-source visual dashboard builder for Google Cast, smart displays, ESP32 screens, wall tablets, and kiosks.",
   "type": "module",
   "private": true,

@@ -7,3 +7,10 @@
 .vehicle-battery,.vehicle-status,.vehicle-range{max-width:32rem;width:100%}
 
 .vehicle-compact{gap:4px;justify-content:center}.vehicle-compact>.widget-head{font-size:.75em;min-height:0}.vehicle-summary{display:flex;gap:10px;align-items:baseline;font-variant-numeric:tabular-nums}.vehicle-summary strong{font-size:1em}.vehicle-summary span{font-size:.8125em;color:var(--muted)}
+
+/* Compact energy flow: upward = supply, downward = consumption, dash = idle/unknown. */
+.vehicle-compact{--energy-demand:#ffbc7a}
+.vehicle-compact .vehicle-summary{gap:6px}
+.vehicle-compact .vehicle-power{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.vehicle-compact .vehicle-power[data-energy="demand"]{color:var(--energy-demand)}
+.vehicle-compact .energy-direction{width:10px;height:10px;flex:none}

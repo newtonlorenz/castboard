@@ -4,6 +4,9 @@ Notable changes are documented here. Castboard follows semantic versioning once 
 
 ## Unreleased
 
+- Add compact solar and vehicle power-flow colours and directional indicators for small browser and image-mode displays.
+- Start camera detection replay when a decoded frame arrives, retry failed or stalled loads, and cancel pending retries when closing the preview.
+
 - Give bundled integrations independent provider settings and credentials, with optional typed shared sources. Add an independent camera detection source.
 - Manage providers and connections in Plugins, link Studio panels to their source settings, hide internal dependencies and simplify display setup.
 - Validate connection contracts, required capabilities and dependency cycles; route forwarded actions through validation and cache invalidation.

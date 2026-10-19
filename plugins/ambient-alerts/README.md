@@ -14,6 +14,8 @@ Add the installed copy to a screen with **Add to a screen**. Screen Studio can o
 
 A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
 
+Detection replay starts as soon as a decoded frame arrives. Failed or stalled clip loads retry up to four times, then retain the snapshot with a clear unavailable message. Closing the preview cancels pending retries.
+
 ## Connection settings
 
 | Setting | Key | Accepted values | Default | Notes |

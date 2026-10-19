@@ -158,6 +158,8 @@ An empty array is a valid no-detections result. Invalid responses fail explicitl
 Image and clip delivery uses a separately selected `camera-resources@1` source
 with streaming capability; provider credentials stay on the server.
 
+Detection clip endpoints must serve a browser-compatible MP4 with accurate `Content-Length` and byte-range responses. Support bounded (`bytes=0-1023`), open-ended (`bytes=1024-`) and suffix (`bytes=-1024`) ranges. A suffix range returns the final bytes of the clip, not its beginning. Return `206` with the matching `Content-Range`, or `416` with `Content-Range: bytes */<size>` for an unsatisfiable range. The camera resource proxy forwards the browser’s Range header and the upstream range response.
+
 ## Briefing service
 
 News Reader’s Briefing service mode owns a base URL such as
