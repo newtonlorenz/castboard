@@ -1,7 +1,7 @@
 {
   "name": "Speaker Controls",
   "description": "Show speaker playback and optional controls using the connected speaker source.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "license": "MIT",
   "category": "Dashboard panels",
   "defaultConfig": {},
@@ -98,5 +98,6 @@
       "required": false,
       "description": "Optional launcher for links opened on a Cast display."
     }
-  }
+  },
+  "displayNotes": "The heart button adds the displayed Spotify track to Liked Songs when a Spotify track URI is available from the source. Successful saves show a filled heart; failures remain available to retry."
 }

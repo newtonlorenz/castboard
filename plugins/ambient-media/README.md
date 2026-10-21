@@ -14,6 +14,8 @@ Add the installed copy to a screen with **Add to a screen**. Screen Studio can o
 
 A provider failure is isolated to its panel. It retries on the configured refresh cadence. Core data widgets show an unavailable state; RSS news can retain its previous update and label it as stale. Demo values are illustrative. Camera demo mode does not contact a live camera.
 
+The heart button adds the displayed Spotify track to Liked Songs when a Spotify track URI is available from the source. Successful saves show a filled heart; failures remain available to retry.
+
 ## Connection settings
 
 | Setting | Key | Accepted values | Default | Notes |

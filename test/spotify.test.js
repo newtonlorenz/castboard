@@ -30,6 +30,34 @@ test('spotify-player provider reads playback and sends allowlisted CLI actions',
   assert.equal(playback.title, 'Quiet Song');
   assert.equal(playback.device, 'Local audio');
   await plugin.action({ action: 'next' });
+  await plugin.action({ action: 'like' });
   assert.match(await fs.readFile(calls, 'utf8'), /get key playback[\s\S]*playback next/);
+  assert.match(await fs.readFile(calls, 'utf8'), /\nlike\n/);
   await assert.rejects(plugin.action({ action: 'arbitrary-command' }), /Unsupported Spotify action/);
+});
+
+import http from 'node:http';
+import { once } from 'node:events';
+import { createPlugin as createMediaSource } from '../plugins/ambient-media-source/plugin.js';
+
+test('media source forwards the displayed Spotify song once and exposes save failures', async t => {
+  const calls = [];
+  const server = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      calls.push({url: req.url, method: req.method, payload: JSON.parse(body)});
+      res.writeHead(calls.length === 1 ? 200 : 503, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify(calls.length === 1 ? {liked: true} : {error: 'Save unavailable'}));
+    });
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => {server.closeAllConnections(); server.close();});
+  const source = createMediaSource({config: {provider: 'http-json', baseUrl: `http://127.0.0.1:${server.address().port}`}});
+  const payload = {action: 'like', trackUri: 'spotify:track:1234567890123456789012'};
+  assert.equal((await source.action(payload)).liked, true);
+  assert.deepEqual(calls, [{url: '/api/sonos/like', method: 'POST', payload}]);
+  await assert.rejects(source.action(payload));
+  assert.equal(calls.length, 2);
 });

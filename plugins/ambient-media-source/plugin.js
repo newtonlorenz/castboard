@@ -1,7 +1,7 @@
 import {validateHttpUrl} from '../../src/core/providers.js';
 import {fetchJson} from '../../src/core/providers.js';
 const queries=new Set(['status','groups','playlists']);
-const actions=new Set(['select','open','broadcast','radio','dj','enqueue','play','pause','next','previous','volume','toggle']);
+const actions=new Set(['select','open','broadcast','radio','dj','enqueue','play','pause','next','previous','volume','toggle','like']);
 export function createPlugin({config}){
  if(config.provider==='http-json')validateHttpUrl(config.baseUrl,{base:true});
  if(config.provider==='http-json'){let url;try{url=new URL(config.baseUrl);}catch{throw new Error('Enter the service URL');}if(!['http:','https:'].includes(url.protocol))throw new Error('Use an HTTP or HTTPS service URL');}

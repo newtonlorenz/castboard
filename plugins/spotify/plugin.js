@@ -9,6 +9,7 @@ const ALLOWED_ACTIONS = new Map([
   ['next', ['playback', 'next']],
   ['play', ['playback', 'play']],
   ['pause', ['playback', 'pause']],
+  ['like', ['like']],
 ]);
 
 export function normalizeSpotifyPlayback(playback) {
