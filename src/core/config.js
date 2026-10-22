@@ -39,6 +39,15 @@ export function expandEnvironment(value, env = process.env) {
   });
 }
 
+// Use the same environment overrides at startup and after every live save.
+export function resolveRuntimeConfig(raw, env = process.env) {
+  const config = expandEnvironment(raw, env);
+  if (env.CASTBOARD_ADMIN_TOKEN) {
+    config.admin = { ...(config.admin || {}), enabled: true, allowLan: true, token: env.CASTBOARD_ADMIN_TOKEN };
+  }
+  return validateConfig(config);
+}
+
 function assertObject(value, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${label} must be an object`);
@@ -176,11 +185,7 @@ export function loadConfig(options = {}) {
   } catch (error) {
     throw new Error(`Unable to load configuration at ${filePath}: ${error.message}`);
   }
-  const expanded = expandEnvironment(raw, env);
-  if (env.CASTBOARD_ADMIN_TOKEN) {
-    expanded.admin = { ...(expanded.admin || {}), enabled: true, allowLan: true, token: env.CASTBOARD_ADMIN_TOKEN };
-  }
-  const config = validateConfig(expanded);
+  const config = resolveRuntimeConfig(raw, env);
   return { config, rawConfig: raw, configPath: filePath, configDir: path.dirname(filePath) };
 }
 

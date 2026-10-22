@@ -50,6 +50,8 @@ Add the plugin to `plugins` and place it in any screen's `panels` with an explic
 - Widgets should use `unavailable()` and continue refreshing after transient failure. The shared `schedule()` helper prevents overlapping refreshes when a provider is slow.
 - Use the bounded helpers in `src/core/providers.js` for remote or file-backed data. Do not call unbounded `response.text()`/`response.json()` for provider payloads.
 
+For service adapters that need reconnect/restart coordination, see [provider recovery](PROVIDER-RECOVERY.md).
+
 For external packages, independently configured instances, separate sources and views, schema-driven options, declared assets and managed cleanup, see [extension contracts and lifecycle](extensions.md).
 
 ## Appearance and internal frames

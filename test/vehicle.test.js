@@ -39,3 +39,9 @@ test('compact vehicle views retain selected range, charging state and sample lab
  assert.match(view.title,/Sample/);assert.match(view.lines[0].text,/Not charging/);
  assert.equal(view.lines[1].text,'100 mi range');assert.ok(view.lines.every(line=>line.kind==='small'));
 });
+
+test('unavailable HA entities cannot be reported as a successful live vehicle reading',async t=>{
+  t.mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify({state:'unavailable',last_updated:new Date().toISOString()})));
+  const plugin=createPlugin({config:{provider:'home-assistant',baseUrl:'https://ha.example.test',token:'test-token',batteryEntity:'sensor.battery',powerEntity:'sensor.power'},context:{}});
+  await assert.rejects(plugin.getData(),/no available readings; check the vehicle integration/);
+});

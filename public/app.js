@@ -1,9 +1,15 @@
 import { createInteractionRuntime } from '/interaction-runtime.js';
-import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.14.0';
+import { escapeHtml, requestJson, schedule, createWidgetContext } from '/widget-kit.js?v=0.14.2';
 
 const dashboard = document.getElementById('dashboard');
 const cleanups = [];
-window.addEventListener('pagehide', () => { for (const cleanup of cleanups.splice(0)) cleanup(); });
+function disposeScreen() {
+  for (const cleanup of cleanups.splice(0).reverse()) { try { cleanup(); } catch {} }
+}
+window.addEventListener('pagehide', disposeScreen);
+// Cached pages have already disposed their widgets; remount on history restore.
+window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });
+
 
 import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.14.0';
 let previewMounted;
@@ -166,7 +172,9 @@ function mountComposition(config, screen, container, register, scoped) {
       if (panel.options?.fitContent === true) enablePanelAutoFit(element, releases);
       register(element, context, panel, screen);
     } catch (error) {
+      context.dispose();
       if (disposed) return;
+      element.dataset.freshness = 'unavailable';
       element.innerHTML = `<div class="empty-state"><strong>${escapeHtml(plugin.name)}</strong><span>${escapeHtml(error.message)}</span></div>`;
       element.classList.add('widget-unavailable');
     }
@@ -233,7 +241,7 @@ if (studioPreview) {
         } catch { /* A failed incremental update falls back to a complete mount. */ }
       }
       previewMounted=null;
-      for (const cleanup of cleanups.splice(0).reverse()) { try { cleanup(); } catch {} }
+      disposeScreen();
       dashboard.className = 'dashboard-grid';
       dashboard.removeAttribute('style');
       document.documentElement.removeAttribute('style');
@@ -251,6 +259,25 @@ if (studioPreview) {
   });
   // The interaction runtime allows draft navigation and blocks live controls.
   window.parent.postMessage({ type: 'castboard-preview-ready' }, window.location.origin);
-} else boot().catch(error => {
-  dashboard.innerHTML = `<div class="boot-state error"><strong>Castboard could not start</strong><span>${escapeHtml(error.message)}</span></div>`;
-});
+} else {
+  let starting = false;
+  let started = false;
+  let retryTimer;
+  let hidden = false;
+  const startScreen = async () => {
+    if (starting || started || hidden) return;
+    starting = true;
+    clearTimeout(retryTimer);
+    disposeScreen();
+    try { await boot(); started = true; }
+    catch (error) {
+      disposeScreen();
+      dashboard.innerHTML = `<div class="boot-state error" role="status"><strong>Castboard could not start</strong><span>${escapeHtml(error.message)}</span><span>Retrying in 10 seconds…</span><button type="button">Retry now</button></div>`;
+      dashboard.querySelector('button').addEventListener('click', startScreen);
+      if (!hidden) retryTimer = setTimeout(startScreen, 10000);
+    } finally { starting = false; }
+  };
+  window.addEventListener('online', startScreen);
+  window.addEventListener('pagehide', () => { hidden = true; clearTimeout(retryTimer); });
+  void startScreen();
+}

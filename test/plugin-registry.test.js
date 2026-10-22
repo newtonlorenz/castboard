@@ -37,3 +37,21 @@ test('display defaults preserve the public hook instance context and configured 
  const [plugin]=await discoverPlugins({pluginsDir:root,config:{plugins:{copy:{type:'sample',displayName:'Lobby display',show:false}},screens:{home:{panels:[{id:'copy',plugin:'copy'}]}}},context:{}});
  assert.deepEqual(plugin.publicConfig(),{show:false,id:'copy',title:'Lobby display'});
 });
+
+test('invalid descriptors retain the validation error even when disposal is invalid', async t => {
+  for (const descriptor of ['null', "{ id: 'sample', name: 'Sample', dispose: true }", "{ id: 'wrong', name: 'Sample', dispose() { throw new Error('cleanup failed'); } }"]) {
+    const root = await pluginFixture(t, `export function createPlugin() { return ${descriptor}; }`);
+    await assert.rejects(discoverPlugins({ pluginsDir: root, config, context: {} }), /Plugin ID mismatch|dispose must be a function/);
+  }
+});
+
+test('plugin cleanup isolates synchronous and asynchronous disposal failures', async () => {
+  const { disposePlugins } = await import('../src/core/plugin-registry.js');
+  const released = [];
+  await disposePlugins([
+    { dispose() { released.push('sync'); throw new Error('sync failure'); } },
+    { async dispose() { released.push('async'); throw new Error('async failure'); } },
+    { dispose() { released.push('healthy'); } },
+  ]);
+  assert.deepEqual(released, ['sync', 'async', 'healthy']);
+});

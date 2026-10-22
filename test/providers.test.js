@@ -51,3 +51,26 @@ test('native camera shortcuts retain their label when the action button is hidde
  const result=plugin.nativeView({data:{},options:{displayMode:'shortcut'},panel:{interaction:{type:'modal',showButton:false,label:'View camera'}}});
  assert.equal(result.title,'View camera');assert.equal(result.image,undefined);
 });
+
+test('oversized declared provider responses cancel the unread body', async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  let cancelled = false;
+  globalThis.fetch = async () => new Response(new ReadableStream({ cancel() { cancelled = true; } }), { headers: { 'Content-Length': '2048' } });
+  await assert.rejects(fetchJson('http://provider.test', {}, 1000, 16), /exceeds 16 bytes/);
+  assert.equal(cancelled, true);
+});
+
+test('file providers bound reads and preserve multibyte text', async t => {
+  const fs = await import('node:fs/promises');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const { readTextFile } = await import('../src/core/providers.js');
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'castboard-provider-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const file = path.join(directory, 'data.txt');
+  const text = 'a'.repeat(65535) + 'é ☀️ 東京';
+  await fs.writeFile(file, text);
+  assert.equal(await readTextFile(file), text);
+  await assert.rejects(readTextFile(file, 16), /exceeds 16 bytes/);
+});

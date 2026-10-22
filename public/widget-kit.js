@@ -108,11 +108,17 @@ export function createWidgetContext({ app, screen, plugin, panel, element, annou
     getPlugin: target => app.plugins.find(item => item.id === (bindings[target] || target)),
     source, data: api.data, action: api.action, resource: api.resource,
     asset: asset => `/plugins/${encodeURIComponent(plugin.id)}/assets/${asset.split('/').map(encodeURIComponent).join('/')}?v=${encodeURIComponent(plugin.version || '1')}`,
-    onDispose: cleanup => { if (typeof cleanup === 'function') cleanups.push(cleanup); },
+    onDispose: cleanup => {
+      if (typeof cleanup !== 'function') return;
+      // An async mount can finish after its panel has already been removed.
+      if (controller.signal.aborted) { try { cleanup(); } catch {} }
+      else cleanups.push(cleanup);
+    },
     listen(target, event, callback, options = {}) {
       target.addEventListener(event, callback, { ...options, signal: controller.signal });
     },
     schedule(load, milliseconds) {
+      if (controller.signal.aborted) return;
       const timer = schedule(() => controller.signal.aborted ? undefined : load(), milliseconds);
       cleanups.push(() => clearInterval(timer));
       return timer;
