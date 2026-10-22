@@ -4,6 +4,11 @@ Notable changes are documented here. Castboard follows semantic versioning once 
 
 ## Unreleased
 
+- Recover dashboard startup automatically after temporary network failures and release widget/plugin resources safely across retries and navigation.
+- Preserve environment-based admin access after all live saves, correctly decode chunked UTF-8 JSON, validate request bodies, and handle missing extension assets safely.
+- Preserve explicit degraded camera-health responses for fallback decisions and reject Home Assistant vehicle responses containing no usable readings.
+- Add an opt-in provider recovery scheduler for trusted service adapters, with sustained-failure thresholds, persisted cooldown support, bounded backoff and recovery confirmation.
+
 - Add compact solar and vehicle power-flow colours and directional indicators for small browser and image-mode displays.
 - Start camera detection replay when a decoded frame arrives, retry failed or stalled loads, and cancel pending retries when closing the preview.
 

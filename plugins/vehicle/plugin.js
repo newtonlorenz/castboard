@@ -29,7 +29,9 @@ export function createPlugin({config,context}) {
       if(range!==null)range=rangeUnit==='mi'?range*1.609344:rangeUnit==='km'?range:null;
       const times=entries.map(([,state])=>state?.last_reported || state?.last_updated).filter(value=>Number.isFinite(Date.parse(value)));
       const charging=chargingState(states.chargingEntity);
-      return normalizeVehicle({label:config.label,batteryPercent:stateNumber(states.batteryEntity),chargingKw:powerKw(states.powerEntity,config.powerUnit || 'auto'),...(charging===null?{}:{charging}),rangeKm:range,updatedAt:times.length?new Date(Math.min(...times.map(Date.parse))).toISOString():null});
+      const data=normalizeVehicle({label:config.label,batteryPercent:stateNumber(states.batteryEntity),chargingKw:powerKw(states.powerEntity,config.powerUnit || 'auto'),...(charging===null?{}:{charging}),rangeKm:range,updatedAt:times.length?new Date(Math.min(...times.map(Date.parse))).toISOString():null});
+      if(data.batteryPercent===null && data.chargingKw===null && data.charging===null && data.rangeKm===null)throw new Error('Home Assistant vehicle sensors have no available readings; check the vehicle integration');
+      return data;
     }
   };
 }

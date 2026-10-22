@@ -47,7 +47,10 @@ async function withTimeout(timeoutMs, externalSignal, operation) {
 
 async function readResponseBody(response, maxBytes) {
   const declaredLength = Number(response.headers.get('content-length'));
-  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) throw new Error(`Provider response exceeds ${maxBytes} bytes`);
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    await response.body?.cancel();
+    throw new Error(`Provider response exceeds ${maxBytes} bytes`);
+  }
   if (!response.body) return '';
   const reader = response.body.getReader();
   const chunks = [];
@@ -94,6 +97,20 @@ export async function fetchJson(url, options = {}, timeoutMs = 8000, maxBytes = 
   }
   if (!response.ok) throw new Error(`Provider returned HTTP ${response.status}`);
   return body;
+}
+
+// Clearcam returns useful, explicit degraded health with HTTP 503.
+// Preserve only that documented status; unrelated HTTP/parse failures still fail.
+export async function fetchCameraHealth(url, options = {}, timeoutMs = 8000) {
+  const { response, text } = await fetchText(url, {
+    ...options, headers: { Accept: 'application/json', ...(options.headers || {}) },
+  }, timeoutMs);
+  let health;
+  try { health = JSON.parse(text); } catch { throw new Error('Camera health returned invalid JSON'); }
+  const degraded = response.status === 503 && health?.status === 'degraded' && Array.isArray(health.cameras);
+  if (!response.ok && !degraded) throw new Error(`Camera health returned HTTP ${response.status}`);
+  if (!health || !Array.isArray(health.cameras)) throw new Error('Camera health response is invalid');
+  return health;
 }
 
 export async function readJsonSource(config, context) {

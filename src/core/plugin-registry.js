@@ -16,6 +16,12 @@ function validateDescriptor(plugin, id) {
   }
 }
 
+export async function disposePlugins(plugins) {
+  await Promise.allSettled(plugins.map(async plugin => {
+    if (typeof plugin?.dispose === 'function') await plugin.dispose();
+  }));
+}
+
 export async function discoverPlugins({ pluginsDir, config, context, reuse = [] }) {
   const directories = await extensionDirectories(pluginsDir, config, 'plugins', context.configDir);
   const plugins = [],created=[];
@@ -69,7 +75,7 @@ export async function discoverPlugins({ pluginsDir, config, context, reuse = [] 
   validatePluginConnections(plugins, config);
   validatePanels(config, plugins);
   return plugins;
-  }catch(error){await Promise.allSettled(created.map(plugin=>plugin.dispose?.()));throw error;}
+  }catch(error){await disposePlugins(created);throw error;}
 }
 
 export function pluginMap(plugins) {

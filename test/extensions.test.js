@@ -118,3 +118,17 @@ test('record lists retain legacy strings and validate structured entries and lim
  assert.throws(()=>validateSchema([42],schema),/allowed format/);
  assert.throws(()=>validateSchema(['a','b','c'],schema),/too many/);
 });
+
+test('removed extension files return a safe 404 and leave the server responsive', async t => {
+  const app = await fixture(t);
+  await fs.unlink(path.join(app.root, 'plugins/view/widget.js'));
+  await fs.unlink(path.join(app.root, 'types/canvas/renderer.js'));
+  for (const route of ['/plugins/numeric/widget.js', '/screen-types/canvas/renderer.js']) {
+    const response = await fetch(app.url + route);
+    assert.equal(response.status, 404);
+    const body = await response.text();
+    assert.equal(body.includes(app.root), false);
+    assert.match(body, /ASSET_NOT_FOUND/);
+  }
+  assert.equal((await fetch(app.url + '/api/health')).status, 200);
+});

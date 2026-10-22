@@ -5,8 +5,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { isIP } from 'node:net';
 import { fileURLToPath } from 'node:url';
-import { environmentWithDotEnv, expandEnvironment, loadConfig, publicAppConfig, validateConfig } from './core/config.js';
-import { discoverPlugins, pluginMap, validatePanels } from './core/plugin-registry.js';
+import { environmentWithDotEnv, loadConfig, publicAppConfig, resolveRuntimeConfig } from './core/config.js';
+import { discoverPlugins, disposePlugins, pluginMap, validatePanels } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
 import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
@@ -51,7 +51,12 @@ function securityHeaders(res, displayContent = null) {
 }
 
 async function sendFile(res, filePath, cache = false) {
-  const data = await fs.readFile(filePath);
+  let data;
+  try { data = await fs.readFile(filePath); }
+  catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return jsonResponse(res, 404, { error: { code: 'ASSET_NOT_FOUND', message: 'Requested file is unavailable' } });
+    throw error;
+  }
   res.writeHead(200, {
     'Content-Type': CONTENT_TYPES[path.extname(filePath)] || 'application/octet-stream',
     'Content-Length': data.length,
@@ -67,23 +72,28 @@ async function readBytes(req, limit) {
 }
 
 async function readBody(req) {
-  let raw = '';
+  const chunks = [];
   let bytes = 0;
   for await (const chunk of req) {
     bytes += chunk.length;
     if (bytes > 512 * 1024) throw Object.assign(new Error('Request body exceeds 512 KiB'), { statusCode: 413, code: 'BODY_TOO_LARGE' });
-    raw += chunk;
+    chunks.push(chunk);
   }
-  if (!raw) return {};
+  if (!bytes) return {};
+  let body;
   try {
-    return JSON.parse(raw);
+    body = JSON.parse(Buffer.concat(chunks, bytes).toString('utf8'));
   } catch {
     throw Object.assign(new Error('Request body must be valid JSON'), { statusCode: 400, code: 'INVALID_JSON' });
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw Object.assign(new Error('Request body must be a JSON object'), { statusCode: 400, code: 'INVALID_JSON' });
+  }
+  return body;
 }
 
 function acceptsJson(req) {
-  return String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json');
+  return String(req.headers['content-type'] || '').split(';', 1)[0].trim().toLowerCase() === 'application/json';
 }
 
 export async function createApp(options = {}) {
@@ -135,7 +145,7 @@ export async function createApp(options = {}) {
   let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
-  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); nativeScenes.dispose(); await Promise.allSettled(plugins.map(plugin => plugin.dispose?.())); };
+  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); nativeScenes.dispose(); await disposePlugins(plugins); };
 
   let publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
 
@@ -236,7 +246,7 @@ export async function createApp(options = {}) {
           const adapterChanged=body.action==='create' || body.device?.adapter && body.device.adapter!==(rawConfig.devices?.[body.id]?.adapter || 'standard');
           const defaults=adapterChanged?{...requestedAdapter.defaults,options:requestedAdapter.defaultOptions || {}}:{};
           const changed=changeDeviceConfig(rawConfig,body,defaults);
-          const nextConfig=validateConfig(expandEnvironment(changed.config,runtimeEnv));
+          const nextConfig=resolveRuntimeConfig(changed.config, runtimeEnv);
           validateAdapterDevices(nextConfig,displayAdapters);
           const nextPath=writableConfigPath(configPath,path.dirname(configPath));
           await writeConfigAtomic(nextPath,changed.config);
@@ -323,7 +333,7 @@ export async function createApp(options = {}) {
       const deviceView=url.pathname.match(/^\/device-view\/([a-z][a-z0-9-]{0,63})$/);
       if (deviceView && req.method==='GET') {
         authenticateDevice(runtimeConfig,deviceView[1],req.headers.authorization);
-        return sendFile(res,path.join(PUBLIC_DIR,'index.html'));
+        return await sendFile(res,path.join(PUBLIC_DIR,'index.html'));
       }
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return jsonResponse(res, 200, { ok: true, plugins: plugins.map(plugin => plugin.id), timestamp: new Date().toISOString() });
@@ -335,7 +345,7 @@ export async function createApp(options = {}) {
       if (url.pathname === '/api/client-status' && req.method === 'POST') {
         if (!acceptsJson(req)) return jsonResponse(res,415,{error:{code:'CONTENT_TYPE',message:'Status requires JSON'}});
         const body=await readBody(req);
-        if(!Object.hasOwn(runtimeConfig.screens,body.screenId) || !Array.isArray(body.panels) || body.panels.length>100) return jsonResponse(res,422,{error:{code:'INVALID_STATUS',message:'Invalid screen status'}});
+        if(!Object.hasOwn(runtimeConfig.screens,body.screenId) || !Array.isArray(body.panels) || body.panels.length>100 || body.panels.some(panel => !panel || typeof panel !== 'object' || typeof panel.id !== 'string')) return jsonResponse(res,422,{error:{code:'INVALID_STATUS',message:'Invalid screen status'}});
         const remoteAddress=clientAddress(req);
         const key=`${remoteAddress}:${body.screenId}`;
         if(clients.size>=128&&!clients.has(key))clients.delete(clients.keys().next().value);
@@ -356,9 +366,7 @@ export async function createApp(options = {}) {
         try {
           if (body.dryRun !== undefined && typeof body.dryRun !== 'boolean') throw new Error('dryRun must be a boolean');
           nextRaw = patchConfiguration(rawConfig, body.operations);
-          nextConfig = expandEnvironment(nextRaw, runtimeEnv);
-          if (runtimeEnv.CASTBOARD_ADMIN_TOKEN) nextConfig.admin = { ...(nextConfig.admin || {}), enabled: true, allowLan: true, token: runtimeEnv.CASTBOARD_ADMIN_TOKEN };
-          validateConfig(nextConfig);
+          nextConfig = resolveRuntimeConfig(nextRaw, runtimeEnv);
           const nextAdapters = await discoverDisplayAdapters({ builtin: DISPLAY_ADAPTERS_DIR, config: nextConfig, configDir: context.configDir });
           validateAdapterDevices(nextConfig, nextAdapters);
           const nextTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
@@ -378,12 +386,12 @@ export async function createApp(options = {}) {
           displayAdapters = nextAdapters;
           nativeScenes.dispose(); deviceDiagnostics.clear();
           publicConfig = nextPublic; applied = true;
-          await Promise.allSettled(previous.filter(plugin => !plugins.includes(plugin)).map(plugin => plugin.dispose?.()));
+          await disposePlugins(previous.filter(plugin => !plugins.includes(plugin)));
           return jsonResponse(res, 200, { ...result, applied: true, revision: configRevision(rawConfig) });
         } catch (error) {
           return jsonResponse(res, 422, { error: { code: 'INVALID_CONFIGURATION', message: safeConfigurationError(error, [rawConfig, runtimeConfig, nextRaw, nextConfig], packages) } });
         } finally {
-          if (staged && !applied) await Promise.allSettled(staged.filter(plugin => !plugins.includes(plugin)).map(plugin => plugin.dispose?.()));
+          if (staged && !applied) await disposePlugins(staged.filter(plugin => !plugins.includes(plugin)));
           pluginSaveInProgress = false;
         }
       }
@@ -400,7 +408,7 @@ export async function createApp(options = {}) {
         let staged;
         try {
           const nextRaw=changePluginConfig(rawConfig,packages,body);
-          const nextConfig=validateConfig(expandEnvironment(nextRaw,runtimeEnv));
+          const nextConfig=resolveRuntimeConfig(nextRaw, runtimeEnv);
           for(const [id,settings] of Object.entries(nextConfig.plugins))validateSchema(settings,packages.find(pkg=>pkg.id===(settings.type||id))?.settingsSchema,`Plugin ${id} settings`);
           staged=await discoverPlugins({pluginsDir:PLUGINS_DIR,config:nextConfig,context,reuse:plugins});
           const nextPublic=publicAppConfig(nextConfig,staged,screenTypes);
@@ -408,10 +416,10 @@ export async function createApp(options = {}) {
           await writeConfigAtomic(nextPath,nextRaw);
           const previous=plugins;
           plugins=staged;byId=pluginMap(plugins);reads.clear();rawConfig=nextRaw;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);publicConfig=nextPublic;
-          await Promise.allSettled(previous.filter(plugin=>!plugins.includes(plugin)).map(plugin=>plugin.dispose?.()));
+          await disposePlugins(previous.filter(plugin=>!plugins.includes(plugin)));
           return jsonResponse(res,200,{...payload(),applied:true});
         }catch(error){
-          if(staged)await Promise.allSettled(staged.filter(plugin=>!plugins.includes(plugin)).map(plugin=>plugin.dispose?.()));
+          if(staged)await disposePlugins(staged.filter(plugin=>!plugins.includes(plugin)));
           return jsonResponse(res,422,{error:{code:'INVALID_PLUGIN_SETTINGS',message:error.message}});
         }finally{pluginSaveInProgress=false;}
       }
@@ -448,7 +456,7 @@ export async function createApp(options = {}) {
         pluginSaveInProgress = true;
         try {
           const nextRaw = changeDelivery(rawConfig, body);
-          const nextConfig = validateConfig(expandEnvironment(nextRaw, runtimeEnv));
+          const nextConfig = resolveRuntimeConfig(nextRaw, runtimeEnv);
           const nextPath = writableConfigPath(configPath, path.dirname(configPath));
           await writeConfigAtomic(nextPath, nextRaw);
           rawConfig = nextRaw; runtimeConfig = nextConfig; configPath = nextPath;
@@ -480,7 +488,7 @@ export async function createApp(options = {}) {
         pluginSaveInProgress=true;
         try {
           const nextRaw = mergeDesign(rawConfig, body.design);
-          const nextConfig = validateConfig(expandEnvironment(nextRaw, runtimeEnv));
+          const nextConfig = resolveRuntimeConfig(nextRaw, runtimeEnv);
           const nextScreenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
           // Design saves must not recreate integration clients or their state.
           validatePanels(nextConfig, plugins);
@@ -530,57 +538,57 @@ export async function createApp(options = {}) {
         let file;
         try { file = extension && await publicAsset(extension, decodeURIComponent(assetMatch[3])); } catch {}
         if (!file) return jsonResponse(res, 404, { error: { code: 'ASSET_NOT_FOUND', message: 'Extension asset not found' } });
-        return sendFile(res, file, true);
+        return await sendFile(res, file, true);
       }
 
       const widgetMatch = url.pathname.match(/^\/plugins\/([a-z][a-z0-9-]*)\/widget\.js$/);
       if (req.method === 'GET' && widgetMatch) {
         const plugin = byId.get(widgetMatch[1]);
         if (!plugin || !plugin.hasWidget) return jsonResponse(res, 404, { error: { code: 'PLUGIN_NOT_FOUND', message: 'Plugin widget not found' } });
-        return sendFile(res, path.join(plugin.directory, 'widget.js'), true);
+        return await sendFile(res, path.join(plugin.directory, 'widget.js'), true);
       }
 
       const screenTypeMatch = url.pathname.match(/^\/screen-types\/([a-z][a-z0-9-]*)\/renderer\.js$/);
       if (req.method === 'GET' && screenTypeMatch) {
         const screenType = screenTypesById.get(screenTypeMatch[1]);
         if (!screenType) return jsonResponse(res, 404, { error: { code: 'SCREEN_TYPE_NOT_FOUND', message: 'Screen type not found' } });
-        return sendFile(res, path.join(screenType.directory, 'renderer.js'), true);
+        return await sendFile(res, path.join(screenType.directory, 'renderer.js'), true);
       }
 
-      if (req.method === 'GET' && url.pathname === '/appearance-model.js') return sendFile(res, path.join(PUBLIC_DIR, 'appearance-model.js'));
-      if (req.method === 'GET' && url.pathname === '/admin-preview' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
-      if (req.method === 'GET' && url.pathname === '/draft-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'draft-model.js'));
-      if (req.method === 'GET' && url.pathname === '/record-list-field.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'record-list-field.js'));
-      if (req.method === 'GET' && url.pathname === '/screen-path.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(ROOT, 'src/core/screen-path.js'));
-      if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
-      if (req.method === 'GET' && url.pathname === '/display-guide.js' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'display-guide.js'));
-      if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
-      if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
-      if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
-      if(req.method==='GET'&&url.pathname==='/admin/devices'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'devices.html'));
-      if(req.method==='GET'&&/^\/devices\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
-      if(req.method==='GET'&&url.pathname==='/connection-model.js'&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,'connection-model.js'));
-      if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
-      if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
-      if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
+      if (req.method === 'GET' && url.pathname === '/appearance-model.js') return await sendFile(res, path.join(PUBLIC_DIR, 'appearance-model.js'));
+      if (req.method === 'GET' && url.pathname === '/admin-preview' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+      if (req.method === 'GET' && url.pathname === '/draft-model.js' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'draft-model.js'));
+      if (req.method === 'GET' && url.pathname === '/record-list-field.js' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'record-list-field.js'));
+      if (req.method === 'GET' && url.pathname === '/screen-path.js' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(ROOT, 'src/core/screen-path.js'));
+      if (req.method === 'GET' && url.pathname === '/studio-model.js' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'studio-model.js'));
+      if (req.method === 'GET' && url.pathname === '/display-guide.js' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'display-guide.js'));
+      if (req.method === 'GET' && url.pathname === '/admin' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'admin.html'));
+      if (req.method === 'GET' && /^\/admin\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
+      if(req.method==='GET'&&url.pathname==='/admin/plugins'&&runtimeConfig.admin?.enabled!==false)return await sendFile(res,path.join(PUBLIC_DIR,'plugins.html'));
+      if(req.method==='GET'&&url.pathname==='/admin/devices'&&runtimeConfig.admin?.enabled!==false)return await sendFile(res,path.join(PUBLIC_DIR,'devices.html'));
+      if(req.method==='GET'&&/^\/devices\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return await sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
+      if(req.method==='GET'&&url.pathname==='/connection-model.js'&&runtimeConfig.admin?.enabled!==false)return await sendFile(res,path.join(PUBLIC_DIR,'connection-model.js'));
+      if(req.method==='GET'&&/^\/plugin-admin\.(js|css)$/.test(url.pathname)&&runtimeConfig.admin?.enabled!==false)return await sendFile(res,path.join(PUBLIC_DIR,url.pathname.slice(1)));
+      if (req.method === 'GET' && url.pathname === '/setup' && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, 'setup.html'));
+      if (req.method === 'GET' && /^\/setup\.(js|css)$/.test(url.pathname) && runtimeConfig.admin?.enabled !== false) return await sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), false);
       const screenPaths = new Set(Object.values(publicConfig.screens).map(screen => screen.path));
       if (req.method === 'GET' && (url.pathname === '/' || screenPaths.has(url.pathname))) {
         const screen = Object.entries(publicConfig.screens).find(([,screen])=>screen.path===url.pathname)?.[0] || publicConfig.defaultScreen;
         const entry=screenRequests[screen] ||= {count:0}; entry.count += 1; entry.lastRequestAt=new Date().toISOString(); entry.remoteAddress=clientAddress(req);
-        return sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
+        return await sendFile(res, path.join(PUBLIC_DIR, 'index.html'));
       }
-      if (req.method === 'GET' && /^\/(app|widget-kit|interaction-model|interaction-runtime)\.js$/.test(url.pathname)) return sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
-      if (req.method === 'GET' && url.pathname === '/schema-fields.js') return sendFile(res, path.join(PUBLIC_DIR, 'schema-fields.js'), true);
-      if (req.method === 'GET' && url.pathname === '/styles.css') return sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
-      if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.png') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.png'), true);
-      if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.svg') return sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.svg'), true);
+      if (req.method === 'GET' && /^\/(app|widget-kit|interaction-model|interaction-runtime)\.js$/.test(url.pathname)) return await sendFile(res, path.join(PUBLIC_DIR, url.pathname.slice(1)), true);
+      if (req.method === 'GET' && url.pathname === '/schema-fields.js') return await sendFile(res, path.join(PUBLIC_DIR, 'schema-fields.js'), true);
+      if (req.method === 'GET' && url.pathname === '/styles.css') return await sendFile(res, path.join(PUBLIC_DIR, 'styles.css'), true);
+      if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.png') return await sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.png'), true);
+      if (req.method === 'GET' && url.pathname === '/assets/castboard-logo.svg') return await sendFile(res, path.join(PUBLIC_DIR, 'assets', 'castboard-logo.svg'), true);
       // Trusted extension handlers cannot intercept core administration/code.
       for (const plugin of plugins) if (plugin.handleRequest && await plugin.handleRequest(req, res, { url })) return;
       return jsonResponse(res, 404, { error: { code: 'NOT_FOUND', message: 'Route not found' } });
     } catch (error) {
       context.logger.error(`[${req.method}] ${url?.pathname || req.url || '/'}:`, error.message);
       const status = error.statusCode || 502;
-      if (!res.headersSent) jsonResponse(res, status, { error: { code: error.code || 'PROVIDER_ERROR', message: error.message } });
+      if (!res.headersSent) jsonResponse(res, status, { error: { code: error.code || 'PROVIDER_ERROR', message: error.statusCode ? error.message : 'The request could not be completed' } });
       else res.destroy(error);
     }
   });
