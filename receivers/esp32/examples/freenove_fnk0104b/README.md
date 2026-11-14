@@ -26,6 +26,22 @@ JPEG decoder; Castboard renders image-mode content on the server.
    colours, each screen edge, touch alignment, modal opening/closing, Wi-Fi loss
    and reconnect in **both modes**. A compile result does not verify these checks.
 
+## Later firmware updates
+
+This receiver checks Castboard for a staged firmware update about once a minute.
+OTA runs only when the receiver uses HTTPS with its configured trusted root CA.
+Plain-HTTP display connections cannot install firmware: a digest received over
+HTTP does not authenticate the firmware publisher. Configure authenticated TLS
+before using remote updates.
+After the first OTA-capable build is installed by USB, open **Displays**, choose
+the ESP32 display, and upload the Arduino build's application `.bin` using
+**Update firmware**. Do not upload the merged/full-flash image. Castboard serves
+the image only to that display's connection key. The receiver checks its size
+and SHA-256 while writing the inactive OTA partition, then reboots. The
+`app3M_fat9M_16MB` partition layout has two 3 MiB application slots; uploads
+larger than 3 MiB are rejected. Keep the full-flash backup and USB recovery
+procedure in case the new firmware does not start.
+
 The touch driver maps coordinates to landscape exactly once. The flush callback
 converts the LVGL colour byte order for the SPI display. Each 320 × 240 frame is
 153,600 bytes; PSRAM is used for incoming frames where available. Data collection

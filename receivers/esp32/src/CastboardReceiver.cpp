@@ -5,6 +5,10 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <esp_heap_caps.h>
+#include <Preferences.h>
+#include <Update.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/version.h>
 #include <memory>
 
 namespace {
@@ -71,9 +75,74 @@ bool CastboardReceiver::begin(lv_obj_t* parent) {
   lv_obj_align(statusLabel_,LV_ALIGN_BOTTOM_MID,0,-4);lv_obj_set_style_bg_opa(statusLabel_,LV_OPA_90,0);lv_obj_set_style_bg_color(statusLabel_,lv_color_hex(0x14201e),0);lv_obj_set_style_text_color(statusLabel_,lv_color_white(),0);lv_obj_set_style_pad_all(statusLabel_,4,0);
   events_=xQueueCreate(4,sizeof(Event));results_=xQueueCreate(1,sizeof(Result*));
   if(!events_ || !results_)return false;
-  return xTaskCreate(networkTask,"castboard-net",12288,this,1,&task_)==pdPASS;
+  // Firmware requires authenticated transport; ordinary HTTP display polling does not enable OTA.
+  if(String(settings_.server).startsWith("https://") && xTaskCreate(firmwareNetworkTask,"castboard-ota",12288,this,1,&firmwareTask_)!=pdPASS)return false;
+  if(xTaskCreate(networkTask,"castboard-net",12288,this,1,&task_)!=pdPASS){if(firmwareTask_)vTaskDelete(firmwareTask_);firmwareTask_=nullptr;return false;}
+  return true;
 }
 void CastboardReceiver::networkTask(void* self){static_cast<CastboardReceiver*>(self)->network();}
+void CastboardReceiver::firmwareNetworkTask(void* self){static_cast<CastboardReceiver*>(self)->firmwareNetwork();}
+void CastboardReceiver::firmwareNetwork(){
+  String base(settings_.server);while(base.endsWith("/"))base.remove(base.length()-1);
+  base+="/api/devices/";base+=settings_.deviceId;base+="/firmware";
+  Preferences saved;saved.begin("castboard-ota",false);
+  for(;;){
+    vTaskDelay(pdMS_TO_TICKS(60000));
+    if(WiFi.status()!=WL_CONNECTED)continue;
+    auto client=[&]()->std::unique_ptr<WiFiClient>{
+      if(base.startsWith("https://")){auto* tls=new WiFiClientSecure();tls->setCACert(settings_.rootCA);return std::unique_ptr<WiFiClient>(tls);}
+      return std::unique_ptr<WiFiClient>(new WiFiClient());
+    };
+    auto connection=client();HTTPClient manifest;prepareHttp(manifest);manifest.setConnectTimeout(3000);manifest.setTimeout(10000);manifest.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
+    if(!manifest.begin(*connection,base))continue;
+    manifest.addHeader("Authorization",String("Bearer ")+settings_.connectionKey);
+    if(manifest.GET()!=200){manifest.end();continue;}
+    BufferStream payload(512);const bool received=readResponse(manifest,payload);manifest.end();
+    if(!received)continue;
+    JsonDocument doc;if(deserializeJson(doc,payload.data,payload.size))continue;
+    const String sha=doc["firmware"]["sha256"]|"";
+    const size_t size=doc["firmware"]["size"]|0;
+    if(sha.length()!=64 || strspn(sha.c_str(),"0123456789abcdef")!=64 || size<1024 || size>3*1024*1024 || saved.getString("sha256")==sha)continue;
+    auto imageClient=client();HTTPClient image;prepareHttp(image);image.setConnectTimeout(3000);image.setTimeout(15000);image.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
+    if(!image.begin(*imageClient,base+"/image"))continue;
+    image.addHeader("Authorization",String("Bearer ")+settings_.connectionKey);
+    const char* names[]={"X-Firmware-SHA256","Transfer-Encoding"};image.collectHeaders(names,2);
+    if(image.GET()!=200 || image.getSize()!=int(size) || image.header("X-Firmware-SHA256")!=sha || (image.header("Transfer-Encoding").length() && image.header("Transfer-Encoding")!="identity")){image.end();continue;}
+    if(!Update.begin(size)){image.end();continue;}
+    mbedtls_sha256_context hash;mbedtls_sha256_init(&hash);
+#if MBEDTLS_VERSION_MAJOR >= 3
+    mbedtls_sha256_starts(&hash,0);
+#else
+    mbedtls_sha256_starts_ret(&hash,0);
+#endif
+    auto* stream=image.getStreamPtr();uint8_t chunk[2048];size_t copied=0;const uint32_t downloadStarted=millis();uint32_t lastData=downloadStarted;bool failed=false;
+    if(!stream)failed=true;
+    while(!failed && copied<size){
+      if(uint32_t(millis()-downloadStarted)>120000){failed=true;break;}
+      const int available=stream->available();
+      if(available<=0){if(!image.connected() || uint32_t(millis()-lastData)>15000){failed=true;break;}vTaskDelay(pdMS_TO_TICKS(10));continue;}
+      const size_t count=stream->readBytes(chunk,std::min(size-copied,size_t(std::min(available,int(sizeof(chunk))))));
+      if(!count || Update.write(chunk,count)!=count){failed=true;break;}
+#if MBEDTLS_VERSION_MAJOR >= 3
+      mbedtls_sha256_update(&hash,chunk,count);
+#else
+      mbedtls_sha256_update_ret(&hash,chunk,count);
+#endif
+      copied+=count;lastData=millis();vTaskDelay(1);
+    }
+    uint8_t digest[32];
+#if MBEDTLS_VERSION_MAJOR >= 3
+    mbedtls_sha256_finish(&hash,digest);
+#else
+    mbedtls_sha256_finish_ret(&hash,digest);
+#endif
+    mbedtls_sha256_free(&hash);image.end();
+    char actual[65];for(size_t i=0;i<32;i++)snprintf(actual+i*2,3,"%02x",digest[i]);
+    if(failed || copied!=size || sha!=actual){Update.abort();continue;}
+    if(!Update.end(true)){continue;}
+    saved.putString("sha256",sha);saved.end();ESP.restart();
+  }
+}
 void CastboardReceiver::network() {
   String base(settings_.server);while(base.endsWith("/"))base.remove(base.length()-1);
   base+="/api/devices/";base+=settings_.deviceId;
