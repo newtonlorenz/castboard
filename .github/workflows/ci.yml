@@ -47,6 +47,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: c++ -std=c++17 receivers/esp32/test/bounded_body.cpp -o /tmp/castboard-body-test && /tmp/castboard-body-test
       - run: pip install platformio==6.1.18
       - run: pio run -d receivers/esp32/test/compile
       - run: python receivers/esp32/test/image_format.py
