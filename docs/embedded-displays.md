@@ -79,6 +79,23 @@ uses a private gateway, expose only `/api/devices/…` to embedded receivers. Do
 open an existing browser/Cast allowlist or expose the entire admin service just to
 connect a microcontroller.
 
+### Remote ESP32 firmware updates
+
+The reference ESP32 receiver checks for firmware about once a minute.
+OTA runs only when the receiver uses HTTPS with its configured trusted root CA.
+Plain-HTTP display connections cannot install firmware: a digest received over
+HTTP does not authenticate the firmware publisher. Configure authenticated TLS
+before using remote updates. Its first
+OTA-capable build must be installed with the board's USB flashing procedure.
+After that, use **Displays → Update firmware** for that display and upload the
+application `.bin` from its Arduino build. Do not upload a full-flash/merged
+image. Castboard stages at most 3 MiB per display; the device downloads using
+its existing connection key, verifies the SHA-256 digest while writing the
+inactive OTA slot, and reboots. Retain the original full-flash backup for USB
+recovery. Private gateways must allow that display's `GET firmware` and
+`GET firmware/image` device routes. The reference Freenove build uses a
+16 MiB partition layout with two 3 MiB app slots.
+
 ## 3. Optional image renderer
 
 The main server retains its dependency-free runtime. The worker is a separate
@@ -296,3 +313,12 @@ display-plugin uploads, tap-only forecasts and camera refresh/failure recovery a
 encoding and bounded responses; browser tests cover MJPEG cleanup on navigation.
 Physical board support still requires a successful board build, installation and
 observed display/touch checks on that board; a protocol test does not establish it.
+
+Firmware staging is bound to the current display connection key. Rotating that
+key or recreating the display invalidates a previously staged update. Use one
+Castboard server process per staging directory. Writes are serialized per device;
+if interrupted between image and manifest publication, retrieval fails its
+integrity check rather than serving a mismatched image. Restage the intended
+firmware after such an interruption. Hash verification detects transfer/storage
+corruption; authenticated HTTPS supplies server authenticity. This feature is
+not a substitute for board-compatible builds or a USB recovery procedure.

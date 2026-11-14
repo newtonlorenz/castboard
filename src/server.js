@@ -18,6 +18,7 @@ import { discoverCastProtocols } from './core/cast-protocol-registry.js';
 import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
 import { createNativeScenes } from './core/native-scene.js';
+import { firmwareImage, firmwareManifest, MAX_FIRMWARE_BYTES, stageFirmware } from './core/device-firmware.js';
 import { adapterCatalog, adapterFor, adapterOptions, discoverDisplayAdapters, encodeAdapterResult, safeAdapterContext, validateAdapterDevices } from './core/display-adapters.js';
 import { installDisplayPackage, MAX_PACKAGE_BYTES, removeDisplayPackage, unpackDisplayPackage, zipFiles } from './core/display-packages.js';
 
@@ -189,6 +190,19 @@ export async function createApp(options = {}) {
       if (!isAllowedApplicationHost(req.headers.host, allowedHosts)) {
         return jsonResponse(res, 421, { error: { code: 'HOST_NOT_ALLOWED', message: 'Request host is not allowed' } });
       }
+      const firmwareAdmin=url.pathname.match(/^\/api\/admin\/devices\/([a-z][a-z0-9-]{0,63})\/firmware$/);
+      if (firmwareAdmin) {
+        if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Firmware management requires admin access'}});
+        const id=firmwareAdmin[1];
+        if (!runtimeConfig.devices?.[id]) return jsonResponse(res,404,{error:{message:'Display no longer exists'}});
+        if (req.method==='GET') return jsonResponse(res,200,{firmware:await firmwareManifest(context.configDir,id,runtimeConfig.devices[id].tokenHash)});
+        if (req.method!=='POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
+        const adminOrigin=runtimeConfig.server.publicUrl?new URL(runtimeConfig.server.publicUrl).origin:url.origin;
+        if(req.headers['sec-fetch-site']==='cross-site' || req.headers.origin && ![url.origin,adminOrigin].includes(req.headers.origin))return jsonResponse(res,403,{error:{message:'Open firmware upload from the Castboard admin page'}});
+        if(String(req.headers['content-type'] || '').split(';')[0]!=='application/octet-stream')return jsonResponse(res,415,{error:{message:'Upload an ESP32 application firmware .bin'}});
+        const data=await readBytes(req,MAX_FIRMWARE_BYTES);
+        return jsonResponse(res,200,{firmware:await stageFirmware(context.configDir,id,data,runtimeConfig.devices[id].tokenHash)});
+      }
       if(url.pathname==='/api/admin/display-adapters/example' && req.method==='GET') {
         if(!authorizeAdmin(req,runtimeConfig))return jsonResponse(res,403,{error:{message:'Display plugins require admin access'}});
         const dir=path.join(DISPLAY_ADAPTERS_DIR,'.examples/monochrome'),files=new Map();
@@ -245,7 +259,7 @@ export async function createApp(options = {}) {
           return jsonResponse(res,200,{...payload(),...(changed.token?{connectionKey:changed.token}:{}),applied:true});
         } finally { pluginSaveInProgress=false; }
       }
-      const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|images\/[0-9]{1,2}|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
+      const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|firmware|firmware\/image|images\/[0-9]{1,2}|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
       if (deviceMatch) {
         const [,id,operation,pluginId]=deviceMatch;
         const device=authenticateDevice(runtimeConfig,id,req.headers.authorization);
@@ -270,6 +284,15 @@ export async function createApp(options = {}) {
         deviceRequests.set(id,rate);
         if (++rate.count>600) return jsonResponse(res,429,{error:{message:'Display request limit exceeded. Retry in a minute.'}});
         deviceDiagnostics.set(id,{lastSeenAt:new Date().toISOString(),remoteAddress:clientAddress(req),operation:operation.startsWith('plugins/')?'data':operation});
+        if(operation==='firmware') {
+          if(req.method!=='GET')return jsonResponse(res,405,{error:{message:'Use GET'}});
+          return jsonResponse(res,200,{firmware:await firmwareManifest(context.configDir,id,runtimeConfig.devices[id].tokenHash)});
+        }
+        if(operation==='firmware/image') {
+          if(req.method!=='GET')return jsonResponse(res,405,{error:{message:'Use GET'}});
+          const {manifest,data}=await firmwareImage(context.configDir,id,device.tokenHash);
+          res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':data.length,'Cache-Control':'no-store','X-Firmware-SHA256':manifest.sha256});res.end(data);return;
+        }
         if (req.method==='GET' && operation==='config') {
           let configuration={};
           if(adapter.hooks.configure){try{configuration=await adapter.hooks.configure(adapterContext);}catch{throw Object.assign(new Error('The display plugin could not prepare its settings'),{statusCode:502});}}

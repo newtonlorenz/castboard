@@ -40,6 +40,7 @@ class CastboardReceiver {
   Settings settings_;
   QueueHandle_t events_=nullptr, results_=nullptr;
   TaskHandle_t task_=nullptr;
+  TaskHandle_t firmwareTask_=nullptr;
   lv_obj_t* parent_=nullptr;
   lv_obj_t* statusLabel_=nullptr;
   lv_obj_t* canvas_=nullptr;
@@ -55,8 +56,10 @@ class CastboardReceiver {
   std::atomic<bool> refreshRequested_{false};
   std::atomic<bool> connected_{false};
   static void networkTask(void* self);
+  static void firmwareNetworkTask(void* self);
   static void inputEvent(lv_event_t* event);
   void network();
+  void firmwareNetwork();
   void display(Result* result);
   void send(const char* control, int x=0, int y=0);
 };

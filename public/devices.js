@@ -26,7 +26,7 @@ function render() {
     const seen=device.status?.lastSeenAt;
     const connected=seen && Date.now()-new Date(seen).getTime()<Math.max(60000,device.refreshMs*3);
     const state=!device.enabled?'Disabled':connected?'Connected':seen?'Not checking in':'Waiting for first connection';
-    return `<article class="device-row"><div><h3>${escape(device.name)}</h3><p>${escape(device.id)} · ${device.width} × ${device.height}</p><span class="pill">${state}</span>${seen?`<p>Last request ${escape(new Date(seen).toLocaleString())}</p>`:''}</div><div><label class="field dashboard-assignment"><span>Dashboard for ${escape(device.name)}</span><select data-device-dashboard="${escape(device.id)}">${dashboardOptions(device.screenId)}</select></label><button type="button" class="button secondary" data-assign="${escape(device.id)}">Apply dashboard</button><p>${escape(report.adapters?.find(adapter=>adapter.id===(device.adapter || 'standard'))?.name || 'Standard receiver')} · ${device.mode==='frame'?'Image':'Native'} mode · every ${device.refreshMs/1000}s · ${device.touch?'Touch enabled':'View only'}</p>${device.mode==='native' && device.nativeIssues.length?`<details><summary>${device.nativeIssues.length} compatibility issue${device.nativeIssues.length===1?'':'s'}</summary><ul>${device.nativeIssues.map(issue=>`<li>${escape(issue)}</li>`).join('')}</ul><p>Use image mode or add native views to these extensions.</p></details>`:device.mode==='frame'&&!report.rendererConfigured?'<p>Set up the image renderer before connecting.</p>':''}</div><div class="device-actions"><button type="button" class="button secondary" data-edit="${escape(device.id)}">Edit</button><button type="button" class="button secondary" data-key="${escape(device.id)}">New key</button><button type="button" class="button danger" data-remove="${escape(device.id)}">Remove</button></div></article>`;
+    return `<article class="device-row"><div><h3>${escape(device.name)}</h3><p>${escape(device.id)} · ${device.width} × ${device.height}</p><span class="pill">${state}</span>${seen?`<p>Last request ${escape(new Date(seen).toLocaleString())}</p>`:''}</div><div><label class="field dashboard-assignment"><span>Dashboard for ${escape(device.name)}</span><select data-device-dashboard="${escape(device.id)}">${dashboardOptions(device.screenId)}</select></label><button type="button" class="button secondary" data-assign="${escape(device.id)}">Apply dashboard</button><p>${escape(report.adapters?.find(adapter=>adapter.id===(device.adapter || 'standard'))?.name || 'Standard receiver')} · ${device.mode==='frame'?'Image':'Native'} mode · every ${device.refreshMs/1000}s · ${device.touch?'Touch enabled':'View only'}</p>${device.mode==='native' && device.nativeIssues.length?`<details><summary>${device.nativeIssues.length} compatibility issue${device.nativeIssues.length===1?'':'s'}</summary><ul>${device.nativeIssues.map(issue=>`<li>${escape(issue)}</li>`).join('')}</ul><p>Use image mode or add native views to these extensions.</p></details>`:device.mode==='frame'&&!report.rendererConfigured?'<p>Set up the image renderer before connecting.</p>':''}</div><div class="device-actions"><button type="button" class="button secondary" data-edit="${escape(device.id)}">Edit</button><button type="button" class="button secondary" data-key="${escape(device.id)}">New key</button><button type="button" class="button secondary" data-open-firmware="${escape(device.id)}">Update firmware</button><input type="file" accept=".bin,application/octet-stream" data-firmware="${escape(device.id)}" hidden><button type="button" class="button danger" data-remove="${escape(device.id)}">Remove</button></div></article>`;
   }).join('') || '<div class="device-empty"><h3>Add your first display</h3><p>Choose a dashboard, enter its resolution, then use the connection details in your receiver firmware.</p><button type="button" class="button primary" id="first-device">Add display</button></div>';
   renderAdapters();
   $('#device-list').querySelectorAll('[data-assign]').forEach(button=>button.onclick=()=>assignDashboard(button.dataset.assign));
@@ -34,6 +34,19 @@ function render() {
   $('#device-list').querySelectorAll('[data-edit]').forEach(button=>button.onclick=()=>edit(button.dataset.edit));
   $('#device-list').querySelectorAll('[data-key]').forEach(button=>button.onclick=()=>changeKey(button.dataset.key));
   $('#device-list').querySelectorAll('[data-remove]').forEach(button=>button.onclick=()=>remove(button.dataset.remove));
+  $('#device-list').querySelectorAll('[data-open-firmware]').forEach(button=>button.onclick=()=>$('#device-list').querySelector(`[data-firmware="${button.dataset.openFirmware}"]`)?.click());
+  $('#device-list').querySelectorAll('[data-firmware]').forEach(input=>input.onchange=()=>uploadFirmware(input));
+}
+async function uploadFirmware(input) {
+  const file=input.files?.[0],id=input.dataset.firmware;
+  if(!file)return;
+  if(file.size>3*1024*1024){toast('Choose an ESP32 application .bin smaller than 3 MB');input.value='';return;}
+  if(!await confirm('Update this display’s firmware?',`Stage ${file.name} for ${id}. An OTA-capable ESP32 connected over trusted HTTPS will download it and restart. Keep its USB recovery backup.`, 'Stage firmware')){input.value='';return;}
+  try {
+    await adminFetch(`/api/admin/devices/${encodeURIComponent(id)}/firmware`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});
+    toast('Firmware staged. An OTA-capable display using trusted HTTPS can install it on its next check.');
+  }catch(error){toast(error.message);}
+  input.value='';
 }
 async function load(force=false) {
   if(busy && force!==true)return;
