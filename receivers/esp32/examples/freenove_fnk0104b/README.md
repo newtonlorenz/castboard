@@ -53,3 +53,22 @@ not confirm that physical pixels or touch alignment are correct.
 The board settings explicitly select HSPI, matching Freenove’s FNK0104B setup.
 Do not remove `USE_HSPI_PORT`: the default TFT_eSPI FSPI register mapping can
 crash at display initialization with Arduino ESP32 core 3.x.
+
+## Bounded HTTP transfers
+
+The receiver uses HTTP/1.0 and requires an explicit positive Content-Length.
+Chunked, oversized, truncated and stalled responses are rejected rather than
+leaving the network task waiting indefinitely. Transfers have a 15-second idle
+timeout and a 60-second overall limit. A reverse proxy must preserve a valid
+Content-Length and must not force chunked encoding for device responses.
+
+Run the host-only regression harness without connecting a device:
+
+```sh
+c++ -std=c++17 receivers/esp32/test/bounded_body.cpp -o /tmp/castboard-body-test
+/tmp/castboard-body-test
+```
+
+This covers successful reads, half-open sockets, zero-byte reads, trickle
+responses, size limits, truncated bodies and clock rollover. It does not replace
+firmware compilation or physical reconnect testing.

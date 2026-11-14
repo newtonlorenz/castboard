@@ -1,4 +1,5 @@
 #include "CastboardReceiver.h"
+#include "bounded_body.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
@@ -25,6 +26,19 @@ class BufferStream : public Stream {
     memcpy(data+size,source,length);size+=length;data[size]=0;return length;
   }
 };
+bool readResponse(HTTPClient& http, BufferStream& buffer) {
+  const int length=http.getSize();
+  const String encoding=http.header("Transfer-Encoding");
+  if(length<=0 || size_t(length)>buffer.capacity || (encoding.length() && encoding!="identity"))return false;
+  auto* stream=http.getStreamPtr();
+  return buffer.data && stream && castboard_http::readBody(*stream,buffer,length,buffer.capacity,
+    [](){return millis();},[](){vTaskDelay(pdMS_TO_TICKS(10));}) && !buffer.overflow && buffer.size==size_t(length);
+}
+void prepareHttp(HTTPClient& http) {
+  http.useHTTP10(true);
+  http.setUserAgent("Castboard/receiver");
+  const char* names[]={"Transfer-Encoding"};http.collectHeaders(names,1);
+}
 lv_color_t color(JsonVariantConst value, const char* fallback) {
   const char* text=value.is<const char*>()?value.as<const char*>():fallback;
   char rgb[7]{};strncpy(rgb,text[0]=='#'?text+1:text,6);
@@ -68,17 +82,16 @@ void CastboardReceiver::network() {
   auto request=[&](const String& path,const String& body,size_t limit,Result* result)->int {
     std::unique_ptr<WiFiClient> client;
     if(base.startsWith("https://")){auto* tls=new WiFiClientSecure();tls->setCACert(settings_.rootCA);client.reset(tls);}else client.reset(new WiFiClient());
-    HTTPClient http;http.setConnectTimeout(3000);http.setTimeout(path=="/frame" || path=="/touch" ? 45000 : 15000);http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
+    HTTPClient http;prepareHttp(http);http.setConnectTimeout(3000);http.setTimeout(path=="/frame" || path=="/touch" ? 45000 : 15000);http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
     if(!http.begin(*client,base+path))return -1;
     http.addHeader("Authorization",String("Bearer ")+settings_.connectionKey);
-    const char* headers[]={"X-Frame-Id","X-Frame-Width","X-Frame-Height","X-Frame-Format"};http.collectHeaders(headers,4);
+    const char* headers[]={"X-Frame-Id","X-Frame-Width","X-Frame-Height","X-Frame-Format","Transfer-Encoding"};http.collectHeaders(headers,5);
     if(path=="/frame" && frameId.length())http.addHeader("If-None-Match",String('"')+frameId+'"');
     int code;
     if(body.length()){http.addHeader("Content-Type","application/json");code=http.POST(body);}else code=http.GET();
     if(code==200){
       BufferStream buffer(limit);
-      const int copied=buffer.data?http.writeToStream(&buffer):-1;
-      if(copied<0 || buffer.overflow || !buffer.size){http.end();return -2;}
+      if(!readResponse(http,buffer)){http.end();return -2;}
       result->bytes=buffer.data;result->length=buffer.size;buffer.data=nullptr;result->revision=http.header("X-Frame-Id");result->format=http.header("X-Frame-Format");
       if(http.hasHeader("X-Frame-Width"))result->width=http.header("X-Frame-Width").toInt();
       if(http.hasHeader("X-Frame-Height"))result->height=http.header("X-Frame-Height").toInt();
