@@ -143,6 +143,12 @@
 
         <details><summary>Text</summary>
 
+          <label class="field"><span>Display mode</span><select data-appearance="displayMode"><option value="">Default</option><option value="visual">Visual</option><option value="text">Text only</option></select></label>
+          <p class="section-note">Text only uses plain text without images or controls. Choose a monospace font to align columns.</p>
+          <div class="field-pair">
+            <label class="field"><span>Character columns</span><input type="number" min="1" max="240" step="1" placeholder="Auto" data-appearance="textColumns"></label>
+            <label class="field"><span>Character rows</span><input type="number" min="1" max="120" step="1" placeholder="Auto" data-appearance="textRows"></label>
+          </div>
           <label class="field"><span>Interface font</span><select data-appearance="fontFamily">
             <option value="">System default</option><option value="sans">Sans serif</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="mono">Monospace</option>
           </select></label>
@@ -243,6 +249,12 @@
           <details><summary>Appearance</summary>
 
             <p class="section-note">Leave a field empty to inherit the dashboard theme.</p>
+            <label class="field"><span>Display mode</span><select data-panel-appearance="displayMode"><option value="">Inherit</option><option value="visual">Visual</option><option value="text">Text only</option></select></label>
+            <p class="section-note">Text only uses plain text without images or controls. Choose a monospace font to align columns.</p>
+            <div class="field-pair">
+              <label class="field"><span>Character columns</span><input type="number" min="1" max="240" step="1" placeholder="Auto" data-panel-appearance="textColumns"></label>
+              <label class="field"><span>Character rows</span><input type="number" min="1" max="120" step="1" placeholder="Auto" data-panel-appearance="textRows"></label>
+            </div>
             <label class="field"><span>Font</span><select data-panel-appearance="fontFamily">
               <option value="">Inherit</option><option value="sans">Sans serif</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="mono">Monospace</option>
             </select></label>

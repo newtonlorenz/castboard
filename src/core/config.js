@@ -51,6 +51,10 @@ const SHADOWS = new Set(['none', 'soft', 'deep']);
 
 function validateAppearance(appearance, label, panel = false) {
   assertObject(appearance, label);
+  if (appearance.displayMode !== undefined && !['visual', 'text'].includes(appearance.displayMode)) throw new Error(`${label}.displayMode must be visual or text`);
+  for (const [field, max] of [['textColumns', 240], ['textRows', 120]]) {
+    if (appearance[field] !== undefined && (!Number.isInteger(appearance[field]) || appearance[field] < 1 || appearance[field] > max)) throw new Error(`${label}.${field} must be an integer from 1 to ${max}`);
+  }
   for (const field of APPEARANCE_COLORS) {
     if (appearance[field] !== undefined && !/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(appearance[field])) throw new Error(`${label}.${field} must be a hex color`);
   }

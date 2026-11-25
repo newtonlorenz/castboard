@@ -9,9 +9,14 @@ export const PANEL_SHADOWS = {
   soft: 'inset 0 1px rgba(255,255,255,.035), 0 8px 22px rgba(0,0,0,.14)',
   deep: 'inset 0 1px rgba(255,255,255,.05), 0 18px 42px rgba(0,0,0,.42)',
 };
+export function textDisplay(appearance = {}, screen = {}) {
+  const effective = {...screen, ...appearance};
+  return {mode: effective.displayMode || 'visual', columns: effective.textColumns, rows: effective.textRows};
+}
 export function panelStyle(appearance = {}, screen = {}) {
   const inherited = {...screen,background:screen.panelBackground,padding:screen.panelPadding};
   const effective = {...inherited,...appearance};
+  if (textDisplay(appearance, screen).mode === 'text' && !effective.fontFamily) effective.fontFamily = 'mono';
   const styles = {'font-size':`${16*(screen.fontScale??100)/100*(appearance.fontScale??100)/100}px`,'--castboard-text-scale':String((screen.fontScale??100)/100*(appearance.fontScale??100)/100)};
   const vars={accent:'--accent',textColor:'--text',mutedColor:'--muted',borderColor:'--line',positiveColor:'--good',negativeColor:'--bad',background:'--panel-background'};
   for(const [field,variable] of Object.entries(vars)) if(effective[field]!==undefined) {styles[variable]=effective[field];styles[`--castboard-${field}`]=effective[field];}
@@ -26,5 +31,5 @@ export function previewStructure(config, screenId) {
   const screen=config.screens[screenId];
   if(!screen)return '';
   const {appearance,layout,panels,...rest}=screen;
-  return JSON.stringify({plugins:config.plugins,sources:config.sources,screenTypes:config.screenTypes,branding:config.branding,screen:{...rest,panels:panels.map(({appearance,position,size,...panel})=>panel)}});
+  return JSON.stringify({plugins:config.plugins,sources:config.sources,screenTypes:config.screenTypes,branding:config.branding,screen:{...rest,panels:panels.map(({appearance:panelAppearance,position,size,...panel})=>({...panel,textDisplay:textDisplay(panelAppearance,appearance)}))}});
 }

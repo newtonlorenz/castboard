@@ -242,3 +242,28 @@ test('new embedded screens save and connect through Displays while Cast setup st
   await setup.waitForURL(origin+'/admin/devices');await setup.locator('#first-device').waitFor();
   assert.deepEqual(errors,[]);
 });
+
+test('text appearance mounts readable output and skips the visual widget', {skip:!enabled,timeout:60000}, async t => {
+  const {chromium}=await import('playwright');
+  const browser=await chromium.launch({headless:true,...(process.env.CASTBOARD_CHROMIUM_PATH?{executablePath:process.env.CASTBOARD_CHROMIUM_PATH}:{})});
+  t.after(()=>browser.close());
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'castboard-text-screen-'));
+  t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const configPath=path.join(dir,'config.json');
+  const config={server:{host:'127.0.0.1',port:8787},branding:{timeZone:'UTC'},plugins:{clock:{enabled:true}},
+    screens:{home:{path:'/',type:'single',appearance:{displayMode:'text',textColumns:16,textRows:2},panels:[{id:'clock',plugin:'clock'}]}}};
+  await fs.writeFile(configPath,JSON.stringify(config));
+  const app=await createApp({configPath});
+  app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  t.after(()=>{app.server.closeAllConnections();app.server.close();return app.dispose();});
+  const page=await browser.newPage(), requests=[];
+  page.on('request',request=>requests.push(new URL(request.url()).pathname));
+  await page.goto(`http://127.0.0.1:${app.server.address().port}`);
+  const panel=page.locator('[data-panel="clock"][data-mounted="true"]');
+  await panel.waitFor();
+  const lines=(await panel.locator('pre').textContent()).split('\n');
+  assert.match(lines[1],/\d{2}:\d{2}/);
+  assert.deepEqual(lines.map(line=>line.length),[16,16]);
+  assert.ok(!requests.includes('/plugins/clock/widget.js'));
+  assert.ok(!requests.some(url=>url.startsWith('/plugins/clock/assets/')));
+});
