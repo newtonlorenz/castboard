@@ -61,7 +61,7 @@ jobs:
           docker volume create castboard-ci-data
           docker run --detach --name castboard-ci --publish 127.0.0.1:8787:8787 \
             --mount type=volume,src=castboard-ci-data,dst=/data castboard:ci
-          curl --fail --silent --show-error --retry 16 --retry-connrefused --retry-delay 2 --max-time 3 \
+          curl --fail --silent --show-error --retry 12 --retry-all-errors --retry-delay 1 --max-time 3 \
             http://127.0.0.1:8787/api/health
           docker exec castboard-ci sh -ec 'test "$(id -u)" != 0 && test -s "$CASTBOARD_CONFIG"'
           curl --fail --silent --show-error --max-time 3 http://127.0.0.1:8787/ > /dev/null
