@@ -242,3 +242,70 @@ test('new embedded screens save and connect through Displays while Cast setup st
   await setup.waitForURL(origin+'/admin/devices');await setup.locator('#first-device').waitFor();
   assert.deepEqual(errors,[]);
 });
+
+test('open dashboards reload only when a reachable design changes', { skip: !enabled, timeout: 30000 }, async t => {
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch({
+    headless: true,
+    ...(process.env.CASTBOARD_CHROMIUM_PATH ? { executablePath: process.env.CASTBOARD_CHROMIUM_PATH } : {}),
+  });
+  t.after(() => browser.close());
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'castboard-browser-revision-'));
+  const configPath = path.join(directory, 'config.json');
+  const screen = (id, screenPath, interaction) => ({
+    path: screenPath, type: 'single',
+    panels: [{ id, plugin: 'clock', ...(interaction ? { interaction } : {}) }],
+  });
+  const config = {
+    server: { host: '127.0.0.1', port: 8787 },
+    plugins: { clock: {} },
+    screens: {
+      home: screen('clock', '/', { type: 'modal', screenId: 'details' }),
+      details: screen('details', '/details'),
+      other: screen('other', '/other'),
+    },
+  };
+  await fs.writeFile(configPath, JSON.stringify(config));
+  const app = await createApp({ configPath });
+  t.after(async () => {
+    app.server.close();
+    app.server.closeAllConnections();
+    await app.dispose();
+    await fs.rm(directory, { recursive: true, force: true });
+  });
+  app.server.listen(0, '127.0.0.1');
+  await once(app.server, 'listening');
+  const origin = `http://127.0.0.1:${app.server.address().port}`;
+  const page = await browser.newPage();
+  const initialCheck = page.waitForResponse(response => response.url().endsWith('/api/dashboard-revision/home'));
+  await page.goto(origin);
+  await page.locator('#dashboard [data-panel="clock"][data-mounted="true"]').waitFor();
+  assert.equal((await initialCheck).status(), 304);
+
+  async function rename(id, title) {
+    const designUrl = origin + '/api/admin/design';
+    const draft = await (await fetch(designUrl)).json();
+    draft.design.screens[id].title = title;
+    const saved = await fetch(designUrl, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft),
+    });
+    assert.equal(saved.status, 200);
+  }
+
+  let navigations = 0;
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations++; });
+  await page.locator('#dashboard .panel-interaction').click();
+  await page.locator('dialog[open]').waitFor();
+  await rename('other', 'Unrelated change');
+  const nextCheck = await page.waitForResponse(response => response.url().endsWith('/api/dashboard-revision/home'));
+  assert.equal(nextCheck.status(), 304);
+  assert.equal(navigations, 0);
+  assert.equal(await page.locator('dialog[open]').count(), 1);
+
+  const reloaded = page.waitForEvent('framenavigated', { predicate: frame => frame === page.mainFrame() });
+  await rename('details', 'Updated details');
+  await reloaded;
+  assert.equal(navigations, 1);
+  await page.locator('#dashboard .panel-interaction').click();
+  assert.equal(await page.locator('dialog[open] h2').textContent(), 'Updated details');
+});
