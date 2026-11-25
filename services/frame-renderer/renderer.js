@@ -14,23 +14,35 @@ const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 
 export function createFrameRenderer({ browser, appOrigin, bridgeToken, maxSessions = 8, idleMs = 300000 }) {
   const origin = new URL(appOrigin).origin;
   const sessions = new Map();
-  async function close(id) {
-    const session = sessions.get(id);
-    if (!session || session.busy) return;
-    sessions.delete(id);
-    await session.context?.close();
+  let disposed = false;
+  async function close(id, session) {
+    session.busy = true;
+    try {
+      session.closing ??= Promise.resolve().then(() => session.context?.close());
+      await session.closing;
+    } finally {
+      if (sessions.get(id) === session) sessions.delete(id);
+    }
   }
   const reaper = setInterval(() => {
-    for (const [id, session] of sessions) if (Date.now() - session.lastSeen > idleMs) void close(id);
+    for (const [id, session] of sessions) {
+      if (!session.busy && Date.now() - session.lastSeen > idleMs) void close(id, session).catch(() => {});
+    }
   }, 30000); reaper.unref();
 
   async function render(input) {
+    if (disposed) throw fail('The image renderer is shutting down', 503);
     const { id, token, width, height, format, revision } = input;
     if (!/^[a-z][a-z0-9-]{0,63}$/.test(id || '') || !/^[A-Za-z0-9_-]{32,128}$/.test(token || '') || !Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 1920 || height > 1920 || width * height > 1920 * 1080 || !['jpeg', 'rgb565'].includes(format) || typeof revision !== 'string' || revision.length > 128) throw fail('Invalid renderer request');
     const signature = hash(JSON.stringify([token, width, height, revision]));
     let session = sessions.get(id);
     if (session?.busy) throw fail('Renderer is busy; retry shortly', 409);
-    if (session && session.signature !== signature) { await close(id); session = null; }
+    if (session && session.signature !== signature) {
+      // Keep the slot reserved until the old context has closed.
+      await close(id, session);
+      if (disposed) throw fail('The image renderer is shutting down', 503);
+      session = null;
+    }
     if (!session) {
       if (sessions.size >= maxSessions) throw fail('The image renderer has reached its display limit', 503);
       session = { signature, busy: true, lastSeen: Date.now(), events: new Map(), frames: new Map() };
@@ -39,7 +51,12 @@ export function createFrameRenderer({ browser, appOrigin, bridgeToken, maxSessio
     session.lastSeen = Date.now();
     try {
       if (!session.page) {
-        session.context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block', acceptDownloads: false });
+        const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block', acceptDownloads: false });
+        if (disposed) {
+          await context.close();
+          throw fail('The image renderer is shutting down', 503);
+        }
+        session.context = context;
         // Only the configured Castboard origin receives the device credential.
         // No browser profiles, arbitrary URLs or remote scripts enter a session.
         await session.context.route('**/*', async route => {
@@ -109,10 +126,17 @@ export function createFrameRenderer({ browser, appOrigin, bridgeToken, maxSessio
       return { buffer, frameId: session.frameId, width, height, format };
     } catch (error) {
       if (!session.page || session.page.isClosed() || !session.frameId && error.statusCode !== 409) {
-        sessions.delete(id); await session.context?.close();
+        await close(id, session).catch(() => {});
       }
       throw error;
     } finally { session.busy = false; }
   }
-  return { render, async dispose() { clearInterval(reaper); await Promise.all([...sessions.values()].map(session => session.context?.close())); sessions.clear(); } };
+  return {
+    render,
+    async dispose() {
+      disposed = true;
+      clearInterval(reaper);
+      await Promise.allSettled([...sessions].map(([id, session]) => close(id, session)));
+    },
+  };
 }
