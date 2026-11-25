@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "lvgl_compat.h"
+#include "network_watchdog.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
@@ -17,8 +18,9 @@ class CastboardReceiver {
     const char* deviceId;
     const char* connectionKey;
     const char* rootCA; // Mandatory for an https:// server.
-    Settings(const char* serverValue, const char* idValue, const char* keyValue, const char* caValue=nullptr)
-      : server(serverValue), deviceId(idValue), connectionKey(keyValue), rootCA(caValue) {}
+    bool restartOnStall;
+    Settings(const char* serverValue, const char* idValue, const char* keyValue, const char* caValue=nullptr, bool restartOnStallValue=false)
+      : server(serverValue), deviceId(idValue), connectionKey(keyValue), rootCA(caValue), restartOnStall(restartOnStallValue) {}
   };
   explicit CastboardReceiver(Settings settings) : settings_(settings) {}
   CastboardReceiver(const CastboardReceiver&) = delete;
@@ -52,6 +54,7 @@ class CastboardReceiver {
   String revision_, status_, labelText_;
   bool native_=false;
   uint32_t updates_=0, touches_=0, inputStarted_=0, lastInputMs_=0;
+  castboard::NetworkWatchdog watchdog_;
   std::atomic<bool> inputPending_{false};
   std::atomic<bool> refreshRequested_{false};
   std::atomic<bool> connected_{false};
