@@ -32,3 +32,7 @@ receivers/**/secrets.h
 receivers/**/board_port.h
 examples/embedded/data/
 receivers/**/build/
+
+# Local recovery state and browser diagnostics.
+/state/
+/.playwright-cli/

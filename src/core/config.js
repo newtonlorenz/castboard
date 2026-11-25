@@ -97,6 +97,10 @@ export function validateConfig(config) {
     if (config.admin.allowLan === true && String(config.admin.token).length < 16) throw new Error('admin.token must be at least 16 characters when LAN access is enabled');
   }
   if (config.casting !== undefined) assertObject(config.casting, 'casting');
+  if (config.casting?.recovery !== undefined) {
+    assertObject(config.casting.recovery, 'casting.recovery');
+    if (config.casting.recovery.enabled !== undefined && typeof config.casting.recovery.enabled !== 'boolean') throw new Error('casting.recovery.enabled must be a boolean');
+  }
   if (config.casting?.protocols !== undefined) assertObject(config.casting.protocols, 'casting.protocols');
   if (config.casting?.defaultProtocol !== undefined && !/^[a-z][a-z0-9-]*$/.test(config.casting.defaultProtocol)) throw new Error('casting.defaultProtocol must be a valid protocol ID');
   for (const [protocolId, protocolConfig] of Object.entries(config.casting?.protocols || {})) {
