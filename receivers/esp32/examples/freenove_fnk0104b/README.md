@@ -88,3 +88,10 @@ c++ -std=c++17 receivers/esp32/test/bounded_body.cpp -o /tmp/castboard-body-test
 This covers successful reads, half-open sockets, zero-byte reads, trickle
 responses, size limits, truncated bodies and clock rollover. It does not replace
 firmware compilation or physical reconnect testing.
+
+For a dedicated display, the receiver's optional fifth `Settings` argument
+enables a restart when the network task makes no progress for over three
+minutes. Normal polling, retries and disconnected Wi-Fi handling count as task
+progress. The default is off so boards running other tasks retain control of
+their restart policy. A firmware write and a watchdog restart are mutually
+exclusive.

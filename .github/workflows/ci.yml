@@ -48,6 +48,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: c++ -std=c++17 receivers/esp32/test/bounded_body.cpp -o /tmp/castboard-body-test && /tmp/castboard-body-test
+      - run: c++ -std=c++17 receivers/esp32/test/network_watchdog.cpp -o /tmp/castboard-watchdog-test && /tmp/castboard-watchdog-test
       - run: pip install platformio==6.1.18
       - run: pio run -d receivers/esp32/test/compile
       - run: python receivers/esp32/test/image_format.py

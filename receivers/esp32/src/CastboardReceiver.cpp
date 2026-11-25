@@ -77,6 +77,7 @@ bool CastboardReceiver::begin(lv_obj_t* parent) {
   if(!events_ || !results_)return false;
   // Firmware requires authenticated transport; ordinary HTTP display polling does not enable OTA.
   if(String(settings_.server).startsWith("https://") && xTaskCreate(firmwareNetworkTask,"castboard-ota",12288,this,1,&firmwareTask_)!=pdPASS)return false;
+  watchdog_.noteProgress(millis());
   if(xTaskCreate(networkTask,"castboard-net",12288,this,1,&task_)!=pdPASS){if(firmwareTask_)vTaskDelete(firmwareTask_);firmwareTask_=nullptr;return false;}
   return true;
 }
@@ -108,7 +109,8 @@ void CastboardReceiver::firmwareNetwork(){
     image.addHeader("Authorization",String("Bearer ")+settings_.connectionKey);
     const char* names[]={"X-Firmware-SHA256","Transfer-Encoding"};image.collectHeaders(names,2);
     if(image.GET()!=200 || image.getSize()!=int(size) || image.header("X-Firmware-SHA256")!=sha || (image.header("Transfer-Encoding").length() && image.header("Transfer-Encoding")!="identity")){image.end();continue;}
-    if(!Update.begin(size)){image.end();continue;}
+    if(!watchdog_.beginFirmwareUpdate()){image.end();continue;}
+    if(!Update.begin(size)){watchdog_.endFirmwareUpdate();image.end();continue;}
     mbedtls_sha256_context hash;mbedtls_sha256_init(&hash);
 #if MBEDTLS_VERSION_MAJOR >= 3
     mbedtls_sha256_starts(&hash,0);
@@ -138,8 +140,8 @@ void CastboardReceiver::firmwareNetwork(){
 #endif
     mbedtls_sha256_free(&hash);image.end();
     char actual[65];for(size_t i=0;i<32;i++)snprintf(actual+i*2,3,"%02x",digest[i]);
-    if(failed || copied!=size || sha!=actual){Update.abort();continue;}
-    if(!Update.end(true)){continue;}
+    if(failed || copied!=size || sha!=actual){Update.abort();watchdog_.endFirmwareUpdate();continue;}
+    if(!Update.end(true)){watchdog_.endFirmwareUpdate();continue;}
     saved.putString("sha256",sha);saved.end();ESP.restart();
   }
 }
@@ -149,6 +151,7 @@ void CastboardReceiver::network() {
   String mode="",frameId="";int width=0,height=0;uint32_t interval=5000,lastConfig=0,nextPoll=0;
   auto deliver=[&](Result* result){Result* previous=nullptr;if(xQueueReceive(results_,&previous,0)==pdTRUE){result->input=result->input || previous->input;free(previous->bytes);delete previous;}xQueueSend(results_,&result,portMAX_DELAY);};
   auto request=[&](const String& path,const String& body,size_t limit,Result* result)->int {
+    watchdog_.noteProgress(millis());
     std::unique_ptr<WiFiClient> client;
     if(base.startsWith("https://")){auto* tls=new WiFiClientSecure();tls->setCACert(settings_.rootCA);client.reset(tls);}else client.reset(new WiFiClient());
     HTTPClient http;prepareHttp(http);http.setConnectTimeout(3000);http.setTimeout(path=="/frame" || path=="/touch" ? 45000 : 15000);http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
@@ -168,6 +171,7 @@ void CastboardReceiver::network() {
     http.end();return code;
   };
   for(;;){
+    watchdog_.noteProgress(millis());
     if(WiFi.status()!=WL_CONNECTED){connected_=false;inputPending_=false;frameId="";xQueueReset(events_);auto* result=new Result();result->error="Wi-Fi offline - keeping last view";deliver(result);vTaskDelay(pdMS_TO_TICKS(3000));continue;}
     if(refreshRequested_.exchange(false)) { mode="";frameId="";nextPoll=0; }
     if(mode.isEmpty() || uint32_t(millis()-lastConfig)>60000){
@@ -321,6 +325,11 @@ void CastboardReceiver::display(Result* result) {
   if(!native_)status_="";
 }
 void CastboardReceiver::loop() {
+  if (task_ && settings_.restartOnStall && watchdog_.claimRestart(millis())) {
+    Serial.println("Castboard receiver network task stalled; restarting");
+    ESP.restart();
+    return;
+  }
   if(!results_)return;Result* result=nullptr;
   // Keep the visible view and its revision stable until the finger is released.
   // The network task continues; its one-slot queue retains only the newest view.
