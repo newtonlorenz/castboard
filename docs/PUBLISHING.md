@@ -11,7 +11,7 @@ checkouts and private installations.
 3. Run `npm test` and `npm run check`. Run `npm run init` twice in a disposable checkout and verify the second run preserves its configuration.
 4. Install the renderer's locked dependencies, run `npm audit --audit-level=high` there, and run the [browser tests](../CONTRIBUTING.md#browser-and-receiver-checks). Check `/setup`, `/admin`, plugin management, Displays and representative screen sizes using demonstration data.
 5. Run the [ESP32 compile and image-format checks](embedded-displays.md#4-receiver-library) when receiver code changes. Record separately which physical boards were tested; software tests cannot establish touch or legibility on other hardware.
-6. Open a pull request with a concise change summary and validation evidence. Require the Node 20/22, embedded-browser and esp32-compile checks to pass before merging.
+6. Open a pull request with a concise change summary and validation evidence. Require the Node 22/24/26, embedded-browser, esp32-compile and Docker smoke checks to pass before merging.
 
 ## Publish
 

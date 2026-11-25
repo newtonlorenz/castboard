@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 22]
+        node-version: [22, 24, 26]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: services/frame-renderer/package-lock.json
       - run: npm ci
@@ -50,3 +50,24 @@ jobs:
       - run: pip install platformio==6.1.18
       - run: pio run -d receivers/esp32/test/compile
       - run: python receivers/esp32/test/image_format.py
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag castboard:ci .
+      - name: Start the image with fresh persistent storage
+        run: |
+          docker volume create castboard-ci-data
+          docker run --detach --name castboard-ci --publish 127.0.0.1:8787:8787 \
+            --mount type=volume,src=castboard-ci-data,dst=/data castboard:ci
+          curl --fail --silent --show-error --retry 16 --retry-connrefused --retry-delay 2 --max-time 3 \
+            http://127.0.0.1:8787/api/health
+          docker exec castboard-ci sh -ec 'test "$(id -u)" != 0 && test -s "$CASTBOARD_CONFIG"'
+          curl --fail --silent --show-error --max-time 3 http://127.0.0.1:8787/ > /dev/null
+      - if: failure()
+        run: docker logs castboard-ci
+      - if: always()
+        run: |
+          docker rm --force castboard-ci || true
+          docker volume rm castboard-ci-data || true
