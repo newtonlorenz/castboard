@@ -5,7 +5,7 @@ const dashboard = document.getElementById('dashboard');
 const cleanups = [];
 window.addEventListener('pagehide', () => { for (const cleanup of cleanups.splice(0)) cleanup(); });
 
-import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure} from '/appearance-model.js?v=0.14.0';
+import {FONT_STACKS, PANEL_SHADOWS, panelStyle, previewStructure, textDisplay} from '/appearance-model.js?v=20261125';
 let previewMounted;
 let previewRenderer;
 function applyScreenAppearance(appearance, branding, root = document.documentElement) {
@@ -131,7 +131,7 @@ function mountComposition(config, screen, container, register, scoped) {
   const releaseRenderer = await renderer.prepare({ container: container, screen });
   if (typeof releaseRenderer === 'function') release(releaseRenderer);
   if (disposed) return;
-  for (const plugin of config.plugins.filter(plugin => screen.panels.some(panel => panel.plugin === plugin.id))) {
+  for (const plugin of config.plugins.filter(plugin => screen.panels.some(panel => panel.plugin === plugin.id && textDisplay(panel.appearance, appearance).mode !== 'text'))) {
     for (const asset of plugin.styles || []) {
       const link = document.createElement('link'); link.rel = 'stylesheet';
       link.href = `/plugins/${encodeURIComponent(plugin.id)}/assets/${asset}?v=${encodeURIComponent(plugin.version)}`;
@@ -145,7 +145,9 @@ function mountComposition(config, screen, container, register, scoped) {
     const plugin = pluginConfigs.get(panel.plugin);
     if (!plugin) return;
     const element = document.createElement('section');
-    element.className = `widget widget-${plugin.type || plugin.id}`;
+    const mode = textDisplay(panel.appearance, appearance).mode;
+    element.dataset.displayMode = mode;
+    element.className = mode === 'text' ? 'widget' : `widget widget-${plugin.type || plugin.id}`;
     element.dataset.plugin = plugin.id;
     element.dataset.panel = panel.id;
     applyPanelAppearance(element, panel.appearance, appearance);
@@ -156,7 +158,9 @@ function mountComposition(config, screen, container, register, scoped) {
     const context = createWidgetContext({ app: config, screen, plugin, panel, element, announce(message) { container.setAttribute('data-status', message); } });
     release(() => context.dispose());
     try {
-      const module = await import(`/plugins/${encodeURIComponent(plugin.id)}/widget.js?v=${encodeURIComponent(plugin.version || '1')}`);
+      const module = mode === 'text'
+        ? await import('/text-widget.js')
+        : await import(`/plugins/${encodeURIComponent(plugin.id)}/widget.js?v=${encodeURIComponent(plugin.version || '1')}`);
       if (typeof module.mount !== 'function') throw new Error('Widget does not export mount()');
       if (disposed) return;
       const unmount = await module.mount({ element, config: { ...plugin.config, ...panel.options }, context, panel });

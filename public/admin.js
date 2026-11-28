@@ -3,7 +3,7 @@ import { validateInteraction } from '/interaction-model.js';
 import { mergeDraft, resolveDraft } from '/draft-model.js';
 import { screenPathError } from '/screen-path.js';
 import { schemaFields } from '/schema-fields.js?v=0.14.0';
-import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, validPlacement } from '/studio-model.js?v=0.14.0';
+import { History, screenAddress, gridSlot, gridDelta, compatibleSource, schemaDefaults, trackLines, trackDelta, shuffleGrid, swapGrid, sharedEdges, resizeShared, resizeTracks, resizePanel, validPlacement } from '/studio-model.js?v=20261125';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -621,8 +621,9 @@ async function renderCanvas() {
       if (generation !== canvasGeneration) return;
       const label = document.createElement('span'); label.className = 'canvas-panel-copy'; label.textContent = panel.options?.title || panel.options?.label || pluginName(panel.plugin); element.append(label);
       if (state.editorModel || screen.type === 'flow') {
-        const handle = document.createElement('span'); handle.className = 'resize-handle'; handle.setAttribute('aria-hidden','true'); element.append(handle);
-        handle.hidden = Boolean(state.editorModel?.weightedResize);
+        for (const corner of state.editorModel ? ['nw','n','ne','e','se','s','sw','w'] : ['se']) {
+          const handle = document.createElement('span'); handle.className = `resize-handle resize-handle-${corner}`; handle.dataset.corner = corner; handle.setAttribute('aria-hidden','true'); element.append(handle);
+        }
         element.addEventListener('pointerdown', event => screen.type === 'flow' ? beginFlowDrag(event,panel.id,element) : beginPanelDrag(event,panel.id,element));
       }
       element.addEventListener('click', () => selectPanel(panel.id));
@@ -632,7 +633,7 @@ async function renderCanvas() {
     renderSharedHandles(surface);
     if(focused?.panel) surface.querySelector(`[data-panel="${CSS.escape(focused.panel)}"]`)?.focus({preventScroll:true});
     else if(focused?.edge) surface.querySelector(`[data-edge="${CSS.escape(focused.edge)}"]`)?.focus({preventScroll:true});
-    $('#canvas-message').textContent = !screen.panels.length ? 'Start with a panel, then arrange and style it here.' : collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag the edges between panels to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize. Arrow keys reorder; Shift + arrows resize.' : 'Select a panel to edit its plugin options and appearance.';
+    $('#canvas-message').textContent = !screen.panels.length ? 'Start with a panel, then arrange and style it here.' : collisionIds.size ? `${collisionIds.size} panels overlap. Adjust their placement before saving.` : state.editorModel ? 'Drag panels to rearrange them. Drag a corner or edge to resize. Arrow keys move; Shift + arrows resize.' : screen.type === 'flow' ? 'Drag panels to reorder them. Drag a corner to resize. Arrow keys reorder; Shift + arrows resize.' : 'Select a panel to edit its plugin options and appearance.';
   } catch (error) {
     if (generation !== canvasGeneration) return;
     $('#canvas-message').textContent = `Cannot preview this layout: ${error.message}`;
@@ -707,10 +708,11 @@ function beginPanelDrag(event,id,element) {
   if(event.button!==0 || !canLeaveField()) return;event.preventDefault();
   selectPanel(id,false);renderPanelInspector();for(const node of $$('.canvas-panel'))node.classList.toggle('selected',node.dataset.panel===id);
   const model=clone(state.editorModel),start=model.positions[id],before=clone(currentScreen());
-  const resize=event.target.classList.contains('resize-handle');let accepted=model,blocked=false,lastTarget='';
+  const resize=event.target.classList.contains('resize-handle'),corner=event.target.dataset.corner||'se';let accepted=model,blocked=false,lastTarget='';
   gesture(event,element,(e,dx,dy)=>{
     let next;
-    if(model.swapOnDrop&&!resize) {
+    if(resize) next=resizePanel(model,id,corner,dx,dy,state.viewport,state.scale);
+    else if(model.swapOnDrop) {
       const rect=$('#design-surface').getBoundingClientRect();
       const x=(e.clientX-rect.left)/state.scale,y=(e.clientY-rect.top)/state.scale;
       const xs=trackLines(model.columns,model.columnWeights,state.viewport.width,model.gap,model.padding),ys=trackLines(model.rows,model.rowWeights,state.viewport.height,model.gap,model.padding);
@@ -719,8 +721,7 @@ function beginPanelDrag(event,id,element) {
     } else {
       const delta=trackDelta(model,state.viewport,state.scale,start,dx,dy);
       const target={...start};
-      if(resize) {target.width=clamp(start.width+delta.x,1,model.columns-start.column+1);target.height=clamp(start.height+delta.y,1,model.rows-start.row+1);}
-      else {target.column=clamp(start.column+delta.x,1,model.columns-start.width+1);target.row=clamp(start.row+delta.y,1,model.rows-start.height+1);}
+      target.column=clamp(start.column+delta.x,1,model.columns-start.width+1);target.row=clamp(start.row+delta.y,1,model.rows-start.height+1);
       const key=JSON.stringify(target);if(key===lastTarget)return;lastTarget=key;next=shuffleGrid(model,id,target);
     }
     blocked=!next; element.classList.toggle('blocked',blocked);
@@ -748,7 +749,16 @@ function keyboardPanel(event,id) {
   if(!canLeaveField())return;
   const model=state.editorModel,p=model.positions[id],target={...p};const direction={ArrowLeft:['column',-1],ArrowRight:['column',1],ArrowUp:['row',-1],ArrowDown:['row',1]}[event.key];
   const key=event.shiftKey?(direction[0]==='column'?'width':'height'):direction[0];target[key]+=direction[1];
-  const next=shuffleGrid(model,id,target);
+  let next;
+  if (event.shiftKey) {
+    const horizontal=direction[0]==='column',origin=horizontal?'column':'row',size=horizontal?'width':'height',count=horizontal?model.columns:model.rows;
+    const leading=Boolean(model.weightedResize)&&p[origin]+p[size]-1===count&&p[origin]>1;
+    const corner=horizontal?(leading?'sw':'se'):(leading?'ne':'se');
+    const boundary=p[origin]-1+(leading?0:p[size]),movement=direction[1]*(leading?-1:1);
+    const lines=trackLines(count,model[horizontal?'columnWeights':'rowWeights'],state.viewport[horizontal?'width':'height'],model.gap,model.padding);
+    const pixels=model.weightedResize&&boundary>0&&boundary<count?movement*10:lines[clamp(boundary+movement,0,count)]-lines[boundary];
+    next=resizePanel(model,id,corner,horizontal?pixels:0,horizontal?0:pixels,state.viewport);
+  } else next=shuffleGrid(model,id,target);
   if(!next)return toast('No room for that change.',true);
   applyEditorModel(next);markDirty();renderCanvas();renderPanelInspector();
 }

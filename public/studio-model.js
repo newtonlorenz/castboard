@@ -132,9 +132,58 @@ export function resizeTracks(model, axis, boundary, pixels, viewport) {
   const next=clone(model), field=axis==='x'?'columnWeights':'rowWeights',count=axis==='x'?model.columns:model.rows;
   const weights=next[field] ||= Array(count).fill(1);
   const extent=viewport[axis==='x'?'width':'height']-model.padding*2-model.gap*(count-1);
+  if (boundary < 1 || boundary >= count || !pixels || extent <= 0) return next;
   const total=weights.reduce((a,b)=>a+b,0),minimum=Math.min(24,extent/count/2)*total/extent;
-  const movement=Math.max(minimum-weights[boundary-1],Math.min(weights[boundary]-minimum,pixels*total/extent));
-  weights[boundary-1]+=movement;weights[boundary]-=movement;return next;
+  // A narrow adjacent track must not block resizing a larger neighbouring panel.
+  // Consume available space outwards, retaining a usable minimum for each track.
+  const growing = pixels > 0;
+  const recipient = growing ? boundary - 1 : boundary;
+  let remaining = Math.abs(pixels) * total / extent;
+  for (let donor = growing ? boundary : boundary - 1; donor >= 0 && donor < count && remaining > 0; donor += growing ? 1 : -1) {
+    const movement = Math.min(remaining, Math.max(0, weights[donor] - minimum));
+    weights[donor] -= movement; weights[recipient] += movement; remaining -= movement;
+  }
+  return next;
+}
+
+// Resize from the grabbed corner, using the actual edge's weighted track pitch.
+// Named-area layouts resize tracks; outer edges can shrink into the grid.
+export function resizePanel(model, id, corner, dx, dy, viewport, scale = 1) {
+  let next = clone(model);
+  for (const [axis, pixels, leading] of [['x', dx, corner.includes('w')], ['y', dy, corner.includes('n')]]) {
+    if (!pixels || (axis === 'x' ? !/[ew]/.test(corner) : !/[ns]/.test(corner))) continue;
+    const origin = axis === 'x' ? 'column' : 'row';
+    const size = axis === 'x' ? 'width' : 'height';
+    const count = axis === 'x' ? model.columns : model.rows;
+    const p = model.positions[id];
+    const boundary = p[origin] - 1 + (leading ? 0 : p[size]);
+    const lines = trackLines(count, model[axis === 'x' ? 'columnWeights' : 'rowWeights'], viewport[axis === 'x' ? 'width' : 'height'], model.gap, model.padding);
+    const targetLine = lines[boundary] + pixels / scale;
+    const nearest = lines.reduce((best, line, index) => Math.abs(line - targetLine) < Math.abs(lines[best] - targetLine) ? index : best, boundary);
+    const edge = Math.max(leading ? 0 : p[origin], Math.min(leading ? p[origin] + p[size] - 2 : count, nearest));
+    const target = {...next.positions[id]};
+    if (leading) { target[origin] = edge + 1; target[size] = p[origin] + p[size] - edge - 1; }
+    else target[size] = edge - p[origin] + 1;
+    const delta = target[size] - p[size];
+    if (model.weightedResize && boundary > 0 && boundary < count) {
+      // Crossing a track can occupy vacant space all the way to the canvas edge.
+      // Weight-only resizing would always leave a minimum-sized empty strip.
+      const expanded = delta > 0 && shuffleGrid(next, id, target);
+      next = expanded || resizeTracks(next, axis, boundary, pixels / scale, viewport);
+      continue;
+    }
+    if (!delta) continue;
+    const shared = sharedEdges(next).find(e => e.axis === axis && (leading ? e.after : e.before) === id);
+    const resized = shared && resizeShared(next, shared, leading ? -delta : delta);
+    // Prefer sharing space with neighbours, then try rearranging into free space.
+    if (resized && resized.positions[id][size] === target[size]) next = resized;
+    else {
+      const shuffled = shuffleGrid(next, id, target);
+      if (!shuffled) return null;
+      next = shuffled;
+    }
+  }
+  return next;
 }
 
 // Screen names are human-facing; generated addresses avoid internal route names.

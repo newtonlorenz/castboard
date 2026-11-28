@@ -98,3 +98,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Content-first panels: the list scrolls within its page, never under controls. */
 .record-display{display:flex;flex-direction:column;gap:8px}.record-content{flex:1;min-height:0;overflow:auto;overflow-wrap:anywhere}.record-content>p{font-size:16px}.display-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0;font-size:14px}.display-pages button{min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer}.display-pages button:disabled{opacity:.45;cursor:default}.display-pages button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Text mode has no plugin styles, artwork or controls. Character grids wrap in
+   JavaScript; fluid text wraps to the available panel width. */
+.text-output {margin:0;font-family:inherit;font-size:1em;font-weight:400;line-height:1.25;letter-spacing:0;white-space:pre-wrap;overflow-wrap:anywhere;color:inherit}
+.text-output[data-columns] {white-space:pre;overflow-wrap:normal;font-size:min(1em,calc(100cqw / var(--text-columns) / .62))}
+.text-output[data-rows] {font-size:min(1em,calc(100cqh / var(--text-rows) / 1.25))}
+.text-output[data-columns][data-rows] {font-size:min(1em,calc(100cqw / var(--text-columns) / .62),calc(100cqh / var(--text-rows) / 1.25))}
