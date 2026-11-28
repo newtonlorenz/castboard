@@ -3,7 +3,7 @@
 Configure Castboard from an AI assistant using the Model Context Protocol (MCP).
 The server exposes 16 tools, the project guides and bundled plugin guides as
 resources, and a `configure-castboard` workflow prompt. It runs locally using
-Node.js 20+ and adds no runtime dependencies.
+Node.js 22+ and adds no runtime dependencies.
 
 The MCP process is a bridge to a running Castboard app. Start the app separately;
 configuration changes use the same validation, authorization, revision checks,

@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/newtonlorenz/castboard/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/newtonlorenz/castboard/ci.yml?branch=main&style=flat-square&labelColor=07100F"></a>
   <a href="https://github.com/newtonlorenz/castboard/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/newtonlorenz/castboard?style=flat-square&labelColor=07100F&color=8EE6C2"></a>
-  <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white">
+  <img alt="Node.js 22+" src="https://img.shields.io/badge/Node.js-22%2B-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white">
   <img alt="Zero runtime dependencies" src="https://img.shields.io/badge/runtime_dependencies-0-8EE6C2?style=flat-square&labelColor=07100F">
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-59D8E6?style=flat-square&labelColor=07100F">
   <img alt="Google Cast, kiosk, and webhook targets" src="https://img.shields.io/badge/screens-Cast%20%7C%20kiosk%20%7C%20webhook-8EE6C2?style=flat-square&labelColor=07100F">
@@ -47,7 +47,7 @@ Most smart-display dashboards make you choose between a polished but rigid produ
 
 ## See it in 60 seconds
 
-You need Git and Node.js 20 or newer:
+You need Git and Node.js 22 or newer:
 
 ```sh
 git clone https://github.com/newtonlorenz/castboard.git

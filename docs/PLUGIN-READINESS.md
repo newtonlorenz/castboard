@@ -12,7 +12,7 @@ See the [universal plugin evaluation](UNIVERSAL-PLUGINS.md) for the five improve
 - Browser checks cover Studio navigation/action isolation, receiver scoping, package configuration, camera failure/recovery and closing, forecast pages, compact layouts and plugin settings. Representative demonstration screenshots were inspected; long announcements intentionally scroll on short displays.
 - Clean-install initialization was run twice; the second run preserved configuration bytes. Both starter and shared-space sample configurations load without external services.
 - The renderer lockfile audit reports zero known advisories. The [security review](PLUGIN-SECURITY-REVIEW.md) records resolved findings and trust boundaries. Private credentials, installation configuration and provisioned firmware are excluded.
-- The publishing process requires Node 20/22, the complete browser suite and ESP32 compile checks on the release PR before merge/tag/release. See [Publishing](PUBLISHING.md).
+- The publishing process requires Node 22/24/26, the complete browser suite, ESP32 compile and Docker smoke checks on the release PR before merge/tag/release. See [Publishing](PUBLISHING.md).
 
 ## Package coverage
 
