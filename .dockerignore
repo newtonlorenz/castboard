@@ -18,3 +18,7 @@ coverage
 *.key
 *.pem
 .DS_Store
+
+# Local recovery state and browser diagnostics.
+/state/
+/.playwright-cli/

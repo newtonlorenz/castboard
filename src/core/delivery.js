@@ -27,6 +27,13 @@ export function targetProtocol(config, screen, target) {
   return target.protocol || screen.castProtocol || config.casting?.defaultProtocol || 'google-cast';
 }
 
+export function castTargetKey({ protocol, target }) {
+  const identity = (protocol === 'google-cast' && target.uuid) || target.address || target.device || target.endpoint || target.name;
+  return JSON.stringify([protocol, protocol === 'google-cast' && target.uuid ? String(identity).toLowerCase() : identity]);
+}
+
+export const castTargetId = key => createHash('sha256').update(key).digest('hex').slice(0, 24);
+
 export function deliveryReport(config, rawConfig, addresses) {
   return {
     ok: true,
@@ -44,7 +51,7 @@ export function deliveryReport(config, rawConfig, addresses) {
           const target = typeof entry === 'string' ? { name: entry } : entry;
           const protocol = targetProtocol(config, screen, target);
           const configured = config.casting?.protocols?.[protocol];
-          const id = createHash('sha256').update(JSON.stringify([protocol, target.address || target.device || target.endpoint || target.name])).digest('hex').slice(0, 24);
+          const id = castTargetId(castTargetKey({ protocol, target }));
           return { id, index, name: target.name || `Display ${index + 1}`, protocol, canSend: !!link && !!configured && configured.enabled !== false && protocol !== 'url' };
         }),
       };

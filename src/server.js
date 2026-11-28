@@ -5,15 +5,20 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { isIP } from 'node:net';
 import { fileURLToPath } from 'node:url';
-import { environmentWithDotEnv, loadConfig, publicAppConfig, resolveRuntimeConfig } from './core/config.js';
+import { environmentWithDotEnv, loadConfig, publicAppConfig } from './core/config.js';
 import { discoverPlugins, disposePlugins, pluginMap, validatePanels } from './core/plugin-registry.js';
 import { discoverScreenTypes } from './core/screen-type-registry.js';
 import { jsonResponse } from './core/providers.js';
-import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign, writableConfigPath, writeConfigAtomic } from './core/admin-config.js';
+import { authorizeAdmin, configRevision, extractDesign, isAllowedApplicationHost, mergeDesign } from './core/admin-config.js';
+import { createConfigTransactions } from './core/config-transaction.js';
+import { dashboardRevisions } from './core/dashboard-revisions.js';
 import { buildSetupReport, discoverCastDevices, testPluginConnection } from './core/setup.js';
 import { publicAsset, extensionMetadata, validateSchema } from './core/extensions.js';
 import { pluginLibrary, pluginInstances, changePluginConfig } from './core/plugin-admin.js';
-import { deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
+import { castTargetKey, deliveryReport, changeDelivery, deliveryTarget } from './core/delivery.js';
+import { createCastRecovery } from './core/cast-recovery.js';
+import { refreshCastAddresses } from './core/cast-addresses.js';
+import { probeCastTarget } from './core/cast-health.js';
 import { discoverCastProtocols } from './core/cast-protocol-registry.js';
 import { configurationView, patchConfiguration, safeConfigurationError } from './core/ai-config.js';
 import { authenticateDevice, changeDeviceConfig, devicePublicConfig, deviceReport, deviceScope } from './core/devices.js';
@@ -107,7 +112,6 @@ export async function createApp(options = {}) {
   let displayAdapters = await discoverDisplayAdapters({builtin:DISPLAY_ADAPTERS_DIR,config:runtimeConfig,configDir:context.configDir});
   validateAdapterDevices(runtimeConfig,displayAdapters);
   const removedAdapterIds=new Set();
-  let adapterInstallInProgress=false;
   let screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: runtimeConfig, configDir: loaded.configDir });
   let screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
   let byId = new Map();
@@ -145,9 +149,17 @@ export async function createApp(options = {}) {
   let plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: loaded.config, context });
   byId = pluginMap(plugins);
   let disposed = false;
-  const dispose = async () => { if (disposed) return; disposed = true; reads.clear(); nativeScenes.dispose(); await disposePlugins(plugins); };
-
-  let publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
+  let disposal;
+  let castRecovery;
+  let publicConfig;
+  let revisions;
+  try {
+    publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
+    revisions = dashboardRevisions(publicConfig);
+  } catch (error) {
+    await disposePlugins(plugins);
+    throw error;
+  }
 
   async function runAction(id, body, request = {}) {
     const plugin = byId.get(id);
@@ -175,8 +187,81 @@ export async function createApp(options = {}) {
     };
   }
 
-  let pluginSaveInProgress=false;
+  const transactions = createConfigTransactions({
+    env: runtimeEnv,
+    current: () => ({
+      raw: rawConfig, config: runtimeConfig, configPath, plugins, byId,
+      screenTypes, screenTypesById, displayAdapters, publicConfig, revisions,
+    }),
+    async prepare(candidate, reload) {
+      const config = candidate.config;
+      const configDir = path.dirname(candidate.configPath);
+      if (reload === 'all') {
+        candidate.displayAdapters = await discoverDisplayAdapters({ builtin: DISPLAY_ADAPTERS_DIR, config, configDir });
+      }
+      validateAdapterDevices(config, candidate.displayAdapters);
+      if (reload === 'none') return;
+      candidate.invalidateReads = reload !== 'design' || JSON.stringify(config.branding) !== JSON.stringify(runtimeConfig.branding);
+      candidate.resetDevices = reload === 'all';
+      candidate.screenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config, configDir });
+      candidate.screenTypesById = new Map(candidate.screenTypes.map(type => [type.id, type]));
+      if (reload === 'design') {
+        validatePanels(config, plugins);
+      } else {
+        candidate.plugins = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config, context, reuse: plugins });
+        candidate.byId = pluginMap(candidate.plugins);
+      }
+      if (reload === 'all') {
+        await discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config, context });
+      }
+      candidate.publicConfig = publicAppConfig(config, candidate.plugins, candidate.screenTypes);
+      candidate.revisions = dashboardRevisions(candidate.publicConfig);
+    },
+    activate(candidate) {
+      if (candidate.invalidateReads) reads.clear();
+      if (candidate.resetDevices) {
+        nativeScenes.dispose();
+        deviceDiagnostics.clear();
+      }
+      rawConfig = candidate.raw;
+      runtimeConfig = candidate.config;
+      configPath = candidate.configPath;
+      context.configDir = path.dirname(configPath);
+      ({ plugins, byId, screenTypes, screenTypesById, displayAdapters, publicConfig, revisions } = candidate);
+    },
+  });
+  const dispose = () => disposal ??= (async () => {
+    disposed = true;
+    castRecovery?.stop();
+    await transactions.close();
+    reads.clear();
+    nativeScenes.dispose();
+    await disposePlugins(plugins);
+  })();
+
   const deliveriesInProgress = new Set();
+  castRecovery = await createCastRecovery({
+    getConfig: () => runtimeConfig,
+    getClients: () => [...clients.values()],
+    statePath: path.join(context.configDir, 'state', 'cast-recovery.json'),
+    locks: deliveriesInProgress,
+    probe: probeCastTarget,
+    logger: context.logger,
+    refreshTargets: async () => {
+      const scanConfig = rawConfig;
+      const nextRaw = await refreshCastAddresses(scanConfig, runtimeConfig);
+      if (!nextRaw || disposed || scanConfig !== rawConfig || transactions.busy || !runtimeConfig.casting?.recovery?.enabled) return;
+      await transactions.run(save => save(nextRaw));
+    },
+    send: async item => {
+      const config = runtimeConfig;
+      const protocols = await discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config, context });
+      const protocol = protocols.find(entry => entry.id === item.protocol);
+      if (!protocol) throw new Error('Cast protocol unavailable');
+      if (disposed || runtimeConfig !== config) throw new Error('Cast configuration changed');
+      await protocol.cast(item);
+    },
+  });
   const server = http.createServer(async (req, res) => {
     securityHeaders(res);
     let url;
@@ -190,7 +275,7 @@ export async function createApp(options = {}) {
       if(displayPage && req.method==='GET') {
         const origins=new Set();
         const allow=value=>{try{const target=new URL(value);if(['http:','https:'].includes(target.protocol) && !target.username && !target.password)origins.add(target.origin);}catch{}};
-        for(const plugin of plugins.filter(plugin=>plugin.type==='web-page'))allow(plugin.publicConfig().url);
+        for(const plugin of publicConfig.plugins.filter(plugin=>plugin.type==='web-page'))allow(plugin.config.url);
         for(const screen of Object.values(runtimeConfig.screens))for(const panel of screen.panels || [])if(byId.get(panel.plugin)?.type==='web-page')allow(panel.options?.url);
         securityHeaders(res,url.pathname==='/admin-preview'?['http:','https:']:[...origins]);
       }
@@ -212,9 +297,8 @@ export async function createApp(options = {}) {
         if(req.method!=='POST')return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
         const adminOrigin=runtimeConfig.server.publicUrl?new URL(runtimeConfig.server.publicUrl).origin:url.origin;
         if(req.headers['sec-fetch-site']==='cross-site' || req.headers.origin && ![url.origin,adminOrigin].includes(req.headers.origin))return jsonResponse(res,403,{error:{message:'Open display plugins from your Castboard admin page before making changes'}});
-        if(adapterInstallInProgress || pluginSaveInProgress)return jsonResponse(res,409,{error:{message:'Another change is being saved. Try again shortly.'}});
-        adapterInstallInProgress=true;
-        try {
+        if(transactions.busy)return jsonResponse(res,409,{error:{message:'Another change is being saved. Try again shortly.'}});
+        return await transactions.run(async () => {
           let installed;
           if(String(req.headers['content-type'] || '').split(';')[0]==='application/zip') {
             if(req.headers['x-castboard-trust-package']!=='yes')return jsonResponse(res,422,{error:{message:'Confirm that you trust this package before installing it'}});
@@ -230,7 +314,7 @@ export async function createApp(options = {}) {
           } else return jsonResponse(res,415,{error:{message:'Upload a ZIP display plugin'}});
           displayAdapters=await discoverDisplayAdapters({builtin:DISPLAY_ADAPTERS_DIR,config:runtimeConfig,configDir:context.configDir});
           return jsonResponse(res,200,{...payload(),...(installed?{installed}:{})});
-        } finally {adapterInstallInProgress=false;}
+        });
       }
       if (url.pathname === '/api/admin/devices') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{message:'Display management requires admin access'}});
@@ -239,21 +323,16 @@ export async function createApp(options = {}) {
         if (req.method !== 'POST') return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
         if (!acceptsJson(req)) return jsonResponse(res,415,{error:{message:'Display changes require JSON'}});
         const body = await readBody(req);
-        if (pluginSaveInProgress || adapterInstallInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res,409,{error:{message:'Settings changed. Refresh displays before saving.'}});
-        pluginSaveInProgress=true;
-        try {
+        if (transactions.busy || body.revision !== configRevision(rawConfig)) return jsonResponse(res,409,{error:{message:'Settings changed. Refresh displays before saving.'}});
+        return await transactions.run(async save => {
           const requestedAdapter=adapterFor(displayAdapters,body.device || rawConfig.devices?.[body.id] || {});
           const adapterChanged=body.action==='create' || body.device?.adapter && body.device.adapter!==(rawConfig.devices?.[body.id]?.adapter || 'standard');
           const defaults=adapterChanged?{...requestedAdapter.defaults,options:requestedAdapter.defaultOptions || {}}:{};
           const changed=changeDeviceConfig(rawConfig,body,defaults);
-          const nextConfig=resolveRuntimeConfig(changed.config, runtimeEnv);
-          validateAdapterDevices(nextConfig,displayAdapters);
-          const nextPath=writableConfigPath(configPath,path.dirname(configPath));
-          await writeConfigAtomic(nextPath,changed.config);
-          rawConfig=changed.config;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);
+          await save(changed.config);
           nativeScenes.reset(body.id);deviceDiagnostics.delete(body.id);
           return jsonResponse(res,200,{...payload(),...(changed.token?{connectionKey:changed.token}:{}),applied:true});
-        } finally { pluginSaveInProgress=false; }
+        });
       }
       const deviceMatch=url.pathname.match(/^\/api\/devices\/([a-z][a-z0-9-]{0,63})\/(config|bootstrap|scene|events|frame|touch|images\/[0-9]{1,2}|plugins\/([a-z][a-z0-9-]*)\/(data|action|stream))$/);
       if (deviceMatch) {
@@ -340,7 +419,7 @@ export async function createApp(options = {}) {
       }
       if (req.method === 'GET' && url.pathname === '/api/admin/health') {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, {error:{code:'ADMIN_FORBIDDEN',message:'Diagnostics require admin access'}});
-        return jsonResponse(res,200,{ok:true,screenRequests,clients:[...clients.values()]});
+        return jsonResponse(res,200,{ok:true,screenRequests,clients:[...clients.values()],castRecovery:castRecovery.status()});
       }
       if (url.pathname === '/api/client-status' && req.method === 'POST') {
         if (!acceptsJson(req)) return jsonResponse(res,415,{error:{code:'CONTENT_TYPE',message:'Status requires JSON'}});
@@ -352,7 +431,23 @@ export async function createApp(options = {}) {
         clients.set(key,{screenId:body.screenId,remoteAddress,lastSeenAt:new Date().toISOString(),panels:body.panels.map(panel=>({id:String(panel.id).slice(0,80),state:['live','stale','unavailable','loading'].includes(panel.state)?panel.state:'loading'}))});
         return jsonResponse(res,200,{ok:true});
       }
-      if (req.method === 'GET' && ['/api/config','/api/runtime-config'].includes(url.pathname)) return jsonResponse(res, 200, publicConfig);
+      if (req.method === 'GET' && url.pathname === '/api/config') return jsonResponse(res, 200, publicConfig);
+      if (req.method === 'GET' && url.pathname === '/api/runtime-config') {
+        return jsonResponse(res, 200, { ...publicConfig, dashboardRevisions: revisions });
+      }
+      const revisionMatch = url.pathname.match(/^\/api\/dashboard-revision\/([a-z][a-z0-9-]*)$/);
+      if (req.method === 'GET' && revisionMatch) {
+        const id = revisionMatch[1];
+        const screen = Object.hasOwn(revisions, id) ? publicConfig.screens[id] : undefined;
+        if (!screen) return jsonResponse(res, 200, { path: publicConfig.screens[publicConfig.defaultScreen]?.path });
+        const etag = `"${revisions[id]}"`;
+        if (req.headers['if-none-match'] === etag) {
+          res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-store' });
+          return res.end();
+        }
+        res.setHeader('ETag', etag);
+        return jsonResponse(res, 200, { path: screen.path });
+      }
       if (url.pathname === '/api/admin/configuration') {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Configuration requires admin access' } });
         const packages = await pluginLibrary({ pluginsDir: PLUGINS_DIR, config: runtimeConfig, configDir: context.configDir });
@@ -360,40 +455,24 @@ export async function createApp(options = {}) {
         if (req.method !== 'PATCH') return jsonResponse(res, 405, { error: { message: 'Use GET or PATCH' } });
         if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { message: 'Configuration changes require JSON' } });
         const body = await readBody(req);
-        if (pluginSaveInProgress || adapterInstallInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Configuration changed. Read it again before saving.' } });
-        pluginSaveInProgress = true;
-        let staged, nextRaw, nextConfig, applied = false;
-        try {
-          if (body.dryRun !== undefined && typeof body.dryRun !== 'boolean') throw new Error('dryRun must be a boolean');
-          nextRaw = patchConfiguration(rawConfig, body.operations);
-          nextConfig = resolveRuntimeConfig(nextRaw, runtimeEnv);
-          const nextAdapters = await discoverDisplayAdapters({ builtin: DISPLAY_ADAPTERS_DIR, config: nextConfig, configDir: context.configDir });
-          validateAdapterDevices(nextConfig, nextAdapters);
-          const nextTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
-          staged = await discoverPlugins({ pluginsDir: PLUGINS_DIR, config: nextConfig, context, reuse: plugins });
-          await discoverCastProtocols({ protocolsDir: path.join(ROOT, 'cast-protocols'), config: nextConfig, context });
-          const nextPublic = publicAppConfig(nextConfig, staged, nextTypes);
-          const restartRequired = ['host', 'port'].some(key => nextConfig.server[key] !== runtimeConfig.server[key]);
-          const result = { ok: true, valid: true, applied: false, revision: configRevision(rawConfig), changedPaths: body.operations.map(item => item.path), restartRequired };
-          if (body.dryRun !== false) return jsonResponse(res, 200, result);
-          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
-          await writeConfigAtomic(nextPath, nextRaw);
-          const previous = plugins;
-          plugins = staged; byId = pluginMap(plugins); reads.clear();
-          rawConfig = nextRaw; runtimeConfig = nextConfig; configPath = nextPath;
-          context.configDir = path.dirname(nextPath);
-          screenTypes = nextTypes; screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
-          displayAdapters = nextAdapters;
-          nativeScenes.dispose(); deviceDiagnostics.clear();
-          publicConfig = nextPublic; applied = true;
-          await disposePlugins(previous.filter(plugin => !plugins.includes(plugin)));
-          return jsonResponse(res, 200, { ...result, applied: true, revision: configRevision(rawConfig) });
-        } catch (error) {
-          return jsonResponse(res, 422, { error: { code: 'INVALID_CONFIGURATION', message: safeConfigurationError(error, [rawConfig, runtimeConfig, nextRaw, nextConfig], packages) } });
-        } finally {
-          if (staged && !applied) await disposePlugins(staged.filter(plugin => !plugins.includes(plugin)));
-          pluginSaveInProgress = false;
-        }
+        if (transactions.busy || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Configuration changed. Read it again before saving.' } });
+        return await transactions.run(async save => {
+          let nextRaw, nextConfig;
+          try {
+            if (body.dryRun !== undefined && typeof body.dryRun !== 'boolean') throw new Error('dryRun must be a boolean');
+            nextRaw = patchConfiguration(rawConfig, body.operations);
+            const previousServer = runtimeConfig.server;
+            const dryRun = body.dryRun !== false;
+            const candidate = await save(nextRaw, { dryRun, reload: 'all', onResolve: config => { nextConfig = config; } });
+            const restartRequired = ['host', 'port'].some(key => candidate.config.server[key] !== previousServer[key]);
+            return jsonResponse(res, 200, {
+              ok: true, valid: true, applied: !dryRun, revision: configRevision(rawConfig),
+              changedPaths: body.operations.map(item => item.path), restartRequired,
+            });
+          } catch (error) {
+            return jsonResponse(res, 422, { error: { code: 'INVALID_CONFIGURATION', message: safeConfigurationError(error, [rawConfig, runtimeConfig, nextRaw, nextConfig], packages) } });
+          }
+        });
       }
       if (url.pathname === '/api/admin/plugins') {
         if (!authorizeAdmin(req,runtimeConfig)) return jsonResponse(res,403,{error:{code:'ADMIN_FORBIDDEN',message:'Plugin management requires admin access'}});
@@ -403,34 +482,30 @@ export async function createApp(options = {}) {
         if(req.method!=='POST')return jsonResponse(res,405,{error:{message:'Use GET or POST'}});
         if(!acceptsJson(req))return jsonResponse(res,415,{error:{message:'Plugin changes require JSON'}});
         const body=await readBody(req);
-        if(pluginSaveInProgress || body.revision!==configRevision(rawConfig))return jsonResponse(res,409,{error:{code:'REVISION_CONFLICT',message:'Settings changed. Reload before saving.'}});
-        pluginSaveInProgress=true;
-        let staged;
-        try {
-          const nextRaw=changePluginConfig(rawConfig,packages,body);
-          const nextConfig=resolveRuntimeConfig(nextRaw, runtimeEnv);
-          for(const [id,settings] of Object.entries(nextConfig.plugins))validateSchema(settings,packages.find(pkg=>pkg.id===(settings.type||id))?.settingsSchema,`Plugin ${id} settings`);
-          staged=await discoverPlugins({pluginsDir:PLUGINS_DIR,config:nextConfig,context,reuse:plugins});
-          const nextPublic=publicAppConfig(nextConfig,staged,screenTypes);
-          const nextPath=writableConfigPath(configPath,path.dirname(configPath));
-          await writeConfigAtomic(nextPath,nextRaw);
-          const previous=plugins;
-          plugins=staged;byId=pluginMap(plugins);reads.clear();rawConfig=nextRaw;runtimeConfig=nextConfig;configPath=nextPath;context.configDir=path.dirname(nextPath);publicConfig=nextPublic;
-          await disposePlugins(previous.filter(plugin=>!plugins.includes(plugin)));
-          return jsonResponse(res,200,{...payload(),applied:true});
-        }catch(error){
-          if(staged)await disposePlugins(staged.filter(plugin=>!plugins.includes(plugin)));
-          return jsonResponse(res,422,{error:{code:'INVALID_PLUGIN_SETTINGS',message:error.message}});
-        }finally{pluginSaveInProgress=false;}
+        if(transactions.busy || body.revision!==configRevision(rawConfig))return jsonResponse(res,409,{error:{code:'REVISION_CONFLICT',message:'Settings changed. Reload before saving.'}});
+        return await transactions.run(async save => {
+          try {
+            const nextRaw = changePluginConfig(rawConfig, packages, body);
+            await save(nextRaw, { reload: 'plugins', onResolve(config) {
+              for (const [id, settings] of Object.entries(config.plugins)) {
+                const schema = packages.find(pkg => pkg.id === (settings.type || id))?.settingsSchema;
+                validateSchema(settings, schema, `Plugin ${id} settings`);
+              }
+            } });
+            return jsonResponse(res,200,{...payload(),applied:true});
+          } catch (error) {
+            return jsonResponse(res,422,{error:{code:'INVALID_PLUGIN_SETTINGS',message:error.message}});
+          }
+        });
       }
       if (url.pathname === '/api/admin/delivery') {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Display setup requires admin access.' } });
-        const payload = () => deliveryReport(runtimeConfig, rawConfig);
+        const payload = () => ({ ...deliveryReport(runtimeConfig, rawConfig), castRecovery:castRecovery.status() });
         if (req.method === 'GET') return jsonResponse(res, 200, payload());
         if (req.method !== 'POST') return jsonResponse(res, 405, { error: { message: 'Use GET or POST' } });
         if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { message: 'Display changes require JSON.' } });
         const body = await readBody(req);
-        if (pluginSaveInProgress || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Settings changed in another window. Refresh displays and try again.' } });
+        if (transactions.busy || body.revision !== configRevision(rawConfig)) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'Settings changed in another window. Refresh displays and try again.' } });
         if (body.action === 'send') {
           const item = deliveryTarget(runtimeConfig, body.screenId, body.index, body.targetScreenId);
           if (body.reset !== undefined && typeof body.reset !== 'boolean') return jsonResponse(res, 422, { error: { message: 'Choose Cast or Recast.' } });
@@ -439,7 +514,7 @@ export async function createApp(options = {}) {
           if (!item.url) return jsonResponse(res, 422, { error: { message: 'Set server.publicUrl to an address your display can reach before sending.' } });
           if (item.protocol === 'url') return jsonResponse(res, 422, { error: { message: 'Open the screen link in the browser on this display.' } });
           // A receiver may be shared by multiple screens; serialize sends to that receiver.
-          const key = JSON.stringify([item.protocol, item.target.address || item.target.device || item.target.endpoint || item.target.name]);
+          const key = castTargetKey(item);
           if (deliveriesInProgress.has(key)) return jsonResponse(res, 409, { error: { message: 'A screen is already being sent to this display. Wait a moment and try again.' } });
           deliveriesInProgress.add(key);
           try {
@@ -447,24 +522,21 @@ export async function createApp(options = {}) {
             const protocol = protocols.find(entry => entry.id === item.protocol);
             if (!protocol) return jsonResponse(res, 422, { error: { message: 'This delivery method is disabled or missing. Check the server configuration.' } });
             await protocol.cast(item);
+            if (item.protocol === 'google-cast' && castRecovery.enabled) await castRecovery.remember(item);
             return jsonResponse(res, 200, { ok: true, message: 'Dashboard sent. Check the display to confirm it opened.' });
           } catch (error) {
             // Adapter errors can include private URLs, headers or executable arguments.
             return jsonResponse(res, 502, { error: { code: 'DELIVERY_FAILED', message: error.code === 'ENOENT' ? 'The delivery tool is not installed. Check Server tools below, then try again.' : 'Could not send the screen. Check that the display is online and can reach this server, then try again.' } });
           } finally { deliveriesInProgress.delete(key); }
         }
-        pluginSaveInProgress = true;
-        try {
-          const nextRaw = changeDelivery(rawConfig, body);
-          const nextConfig = resolveRuntimeConfig(nextRaw, runtimeEnv);
-          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
-          await writeConfigAtomic(nextPath, nextRaw);
-          rawConfig = nextRaw; runtimeConfig = nextConfig; configPath = nextPath;
-          context.configDir = path.dirname(nextPath);
-          return jsonResponse(res, 200, { ...payload(), applied: true });
-        } catch (error) {
-          return jsonResponse(res, error.statusCode || 500, { error: { code: error.code || 'DELIVERY_SAVE_FAILED', message: error.statusCode ? error.message : 'Could not save the display settings. Check that the server configuration file is writable, then try again.' } });
-        } finally { pluginSaveInProgress = false; }
+        return await transactions.run(async save => {
+          try {
+            await save(changeDelivery(rawConfig, body));
+            return jsonResponse(res, 200, { ...payload(), applied: true });
+          } catch (error) {
+            return jsonResponse(res, error.statusCode || 500, { error: { code: error.code || 'DELIVERY_SAVE_FAILED', message: error.statusCode ? error.message : 'Could not save the display settings. Check that the server configuration file is writable, then try again.' } });
+          }
+        });
       }
       if (url.pathname.startsWith('/api/admin/setup')) {
         if (!authorizeAdmin(req, runtimeConfig)) return jsonResponse(res, 403, { error: { code: 'ADMIN_FORBIDDEN', message: 'Setup access requires localhost or an authorized LAN token' } });
@@ -484,27 +556,15 @@ export async function createApp(options = {}) {
         if (!acceptsJson(req)) return jsonResponse(res, 415, { error: { code: 'CONTENT_TYPE', message: 'Admin saves require application/json' } });
         const body = await readBody(req);
         const currentRevision = configRevision(rawConfig);
-        if (pluginSaveInProgress || body.revision !== currentRevision) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'The configuration changed after this editor loaded. Reload before saving.' }, revision: currentRevision });
-        pluginSaveInProgress=true;
-        try {
-          const nextRaw = mergeDesign(rawConfig, body.design);
-          const nextConfig = resolveRuntimeConfig(nextRaw, runtimeEnv);
-          const nextScreenTypes = await discoverScreenTypes({ screenTypesDir: SCREEN_TYPES_DIR, config: nextConfig, configDir: context.configDir });
-          // Design saves must not recreate integration clients or their state.
-          validatePanels(nextConfig, plugins);
-          const nextPath = writableConfigPath(configPath, path.dirname(configPath));
-          await writeConfigAtomic(nextPath, nextRaw);
-          rawConfig = nextRaw;
-          runtimeConfig = nextConfig;
-          configPath = nextPath;
-          context.configDir = path.dirname(nextPath);
-          screenTypes = nextScreenTypes;
-          screenTypesById = new Map(screenTypes.map(type => [type.id, type]));
-          publicConfig = publicAppConfig(runtimeConfig, plugins, screenTypes);
-          return jsonResponse(res, 200, { ok: true, ...adminPayload(), applied: true });
-        } catch (error) {
-          return jsonResponse(res, 422, { error: { code: 'INVALID_DESIGN', message: error.message } });
-        }finally{pluginSaveInProgress=false;}
+        if (transactions.busy || body.revision !== currentRevision) return jsonResponse(res, 409, { error: { code: 'REVISION_CONFLICT', message: 'The configuration changed after this editor loaded. Reload before saving.' }, revision: currentRevision });
+        return await transactions.run(async save => {
+          try {
+            await save(mergeDesign(rawConfig, body.design), { reload: 'design' });
+            return jsonResponse(res, 200, { ok: true, ...adminPayload(), applied: true });
+          } catch (error) {
+            return jsonResponse(res, 422, { error: { code: 'INVALID_DESIGN', message: error.message } });
+          }
+        });
       }
 
       const apiMatch = url.pathname.match(/^\/api\/plugins\/([a-z][a-z0-9-]*)\/(data|action|stream)$/);
@@ -593,6 +653,7 @@ export async function createApp(options = {}) {
     }
   });
 
+  server.once('listening', () => castRecovery.start());
   server.once('close', () => { void dispose(); });
   return {
     server,

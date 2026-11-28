@@ -81,3 +81,11 @@ If the server URL cannot be derived from the host's LAN interface, configure `se
 Google Cast accepts `attempts` on the target or protocol configuration (default 2, capped at 5). Set `resetBeforeCast:true` only for receivers that retain stale DashCast sessions; `resetDelayMs` defaults to 3000 and is capped at 10000 milliseconds. `CATT_BIN` overrides the configured executable. These settings affect delivery only, and do not change a screen’s layout or data providers.
 
 External drivers can be loaded from `extensions.protocols` roots relative to the configuration file; see [extension loading](extensions.md).
+
+## Automatic Google Cast recovery
+
+Set `casting.recovery.enabled` to `true` on a server that can reach the Cast control port of its receivers directly. Give each managed receiver a saved IP address in `address` (preferred) or `device`. Enable this for dedicated dashboard receivers. An extended absence of a dashboard heartbeat can cause Castboard to replace the current Cast session.
+
+Recovery checks after startup and at 30-second intervals after each completed check. It waits for an existing receiver heartbeat to age out after three minutes, then probes the saved address before resetting and sending the assigned dashboard. Successful sends get three minutes for the heartbeat to return. Command failures retry with backoff capped at five minutes. Receivers whose Cast port is unavailable are checked again on the next pass. Use **Refresh** in Displays or read authenticated `/api/admin/health` for the current state. A receiver whose Cast service stays unresponsive may need a restart through its normal device controls.
+
+A successful send from the admin UI becomes the receiver's recovery assignment. Castboard stores assignments and bounded status transitions in `state/` beside the configuration. Use one server per configuration directory. A saved `uuid` enables best-effort DHCP address refresh through `catt` discovery. An address changes only when exactly one discovered device matches the pinned UUID and the saved `address` is a literal IP. Names alone never change the destination. Configure the same UUID on all entries for a shared receiver. Local discovery uses the trusted LAN and does not authenticate devices cryptographically.
