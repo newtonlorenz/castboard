@@ -92,32 +92,37 @@ function enablePanelAutoFit(element, releases = cleanups) {
   scheduleFit();
 }
 
-function visibleDesignSignature(config, screenId) {
-  return JSON.stringify({ branding: config.branding, plugins:config.plugins, screens: config.screens });
-}
-
 function watchDesign(config, screen) {
-  const initialSignature = visibleDesignSignature(config, screen.id);
+  const revision = config.dashboardRevisions?.[screen.id];
+  if (!revision) return;
+  const controller = new AbortController();
   const timer = schedule(async () => {
+    const request = new AbortController();
+    const abort = () => request.abort();
+    controller.signal.addEventListener('abort', abort, { once: true });
+    const timeout = setTimeout(abort, 12000);
     try {
-      const { response, payload: latest } = await requestJson('/api/runtime-config', { cache: 'no-store' });
+      const response = await fetch(`/api/dashboard-revision/${encodeURIComponent(screen.id)}`, {
+        cache: 'no-store',
+        headers: { 'If-None-Match': `"${revision}"` },
+        signal: request.signal,
+      });
       if (!response.ok) return;
-      const nextScreen = latest.screens[screen.id];
-      if (!nextScreen) {
-        const fallback = latest.screens[latest.defaultScreen] || Object.values(latest.screens)[0];
-        if (fallback) window.location.replace(fallback.path);
-        return;
-      }
-      if (nextScreen.path !== screen.path) {
-        window.location.replace(nextScreen.path);
-        return;
-      }
-      if (visibleDesignSignature(latest, screen.id) !== initialSignature) window.location.reload();
+      const { path } = await response.json();
+      if (controller.signal.aborted || !path) return;
+      if (path !== screen.path) window.location.replace(path);
+      else window.location.reload();
     } catch {
       // A temporary network outage should not take an already-rendered display down.
+    } finally {
+      clearTimeout(timeout);
+      controller.signal.removeEventListener('abort', abort);
     }
   }, 5000);
-  cleanups.push(() => clearInterval(timer));
+  cleanups.push(() => {
+    controller.abort();
+    clearInterval(timer);
+  });
 }
 
 function mountComposition(config, screen, container, register, scoped) {
